@@ -31,11 +31,14 @@ var CartoDB_DarkMatter = L.tileLayer(
         opacity: 1.0
 });
 
+// Set up basemap options
+
 var basemap_options = {
     'OSM Mapnik': OpenStreetMap_Mapnik,
     'ESRI Gray' : Esri_WorldGrayCanvas,
     'ESRI Aerial': Esri_WorldImagery,
-    'CartoDB Dark': CartoDB_DarkMatter
+    'CartoDB Dark': CartoDB_DarkMatter,
+//     'Macrostrat': Macrostrat,
 }
 OpenStreetMap_Mapnik.addTo(MAP);
 
@@ -467,167 +470,27 @@ var CustomLayerControl = L.Control.extend({
             
             var attr = mom._baseLayers[id];
             var onclick = `onClick="onToggleOtherLayerClick(this,'${id}')"`;
-            if (mom.options.organize_imagery && 
-                (group.indexOf('imagery') > -1 ||
-                 ['hydrodynamic vids','beach mon reports'].indexOf(group) > -1)) {
-                // if imagery, group by dates
-                
-                var ldate = attr.label.split('_')[0].replace('000','');
-                var ldateYear = ldate.substring(0,4);
-                var ldate = delay_legend ? 
-                    '' : ldate.substring(4,6) + '-' + ldate.substring(6,8);
-                var lsource = attr.label.split('_')[1].replace('zzz','');
-                var lsource_short = imagery_sources[lsource];
-                var lproduct = attr.label.split('_')[2];
-                var legend = attr.legend || delay_legend;
-                var lid = delay_legend_id || id;
-                var lab = lsource; // data label
-                if (lab == 'SkySat') {
-                    lab = `<span style='color:#cfdbe2;'>${lab}</span>`;
-                }
-                if (lab == 'DigitalGlobe') {
-                    lab = `<span style='color:#a4f4cc;'>${lab}</span>`;
-                }
-                
-                // Interpreted imagery is a special case; we want to display
-                // the classified image, the original image, AND any RSRF polygons
-                // This means holding off on inserting the legend until after
-                // the next layer is added, and applying special labeling to
-                // indicate the product instead of the source
-                if (group == 'interpreted imagery') {
-                    lab = attr.legend ? lproduct : `${lab} image`;
-                    
-                    // If it has a legend, it's the classified image
-                    // (as opposed to the original image)
-                    if (attr.as_checkbox) {
-                        onclick = `onClick="onToggleOtherLayerClick(this,'${id}', true)"`;
-                        type = 'checkbox';
-  
-                        // If there's no legend, assume it's the RSRF layer
-                        var has_rsrf;
-                        if (!attr.legend) { 
-                            name = 'rsrf_polygons';
-                            lab = `${lproduct} polygons`;
-                            has_rsrf = true;
-                            
-                        } else {
-                            // otherwise assume it's the classification layer
-                            lab = lproduct;
-                            name = 'classifications';
-                            if (lab.indexOf('HeatMap') == -1) {
-                                delay_legend = attr.legend;
-                                delay_legend_id = id;
-                            legend = null;
-                            }
-                            if (has_rsrf) {
-                                // If there's an RSRF layer, the date will go
-                                // with that one
-                                ldate = '';
-                                has_rsrf = false;
-                            }
-                        }
-                    }
-                }
-       
-                // If new year, add label div
-                if (currYear != ldateYear) {
-                    currYear = ldateYear;
-                    var cls = firstYear ? ' firstyear': '';
-                    mom._layerGroups[group].rows[ldateYear] = L.DomUtil.create(
-                        'tr', 'm-basemap-year-divider' + cls, mom._layerGroups[group].table
-                    );
-                    mom._layerGroups[group].rows[ldateYear].innerHTML = `
-                        <td class="year_label" colspan=${header_colspan}>
-                            ${currYear}
-                        </td>
-                        <td class="collapse">-</td>`;
-                    
-                    firstYear = false;
-                }
-                
-                if (['drone imagery','hydrodynamic vids','beach mon reports'].indexOf(group) > -1
-                    && attr.vidlink) {
-//                     console.log(group);
-                    var vlink = attr.vidlink;
-                    var n = attr.label.split('_')[3];
-                    var vid = `vid${n}`;
-                    var is_hydro = group == 'hydrodynamic vids'
-                    var onclick = `onclick="showEmbeddedVideo('${vlink}',${is_hydro})"`;
-                    mom._layerGroups[group].rows[vid] = L.DomUtil.create(
-                        'tr', 'm-basemap-selector', mom._layerGroups[group].table);
-                    
-                    if (group == 'drone imagery') {
-                        mom._layerGroups[group].rows[vid].innerHTML = `
-                            <td class='control_label date'
-                                ${onclick} >${ldate}</td>
-                            <td colspan=3 class='control_label source video'
-                            >Vid#${n} <a href='#' ${onclick}>Prev.</a> - <a target="_blank" href='${vlink.replace('_768x432','')}'>FullRes</a></td>`;
-                    } else {
-                        var lab = 'Model results';
-                        if (group == 'beach mon reports') {
-                            lab = 'PDF';
-                            onclick = `onclick="window.open('${vlink}');"`
-                        }
-                        mom._layerGroups[group].rows[vid].innerHTML = `
-                            <td class='control_label date'
-                                ${onclick} >${ldate}</td>
-                            <td colspan=2 class='control_label source video'
-                            ><a href='#' ${onclick}>${lab}</a></td>`;
-                        
-                    }
-                        
-                } else {
-                    mom._layerGroups[group].rows[id] = L.DomUtil.create(
-                        'tr', 'm-basemap-selector', mom._layerGroups[group].table);
-                    
-                    mom._layerGroups[group].rows[id].innerHTML = `
-                        <td class='control_label date'
-                            id='${id}-label'
-                            title='${attr.title}' ${onclick} >${ldate}</td>
-                        <td class='control_label source' 
-                            title='${lproduct}'
-                            ${onclick}>${lab}</td>
-                        <td></td>
-                        <td class='control_input'>
-                            <input type='${type}' name='${name}'
-                                ${onclick} id='${id}-checkbox'
-                                title='${attr.title}'>
-                        </td>`;
-                }
-                
-                // Add legend
-                if (legend) {
-                    delay_legend = undefined;
-                    delay_legend_id = undefined;
-                    mom._layerGroups[group].rows[lid + '_legend'] = L.DomUtil.create(
-                        'tr', 'legend', mom._layerGroups[group].table);
-                    mom._layerGroups[group].rows[lid + '_legend'].innerHTML = `
-                        <td colspan=${header_colspan + 1}>
-                            <div class='other-legend' id='${lid}-legend'>
-                                ${legend}</div>
-                        </td>`
-                }
-            } else {
-                mom._layerGroups[group].rows[id] = L.DomUtil.create(
-                    'tr', 'm-basemap-selector', mom._layerGroups[group].table);
-                mom._layerGroups[group].rows[id].innerHTML = `
-                    <td class='control_label' id='${id}-label' 
-                        colspan=${header_colspan} 
-                        title='${attr.title}'
-                        onClick='onToggleOtherLayerClick(this)' >
-                            ${attr.label}
-                            <div class='other-legend' id='${id}-legend'>
-                                ${attr.legend}</div>
-                    </td>
 
-                    <td class='control_input'>
-                        <input type='${type}' name='imagery'
-                            onClick='onToggleOtherLayerClick(this)'
-                            id='${id}-checkbox'
-                            title='${attr.title}'>
-                    </td>`
+            mom._layerGroups[group].rows[id] = L.DomUtil.create(
+                'tr', 'm-basemap-selector', mom._layerGroups[group].table);
+            mom._layerGroups[group].rows[id].innerHTML = `
+                <td class='control_label' id='${id}-label' 
+                    colspan=${header_colspan} 
+                    title='${attr.title}'
+                    onClick='onToggleOtherLayerClick(this)' >
+                        ${attr.label}
+                        <div class='other-legend' id='${id}-legend'>
+                            ${attr.legend}</div>
+                </td>
+
+                <td class='control_input'>
+                    <input type='${type}' name='imagery'
+                        onClick='onToggleOtherLayerClick(this)'
+                        id='${id}-checkbox'
+                        title='${attr.title}'>
+                </td>`
                 
-            }
+            
         });
         
         ///////////////////////////////////////////////////////////////////////

@@ -245,7 +245,7 @@ tr.m-basemap-selector td {
 }
 tr.m-basemap-selector td.control_label {
     cursor: default;
-    padding: 1px 2px 0px 8px;
+    padding: 1px 6px 0px 8px;
     font-size: 12px;
     border-bottom: None;
 }
