@@ -3,9 +3,9 @@
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('StatMAGIC') }}</a></h1>
+<h1 id="site-name">{{ site_header|default:_('StatMAGIC') }}</h1>
 {% if user.is_anonymous %}
-  {% include "admin/color_theme_toggle.html" %}
+<!--   {% include "admin/color_theme_toggle.html" %} -->
 {% endif %}
 {% endblock %}
 

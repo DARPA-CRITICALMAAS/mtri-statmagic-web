@@ -1,0 +1,379 @@
+
+@font-face {
+    font-family: Avenir;
+    src: url("/static/fonts/AvenirNext_PC/AvenirNext_PC/AvenirNext-Regular.ttf") format("opentype");
+}
+
+#map {
+    height: 800px;
+}
+
+#content {
+    padding: 0px;
+}
+
+body {
+    background: #444;
+}
+
+td, th {
+    border-bottom: None;
+    
+}
+
+#header {
+    background: #444;
+    padding: 10px 30px;
+}
+
+#branding h1 {
+    font-size: 2.0rem;
+/*     font-style: italic; */
+    font-weight: 600;
+    color: #ccccff;
+    letter-spacing: .04rem;
+/*     font-family: Avenir, 'PT Sans' */
+    
+}
+
+div.breadcrumbs {
+/*     display: none; */
+    background: #777;
+    padding: 8px 40px;
+}
+
+
+.overlay {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    top: 0;
+    left: 0;
+    display: none;
+    position: fixed; 
+    z-index: 9990;
+    background-color: rgba(50,50,50,0.8);
+}
+.modal {
+    position: absolute; 
+    width: 80%;
+    background-color: #333;
+    opacity: 0.95;
+    border-radius: 3px;
+    top:50%;
+    left:50%;
+    overflow: visible;
+    transform: translate(-50%, -50%);
+    padding: 10px 0px;
+    margin: 0px auto;
+}
+
+
+.button {
+    width: 160px;
+/*     height: 100px; */
+    border-radius: 4px;
+    text-align: center;
+    background: #888;
+    margin: 8px 0px 0px 0px;
+    font-size: 32px;
+    line-height: 34px;
+    cursor: pointer;
+}
+.button:hover {
+    background: #444;
+}
+
+
+.leaflet-control-layers-table_label th {
+    font-size: 11px;
+    font-weight: normal;
+    text-align: left;
+    padding-bottom: 3px;
+    height: 46px;
+    vertical-align: bottom;
+/*    height: 50px;*/
+/*    width: 40px;*/
+/*    position: relative;
+    vertical-align: bottom;
+    padding: 0;
+    line-height: 0.8;*/
+
+}
+
+.leaflet-control-layers-table_label th div {
+    width: 14px;
+    height: 6px;
+    -ms-transform: rotate(-80deg); /* IE 9 */
+    -webkit-transform: rotate(-80deg); /* Chrome, Safari, Opera */
+    transform: rotate(-80deg);
+    transform-origin: left bottom 0;
+    float: right;
+
+}
+
+.customLayerControl_th span {
+/*    left: -20px;*/
+}
+
+.customLayersTableDiv {
+    margin-top: 0px;
+    max-height: 600px;;
+    overflow: auto;
+}
+
+table.customLayersTable {
+    border-spacing: 0px;
+    width: 100%;
+}
+.customLayersTable td {
+    text-align: right;
+    vertical-align: top;
+}
+
+.layerLabelAndCheck {
+    height: 19px;
+    vertical-align: bottom;
+    font-size: 12px;
+    
+}
+/*.leaflet-control-layers-overlays {
+    font-size: 12px;
+    vertical-align: middle;
+}*/
+.layerCheckbox {
+    display: inline;
+    height: 19px;
+    font-size: 16px;
+    vertical-align: top;
+    padding: 0.5px;
+    margin-left: 10px;
+
+}
+
+.layerLabelAndCheck.footer {
+    margin-top: 12px;
+    padding-bottom: 4px;
+    font-size: 10px;
+    vertical-align: top;
+}
+.layerLabelAndCheck.other {
+/*    margin-top: 12px;*/
+    text-align: left;
+    
+}
+
+.leaflet-control-layers-list {
+    margin-bottom: 0px;
+}
+
+.leaflet-control-layers {
+/*    background-color:rgba(256,256,256,0.8);*/
+    background-color: transparent;
+    padding-top: 34px;
+/*    margin-right: 5px;
+    margin-bottom: 5px;*/
+    border-radius: 2px;
+/*    box-shadow: none;*/
+}
+.leaflet-control-layers td,
+.leaflet-control-layers th {
+    background-color:#333;
+}
+.leaflet-control-layers.leaflet-control-layers-expanded.leaflet-control {
+    margin: 3px 6px 6px 0px;
+    padding: 0px 0px 2px 0px;
+    border: none;
+}
+
+.layerLabelAndCheck.footer input[type='radio'] {
+    margin-left: 2px;
+}
+
+.layerLabelAndCheck.footer {
+    height: auto;
+}
+.layerLabelAndCheck.footer div {
+    padding-right: 5px;
+}
+
+/*tr.m-basemap-selector,
+tr.m-basemap-selector td {
+    -webkit-transition: all 0.4s ease;
+    -moz-transition: all 0.4s ease;
+    -o-transition: all 0.4s ease;
+    transition: all 0.4s ease;
+}*/
+tr.m-basemap-filler { 
+    height: 4px;
+}
+tr.m-basemap-filler2 { 
+    height: 12px;
+    background-color: #333;
+}
+tr.m-basemap-filler3 { 
+    height: 2px;
+    background-color: #333;
+}
+
+tr.m-basemap-year-divider td,
+tr.m-basemap-headeroo td { 
+    text-align: left;
+    font-size: 13px;
+    font-family: monospace, Arial;
+    color: #c2c2c2;
+    padding: 4px 4px 2px 4px;
+    border-top: 1px dashed #444;
+    cursor: pointer;
+/*    -webkit-transition: all 0.4s ease;
+    -moz-transition: all 0.4s ease;
+    -o-transition: all 0.4s ease;
+    transition: all 0.4s ease;*/
+}
+tr.m-basemap-year-divider td:hover {
+    color: #fff;
+    font-weight: bold;
+}
+tr.m-basemap-year-divider td.year_label {
+    width: 130px;
+}
+tr.m-basemap-selector td {
+    font-size: 13px;
+    text-align: left;
+    vertical-align: top;
+    font-family: monospace, Arial;
+}
+tr.m-basemap-selector td.control_label {
+    cursor: default;
+    padding: 1px 2px 0px 8px;
+    font-size: 12px;
+    border-bottom: None;
+}
+tr.m-basemap-selector td.control_label.date {
+    color: #ffffcc;
+    padding-left: 14px;
+    width: 50px;
+}
+tr.m-basemap-selector td.control_label.source {
+    color: #8faabc;
+/*     font-family: 'PT Sans Narrow'; */
+    font-size: 13px;
+    cursor: pointer;
+}
+tr.m-basemap-selector {
+    cursor: pointer;
+}
+tr.m-basemap-selector {
+    color: #fff;
+}
+tr.m-basemap-selector td.control_label.product {
+    color: #999;
+    font-size: 11px;
+}
+.customLayersTable td.off {
+    color: #c2c2c2;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 12px;
+    font-family: monospace;
+    padding: 3px 0px 1px 14px;
+}
+tr.m-basemap-selector td.control_input {
+    text-align: right;
+    padding: 1px 0px 0px 0px;
+    vertical-align: top;
+}
+tr.m-basemap-selector td.control_input input[type='checkbox'] {
+    margin: 0px 3px 0px 0px;
+    
+}
+tr.m-basemap-selector input {
+    margin-top:0px;
+    cursor: pointer;
+    
+}
+tr.m-basemap-selector.header {
+    font-weight: 600;
+    text-transform: uppercase;
+}
+tr.m-basemap-selector.header td {
+    background-color: rgba(80,80,80,0.9);
+    color: #d9d9d9;
+    font-size: 13px;
+    padding: 4px 2px 2px 6px;
+    margin-bottom: 2px;
+/*     font-family: 'PT Sans'; */
+    cursor: pointer;
+}
+tr.m-basemap-selector.header td:hover {
+    color: #fff;
+}
+tr.m-basemap-selector.header td.collapse {
+    text-align: right;
+    vertical-align: middle;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 10px;
+    cursor: pointer;
+    padding-top: 2px;
+    padding-right: 8px;
+    border-radius: 0px;
+}
+tr.m-basemap-selector.header td.collapse:hover {
+    font-weight: 800;
+}
+tr.m-basemap-selector.header.first td {
+    margin-top: 0px;
+}
+tr.m-basemap-selector.buffer {
+    height: 4px;
+/*     background-color: transparent; */
+}
+tr.m-basemap-selector.divider {
+    height: 3px;
+    background-color: transparent;
+}
+
+.leaflet-control-layers-table_cell_1 {
+    padding: 0px 0px 0px 3px;
+}
+
+
+.leaflet-popup-tip-container {
+    display: none;
+    
+}
+.leaflet-popup-close-button {
+    display: none;
+    
+}
+.leaflet-popup-content-wrapper {
+    border-radius: 2px;
+    background: #444;
+    color: #fff;
+}
+.leaflet-popup-content {
+    margin: 4px 6px;
+}
+
+
+.item {
+    clear:both;
+/*    margin:0px -34px 0 0px;*/
+    margin:0px 0px 0 0px;
+    line-height:14px;
+    font-size: 11px;
+    color:#999;
+    text-align:left;
+    vertical-align: bottom;
+}
+.bin {
+    float:left;
+    width:12px;
+    height:12px;
+    margin:0px 5px 1px 0px;
+    border:1px solid #222;
+    border-radius:3px;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+}
