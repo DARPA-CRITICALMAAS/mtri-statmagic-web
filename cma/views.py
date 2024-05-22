@@ -79,7 +79,7 @@ def get_mineral_sites(request):
     #       the results by geometry (if provided)
     sites = None
     
-    print(params)
+    #print(params)
     
     # Return response as JSON to client
     response = HttpResponse(json.dumps({

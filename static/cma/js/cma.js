@@ -204,7 +204,6 @@ function addDrawControl() {
         if (drawnLayer && MAP.hasLayer(drawnLayer)) {
             MAP.removeLayer(drawnLayer);
         }
-
     });
     
     MAP.on(L.Draw.Event.CREATED, function(e) {
@@ -221,6 +220,9 @@ function addDrawControl() {
 function finishDraw(layer) {
     // Zoom to drawn polygon
     MAP.fitBounds(layer.getBounds(),{padding: [80,80]});
+    
+    // Enable/disable load sites button
+    toggleLoadSitesButton();
 }
 
 function loadMineralSites() {
@@ -270,7 +272,7 @@ function createControlPanel() {
                     <tr>
                         <td class='label'>Commodity:</td>
                         <td>
-                            <select id='commodity'>
+                            <select id='commodity' onChange="toggleLoadSitesButton();">
                                 ${opts_html}
                             </select>
                         </td>
@@ -290,7 +292,7 @@ function createControlPanel() {
                     </tr>
                     <tr>
                         <td colspan=2>
-                            <div class='button load_sites' onClick='loadMineralSites();'>Load sites</div>
+                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load sites</div>
                         </td>
                     </tr>
                 </table>
@@ -300,6 +302,15 @@ function createControlPanel() {
         }
     });
     MAP.addControl(new controlPanel());
+}
+
+function toggleLoadSitesButton() {
+    var v = $('#commodity').val();
+    if (v && drawnLayer) {
+        $('#load_sites_button').removeClass('disabled');
+    } else {
+        $('#load_sites_button').addClass('disabled');
+    }
 }
 
 function drawStart(layerType) {
