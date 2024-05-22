@@ -72,13 +72,14 @@ div.breadcrumbs {
 .button {
     width: 160px;
 /*     height: 100px; */
-    border-radius: 4px;
+    border-radius: 3px;
     text-align: center;
     background: #888;
-    margin: 8px 0px 0px 0px;
+    margin: 8px auto 0px auto;
     font-size: 32px;
     line-height: 34px;
     cursor: pointer;
+    padding: 3px 12px;
 }
 .button:hover {
     background: #444;
@@ -380,5 +381,71 @@ tr.m-basemap-selector.divider {
 
 .leaflet-control-layers {
     min-width: 180px;
+}
+
+.leaflet-left .leaflet-control {
+    margin-left: 6px;
+}
+.leaflet-top .leaflet-control {
+    margin-top: 6px;
+}
+.controlPanel {
+    min-width: 200px;
+    padding: 4px;
+    border-spacing: 0px;
+    background-color: rgba(80, 80, 80, 0.9);
+    border-radius: 1px;
     
 }
+.controlPanel table {
+    padding: 4px;
+    font-family: monospace, Arial;
+    margin: 0px auto;
+    
+}
+.controlPanel tr {
+    background-color: transparent;
+}
+.controlPanel tr.title {
+/*     background-color: rgba(80, 80, 80, 0.9); */
+    color: #d9d9d9;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.controlPanel tr.title td {
+    text-align: center;
+    
+}
+.controlPanel td {
+    vertical-align: middle;
+}
+.controlPanel img {
+    background-color: white;
+    border-radius: 2px;
+    cursor: pointer;
+    
+}
+
+select {
+    padding: 1px 3px;
+    height: 1.6rem;
+    
+}
+
+.button.load_sites {
+    font-size: 1.1rem;
+    line-height: 1.5rem;
+    background-color: #6aaf7a;
+}
+.button.load_sites:hover {
+    background-color: #24422b;
+    
+}
+/*.leaflet-top.leaflet-left, 
+
+{
+    margin: 3px 0px 6px 6px;
+    padding: 0px 0px 2px 0px;
+    
+}*/

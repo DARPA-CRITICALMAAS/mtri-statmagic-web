@@ -21,5 +21,8 @@ from cma import views as cma_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('home', cma_views.home),
+    path('get_mineral_sites', cma_views.get_mineral_sites),
+    path('create_datacube', cma_views.create_datacube),
+    path('run_cma_model', cma_views.run_cma_model),
     path(r'', cma_views.home),
 ]

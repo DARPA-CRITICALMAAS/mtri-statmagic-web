@@ -1,6 +1,9 @@
 // Interactive JS code for the CMA viewer/modeler
 const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
 var images;
+var drawnItems = new L.FeatureGroup();
+var drawnLayer;
+var AJAX_GET_MINERAL_SITES;
 
 
 // Stuff to do when the page loads
@@ -8,6 +11,12 @@ function onLoad() {
     
     // Build map layer control
     createLayerControl();
+    
+    // Add draw control to map 
+    addDrawControl();
+    
+    // Add control panel  
+    createControlPanel();
     
 }
 
@@ -147,6 +156,171 @@ function getWMSLayer(
         layers: [layer],
         legend: legend,
     };
+}
+
+function addDrawControl() {
+    // Add draw control and functionality
+    var draw_style = {
+        color: 'orange',
+        weight: 4,
+        opacity: 1,
+        fillOpacity: 0.1,
+        strokeOpacity: 1,
+        pointerEvents: 'None'
+    }
+    
+    var drawControl = new L.Control.Draw({
+        draw: {
+            polyline: false,
+            polygon: {
+                shapeOptions: draw_style
+            },
+            circle: false,
+//             marker: {
+//                 icon: marker_icon
+//             },
+            rectangle: {
+                shapeOptions: draw_style
+            },
+            circlemarker: false,
+            marker: false,
+        },
+        edit: {
+            featureGroup: drawnItems,
+            edit: false
+        },
+        position: 'bottomleft',
+    });
+    
+    // Add layer to the map that holds drawn items
+    MAP.addLayer(drawnItems);
+
+    // Add draw control tools to map
+    MAP.addControl(drawControl);
+    
+    // Draw event handlers
+    MAP.on(L.Draw.Event.DRAWSTART, function(e) {
+        // Remove existing drawings before starting new one
+        if (drawnLayer && MAP.hasLayer(drawnLayer)) {
+            MAP.removeLayer(drawnLayer);
+        }
+
+    });
+    
+    MAP.on(L.Draw.Event.CREATED, function(e) {
+        drawnLayer = e.layer;
+        drawnItems.addLayer(drawnLayer);
+        finishDraw(drawnLayer);
+    });
+    MAP.on(L.Draw.Event.EDITED, function(e) {
+        var layer = e.layers.getLayers()[0];
+        finishDraw(layer);
+    });
+}
+
+function finishDraw(layer) {
+    // Zoom to drawn polygon
+    MAP.fitBounds(layer.getBounds(),{padding: [80,80]});
+}
+
+function loadMineralSites() {
+    // Request the selected sites
+    
+    // First abort any requests to the same endpoint that are in progress
+    if (AJAX_GET_MINERAL_SITES) {
+        AJAX_GET_MINERAL_SITES.abort();
+    }
+    AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
+        data: {
+            commodity: $('#commodity').val(),
+            wkt: getWKT()
+        },
+        success: function(response) {
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+    
+}
+
+function createControlPanel() {
+    
+    // Create "Load Mineral Sites" control
+    
+    // Create html *select* options list of commodities
+    var opts_html = '<option value="" disabled selected hidden>Select...</option>';
+    $.each(COMMODITIES, function(i, name) {
+        opts_html += `<option value="${name}">${name}</option>`;
+    });
+    
+    var controlPanel = L.Control.extend({
+        options: {
+            position: 'topleft'
+        },
+
+        onAdd: function () {
+            var c = L.DomUtil.create('div', 'controlPanel');
+            
+            c.innerHTML = `
+                <table>
+                    <tr class='title'>
+                        <td colspan=2>Load mineral sites</td>
+                    </tr>
+                    <tr>
+                        <td class='label'>Commodity:</td>
+                        <td>
+                            <select id='commodity'>
+                                ${opts_html}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class='label'>AOI:</td>
+                        <td><div id='query_instructions'><span class="highlight">
+                            (draw) poly <a onClick=drawStart("polygon")>
+                            <img src="/static/cma/img/draw-polygon-icon.png" 
+                                 height="17"
+                                 id="draw_polygon_icon" /></a> | 
+                            rect <a onClick=drawStart("rectangle")>
+                            <img src="/static/cma/img/draw-rectangle-icon.png"
+                                 height="17"
+                                 id="draw_rectangle_icon" ></a>
+                        </div></td>
+                    </tr>
+                    <tr>
+                        <td colspan=2>
+                            <div class='button load_sites' onClick='loadMineralSites();'>Load sites</div>
+                        </td>
+                    </tr>
+                </table>
+            `;
+
+            return c;
+        }
+    });
+    MAP.addControl(new controlPanel());
+}
+
+function drawStart(layerType) {
+    $('.leaflet-draw-draw-' + layerType)[0].click();
+}
+
+function getWKT() {
+    
+    // Convert the drawn layer to WKT so that it can be sent as a URL parameter
+    var gj = drawnLayer.toGeoJSON();
+    var new_coords = gj.geometry.coordinates[0].map(function(val) {
+        return val.map(x => Number(x.toFixed(6)));
+    });
+
+    gj.geometry.coordinates = [new_coords];
+    var wkt = new Wkt.Wkt();
+    wkt.read(JSON.stringify(gj));
+    
+    // replace spaces w/ + bc can't put spaces in URL
+    return wkt.write().replace(/ /g,'+'); 
+    
 }
 
 onLoad();

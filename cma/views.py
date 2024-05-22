@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render
+from django.http import HttpResponse
 from cdr import cdr_utils
 from . import util
 
@@ -78,10 +79,11 @@ def get_mineral_sites(request):
     #       the results by geometry (if provided)
     sites = None
     
+    print(params)
     
     # Return response as JSON to client
     response = HttpResponse(json.dumps({
-        'mineral_sites': mineral_sites,
+        'mineral_sites': sites,
         'params': params
     }))
     response['Content-Type'] = 'application/json'
