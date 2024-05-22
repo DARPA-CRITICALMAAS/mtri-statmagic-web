@@ -1,14 +1,10 @@
 // Interactive JS code for the CMA viewer/modeler
-
-var MAP;
+const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
 var images;
 
 
 // Stuff to do when the page loads
 function onLoad() {
-    
-    
-   
     
     // Build map layer control
     createLayerControl();
@@ -17,9 +13,50 @@ function onLoad() {
 
 function createLayerControl() {
     
-    // Re-sort images list by group
+    // Create a popup to use in the macrostrat layer
+    var popup = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
+            
+    macrostrat_layer = L.vectorGrid.protobuf(
+        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+        attribution: 'Macrostrat',
+        interactive: true,
+        vectorTileLayerStyles: {
+            units: {
+                weight: 0.5,
+                color: '#c96303',
+                fillColor: '#fdc086',
+                fillOpacity: 0.2,
+                fill: true,
+            },
+            lines: {
+                weight: 2,
+                color: '#7fc97f',
+            }
+        },
+    }),
+    macrostrat_layer.bindPopup(popup);
+    macrostrat_layer.on('click', function(e) {
+        popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
+        macrostrat_layer.openPopup();
+    });
+    macrostrat_layer.on('mouseover', function(e) {
+        console.log(e.layer);
+//         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
+
+        
+    });
+//     macrostrat_layer.on('mouseout', function(e) {
+// //         console.log(e.layer);
+// //         alert(e.layer.properties.name);
+//         e.layer.setStyle({weight: 0.5});//, fillOpacity: 0.2});
+//         
+//     });
     
-    // TODO: populate these
+    
+    // Populate the 'images2' object
     // key: the layer control group (e.g. 'imagery','other','features', etc.)
     // values: object with:
     //      key: WMS layername
@@ -31,14 +68,16 @@ function createLayerControl() {
                 label: 'Macrostrat',
                 as_checkbox: true,
                 title: '',
-                layers: [
-                    L.vectorGrid.protobuf(
-                        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
-                        attribution: 'Macrostrat'
-                    }),
-                ],
+                layers: [macrostrat_layer],
                 legend: '',
             },
+            'geophysics': getWMSLayer(
+                'geophysics',
+                'Layers',
+                'GeophysicsMagRTP',
+                null,
+                ''
+            ),
         },
     };
     
@@ -79,19 +118,14 @@ function getWMSLayer(
         group,
         label,
         opacity,
-        wms_url0,
         legend,
         style_opts
     ) {
     opacity = opacity || 0.7;
     
-//     console.log(wms_layer_name,wms_url0);
-    
-    wms_url0 = wms_url0 || WMS_URL;
-    
     var data = {
         layers: wms_layer_name,
-//         map: '/var/www/mapfiles/fra.map',
+        map: '/var/www/mapfiles/statmagic.map',
         format: 'image/png',
         crs: L.CRS.EPSG4269,
         transparent: true,
@@ -103,11 +137,7 @@ function getWMSLayer(
         data_id: wms_layer_name
     }
     
-    if (wms_url0 == WMS_URL) {
-        data.map = '/var/www/mapfiles/statmagic.map';
-    }
-    
-    var layer = L.tileLayer.wms(wms_url0, data);
+    var layer = L.tileLayer.wms(WMS_URL, data);
     
     return {
         group: group,

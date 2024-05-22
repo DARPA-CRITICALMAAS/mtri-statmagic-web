@@ -18,7 +18,7 @@ body {
 
 td, th {
     border-bottom: None;
-    
+    padding: 4px 2px;
 }
 
 #header {
@@ -376,4 +376,9 @@ tr.m-basemap-selector.divider {
     border-radius:3px;
     -moz-border-radius:3px;
     -webkit-border-radius:3px;
+}
+
+.leaflet-control-layers {
+    min-width: 180px;
+    
 }

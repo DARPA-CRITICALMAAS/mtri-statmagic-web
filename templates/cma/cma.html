@@ -16,6 +16,9 @@
 {% block content %}
 <div id='map'></div>
 
+<script type="text/javascript">
+    const COMMODITIES = {{ COMMODITIES|safe }};
+</script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>
 {% endblock %}
