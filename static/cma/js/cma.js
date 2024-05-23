@@ -215,6 +215,12 @@ function addDrawControl() {
         var layer = e.layers.getLayers()[0];
         finishDraw(layer);
     });
+    
+    MAP.on(L.Draw.Event.DELETED, function(e) {
+        console.log('deleted!');
+        drawnLayer = null;
+        validateLoadSitesButton();
+    });
 }
 
 function finishDraw(layer) {
@@ -222,7 +228,7 @@ function finishDraw(layer) {
     MAP.fitBounds(layer.getBounds(),{padding: [80,80]});
     
     // Enable/disable load sites button
-    toggleLoadSitesButton();
+    validateLoadSitesButton();
 }
 
 function loadMineralSites() {
@@ -272,7 +278,7 @@ function createControlPanel() {
                     <tr>
                         <td class='label'>Commodity:</td>
                         <td>
-                            <select id='commodity' onChange="toggleLoadSitesButton();">
+                            <select id='commodity' onChange="validateLoadSitesButton();">
                                 ${opts_html}
                             </select>
                         </td>
@@ -304,7 +310,7 @@ function createControlPanel() {
     MAP.addControl(new controlPanel());
 }
 
-function toggleLoadSitesButton() {
+function validateLoadSitesButton() {
     var v = $('#commodity').val();
     if (v && drawnLayer) {
         $('#load_sites_button').removeClass('disabled');
