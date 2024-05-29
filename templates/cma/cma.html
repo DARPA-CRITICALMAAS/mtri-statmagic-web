@@ -16,10 +16,54 @@
 {% endblock %}
 
 {% block content %}
-<div id='map'></div>
+<div class='flex-container main'>
+    <div class='flex-child control_panel'>
+        <div id='control_panel'>
+            <div class='collapse' id='datalayer_container'>
+                <div class='header topbar'><span class="collapse">+ </span> Data layers</div>
+                <div class='content main'>
+                {% for category,cobj in datalayers.items %}
+                    <div class='collapse sub'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Geology</div>
+                        <div class='content'>
+                            <table class='datalayer_table'>
+                            {% for subcategory,layers in cobj.items %}
+                                <tr class='subcategory_label'>
+                                    <td>{{subcategory}}</td>
+                                    <td class='colname'>Info</td>
+                                    <td class='colname'>Show</td>
+                                </tr>
+                                {% for layer in layers %}
+                                    <tr data-path="{{layer.name}}">
+    <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
+                                        <td class='name'>{{layer.name_pretty}}</td>
+                                        <td class='info'><img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon"></td>
+                                        <td class='show_chk'><input type='checkbox' onChange='onDataLayerShowToggle(this);' /></td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor%}
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+                    
+                </div>
+            </div>
+        
+            <div class='collapse'>
+                <div class='header topbar'><span class="collapse">+ </span> Build data cube</div>
+                <div class='content'>
+                </div>
+            </div>
+        
+        </div>
+    </div>
+    <div class='flex-child map'><div id='map'></div></div>
+</div>
 
 <script type="text/javascript">
     const COMMODITIES = {{ COMMODITIES|safe }};
+    const DATALAYERS = {{ DATALAYERS_JSON|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>

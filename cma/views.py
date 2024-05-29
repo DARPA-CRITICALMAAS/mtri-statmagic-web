@@ -1,8 +1,10 @@
 import json
 from django.shortcuts import render
+from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from cdr import cdr_utils
 from . import util
+from . import models
 
 # Functions for handling requests
 
@@ -16,9 +18,29 @@ def home(request):
         for x in cdr.get_commodity_list() if x['geokb_commodity']
     ])
     
+    # Get data layers
+    datalayers = {}
+    for d in models.DataLayer.objects.all().order_by('category','subcategory','name'):
+        if d.category not in datalayers:
+            datalayers[d.category] = {}
+        if d.subcategory not in datalayers[d.category]:
+            datalayers[d.category][d.subcategory] = []
+        data = model_to_dict(d)
+        name_pretty = d.name
+        if d.name_alt:
+            name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
+        data['name_pretty'] = name_pretty
+        datalayers[d.category][d.subcategory].append(data)
+
+        
+        
+    
+    
     # Put any data/info you want available on front-end in this dict
     context = {
-        'COMMODITIES': json.dumps(commodities)
+        'COMMODITIES': json.dumps(commodities),
+        'DATALAYERS_JSON': json.dumps(datalayers),
+        'datalayers': datalayers
     }
     
     return render(request, 'cma/cma.html', context)

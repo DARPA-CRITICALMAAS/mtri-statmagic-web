@@ -18,7 +18,11 @@ function onLoad() {
     // Add control panel  
     createControlPanel();
     
+    // Toggle open the DATA LAYERS panel by default
+    toggleHeader($('#datalayer_container .header'));
 }
+
+// function buildDataLayer
 
 function createLayerControl() {
     
@@ -338,6 +342,10 @@ function getWKT() {
     // replace spaces w/ + bc can't put spaces in URL
     return wkt.write().replace(/ /g,'+'); 
     
+}
+
+function onDataLayerShowToggle(cmp,e) {
+    var path = 
 }
 
 onLoad();
