@@ -399,6 +399,16 @@ function getWKT() {
     
 }
 
+function showDataLayerInfo(layer_name) {
+    var dl = DATALAYERS_LOOKUP[layer_name];
+    
+    $('#dl_title').html(layer_name);
+    $('#dl_description').html(`<span class='label'>Description:</span><br>${dl.description}`);
+    $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.source}`);
+    
+    $('#datalayer_info').show();
+}
+
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     
@@ -439,6 +449,24 @@ function onToggleLayerClick(target,layer_name) {
     } else {
         MAP.removeLayer(layer);
     }
+}
+
+function onRadioCubeClick(cmp) {
+    var el = $(cmp);
+    var for_radio = el.prop('for');
+    var radio = $(`input[name='${for_radio}']`);
+
+    var valnew = el.prop('class');
+    
+    radio.prop('checked',false);
+    $(`input[name='${for_radio}'][value='${valnew}']`).prop('checked',true);
+    
+    // Update 'checked' properties
+    
+//     radio.val(valnew);
+    
+//     console.log(value);
+    
 }
 
 onLoad();

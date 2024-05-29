@@ -16,6 +16,15 @@
 {% endblock %}
 
 {% block content %}
+<div id='datalayer_info' class='overlay' onclick="$('#datalayer_info').hide()">
+    <div class="modal" >
+        <div id='dl_title'></div>
+        <div id='dl_description'></div>
+        <div id='dl_source'></div>
+    </div>
+</div>
+
+
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
         <div id='control_panel'>
@@ -68,13 +77,22 @@
                                     <td>{{subcategory}}</td>
                                     <td class='colname'>Info</td>
                                     <td class='colname'>Show</td>
+                                    <td class='colname'>Add to cube</td>
                                 </tr>
                                 {% for layer in layers %}
                                     <tr data-path="{{layer.name}}">
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
-                                        <td class='info'><img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon"></td>
+                                        <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon"></td>
                                         <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
+                                        <td>
+                                            <div class="radiocube" align="left">
+                                                <input type="radio" name="radiocube_{{layer.name}}" value="no" checked>
+                                                <label class='no' for="radiocube_{{layer.name}}" onclick="onRadioCubeClick(this);">N</label>
+                                                <input type="radio" name="radiocube_{{layer.name}}" value="yes" >
+                                                <label class='yes' for="radiocube_{{layer.name}}" onclick="onRadioCubeClick(this);">Y</label>
+                                            </div>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             {% endfor%}
