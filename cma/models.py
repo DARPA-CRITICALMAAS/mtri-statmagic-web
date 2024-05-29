@@ -37,3 +37,6 @@ class DataLayer(models.Model):
             ('shp','shp',)
         )
     )
+    stats_minimum = models.FloatField(null=True)
+    stats_maximum = models.FloatField(null=True)
+    color = models.CharField(max_length=20,null=True)

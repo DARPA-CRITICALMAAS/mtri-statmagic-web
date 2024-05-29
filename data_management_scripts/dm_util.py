@@ -5,6 +5,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "statmagic.settings"
 import django
 django.setup()
 from django.conf import settings
+from cma.models import DataLayer
 
 DB = settings.DATABASES['default']
 
@@ -18,3 +19,7 @@ con1 = getcon()
 def exit():
     if con1:
         con1.close()
+
+
+def getDataLayers():
+    return DataLayer.objects.all().order_by('category','subcategory','name')

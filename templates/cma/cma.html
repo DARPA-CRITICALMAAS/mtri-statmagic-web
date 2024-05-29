@@ -20,11 +20,47 @@
     <div class='flex-child control_panel'>
         <div id='control_panel'>
             <div class='collapse' id='datalayer_container'>
-                <div class='header topbar'><span class="collapse">+ </span> Data layers</div>
+                <div class='header topbar toptop'><span class="collapse">+ </span> Data layers</div>
                 <div class='content main'>
+                    <div class='collapse sub'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Mineral sites</div>
+                        <div class='content'>
+                            <table class='datalayer_table'>
+                                <tr>
+                                    <td class='label'>Commodity:</td>
+                                    <td align='right'>
+                                        <select id='commodity' onChange="validateLoadSitesButton();">
+                                            <option value="" disabled selected hidden>Select...</option>
+                                            {% for commodity in commodities %}
+                                                <option value="{{commodity}}">{{commodity}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>AOI:</td>
+                                    <td align='right'><div id='query_instructions'><span class="highlight">
+                                        (draw) poly <a onClick=drawStart("polygon")>
+                                        <img src="/static/cma/img/draw-polygon-icon.png" 
+                                            height="17"
+                                            id="draw_polygon_icon" /></a> | 
+                                        rect <a onClick=drawStart("rectangle")>
+                                        <img src="/static/cma/img/draw-rectangle-icon.png"
+                                            height="17"
+                                            id="draw_rectangle_icon" ></a>
+                                    </div></td>
+                                </tr>
+                                <tr>
+                                    <td colspan=2>
+                                        <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load sites</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 {% for category,cobj in datalayers.items %}
                     <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Geology</div>
+                        <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}</div>
                         <div class='content'>
                             <table class='datalayer_table'>
                             {% for subcategory,layers in cobj.items %}
@@ -38,7 +74,7 @@
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
                                         <td class='info'><img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon"></td>
-                                        <td class='show_chk'><input type='checkbox' onChange='onDataLayerShowToggle(this);' /></td>
+                                        <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
                                     </tr>
                                 {% endfor %}
                             {% endfor%}
@@ -63,7 +99,7 @@
 
 <script type="text/javascript">
     const COMMODITIES = {{ COMMODITIES|safe }};
-    const DATALAYERS = {{ DATALAYERS_JSON|safe }};
+    const DATALAYERS_LOOKUP = {{ DATALAYERS_LOOKUP|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>

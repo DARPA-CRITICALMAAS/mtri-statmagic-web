@@ -1,5 +1,6 @@
 // Interactive JS code for the CMA viewer/modeler
 const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
+const MAPFILE = '/var/www/mapfiles/statmagic.map';
 var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
@@ -9,20 +10,46 @@ var AJAX_GET_MINERAL_SITES;
 // Stuff to do when the page loads
 function onLoad() {
     
+    // Creates map layers from the datalayers lookup
+    createMapLayers();
+    
     // Build map layer control
     createLayerControl();
     
     // Add draw control to map 
     addDrawControl();
     
-    // Add control panel  
-    createControlPanel();
+    // Add mineral sites contrl
+//     createMineralSitesControl();
     
     // Toggle open the DATA LAYERS panel by default
-    toggleHeader($('#datalayer_container .header'));
+    toggleHeader($('#datalayer_container .header.toptop'));
+    toggleHeader($('#datalayer_container .header.Geophysics'));
 }
 
 // function buildDataLayer
+
+function createMapLayers() {
+    
+    $.each(DATALAYERS_LOOKUP, function(name,obj) {
+        obj.maplayer = L.tileLayer.wms(
+            WMS_URL, {
+                layers: name,
+                map: MAPFILE,
+                format: 'image/png',
+                crs: L.CRS.EPSG4269,
+                transparent: true,
+                width: 512,
+                height: 512,
+                opacity: 0.8,
+                maxZoom: 30,
+                zIndex: 200,
+//                     data_id: wms_layer_name
+        
+        });
+    });
+    
+}
 
 function createLayerControl() {
     
@@ -93,7 +120,7 @@ function createLayerControl() {
             ),
         },
     };
-    
+    images2 = {}
     var groups = Object.keys(images2).sort();
     images = {};
     var i = 0;
@@ -107,7 +134,7 @@ function createLayerControl() {
 
     clc = new CustomLayerControl(images, basemap_options, groups, {
         collapsed: false,
-        position: 'topright',
+        position: 'bottomright',
         organize_imagery: true
     });
 
@@ -161,6 +188,34 @@ function getWMSLayer(
         legend: legend,
     };
 }
+
+// function getWMSLayer(wms_layer_name,group,label,opacity) {
+//     opacity = opacity || 0.7;
+//     return {
+//         group: group,
+//         label: label,
+//         title: '',
+//         layers: [
+//            L.tileLayer.wms(
+//                 WMS_URL, {
+//                     layers: wms_layer_name,
+//                     map: MAPFILE,
+//                     format: 'image/png',
+//                     crs: L.CRS.EPSG4269,
+//                     transparent: true,
+//                     width: 512,
+//                     height: 512,
+//                     opacity: opacity,
+//                     maxZoom: 30,
+//                     zIndex: 200,
+//                     data_id: wms_layer_name
+//                 }
+//             )
+//         ],
+//         legend: ``
+//     };
+// 
+// }
 
 function addDrawControl() {
     // Add draw control and functionality
@@ -256,7 +311,7 @@ function loadMineralSites() {
     
 }
 
-function createControlPanel() {
+function createMineralSitesControl() {
     
     // Create "Load Mineral Sites" control
     
@@ -344,8 +399,46 @@ function getWKT() {
     
 }
 
-function onDataLayerShowToggle(cmp,e) {
-    var path = 
+function onToggleLayerClick(target,layer_name) {
+    var chk = $(target);
+    
+    
+    
+//     // ID the associated checkbox
+//     if (target.prop('nodeName') == 'INPUT') {
+//         chk = $(target);
+//     } else if (['SPAN','DIV','TD','TR'].indexOf(target.prop('nodeName')) > -1) {
+//         chk = $(target.find('input')[0]);//$('#' + id + '-checkbox');
+//         is_label = true;
+//     }
+//     
+//     // Handle a click on the label 
+//     if (chk.prop('type') == 'radio') {
+//         if (is_label) {
+//             chk.prop('checked',true);
+//         }
+//     } else {
+//         if (is_label && !chk.prop('checked')) {
+//             chk.prop('checked', true);
+//         } else if (is_label && chk.prop('checked')) {
+//             chk.prop('checked', false);
+//         }
+//     }
+    
+    var datalayer =  DATALAYERS_LOOKUP[layer_name];
+    var layer = datalayer.maplayer;//bm ? map_obj.basemaps[layer_id] : CROSSINGS[crossing_id].layers[layer_id].layers[0];
+    
+    // Remove all layers in group
+    if (chk.prop('checked')) {
+        MAP.addLayer(layer);
+        
+        // Add color halo
+        chk.css({
+            'accent-color': `rgb(${datalayer.color})`
+        });
+    } else {
+        MAP.removeLayer(layer);
+    }
 }
 
 onLoad();

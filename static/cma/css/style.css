@@ -464,6 +464,8 @@ select {
     font-size: 1.1rem;
     line-height: 1.5rem;
     background-color: #6aaf7a;
+    width: 80%;
+    margin: 10px auto;
 }
 .button.load_sites:hover {
     background-color: #24422b;
@@ -611,5 +613,22 @@ tr.subcategory_label td.colname {
     font-size: 0.7rem;
     color: #999;
     text-align: center;
+}
+
+.datalayer_table input {
+    cursor: pointer;
+}
+
+select {
+    color: white;
+    background-color: #333;
+    border: none;
+    width: 240px;
+}
+option {
+    color: white;
+}
+#draw_rectangle_icon {
+    background-color: #f2f2f2;
     
 }
