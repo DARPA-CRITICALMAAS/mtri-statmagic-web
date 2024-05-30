@@ -612,7 +612,7 @@ tr.subcategory_label td {
     font-size: 0.8125rem;
     border-bottom: 1px solid #555;
 }
-td.colname,
+tr.subcategory_label td.colname,
 .content.datacube #datacube_layers thead td {
     font-size: 0.7rem;
     color: #999;
