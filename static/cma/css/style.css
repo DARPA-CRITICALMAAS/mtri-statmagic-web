@@ -578,7 +578,8 @@ span.collapse {
 .datalayer_table td {
     padding: 2px 4px;
 }
-.datalayer_table td.name {
+.datalayer_table td.name,
+#datacube_layers td.name {
     font-family: 'Open Sans Condensed';
     font-size: 0.85rem;
     max-width: 200px;
@@ -611,7 +612,8 @@ tr.subcategory_label td {
     font-size: 0.8125rem;
     border-bottom: 1px solid #555;
 }
-tr.subcategory_label td.colname {
+tr.subcategory_label td.colname,
+.content.datacube #datacube_layers thead td {
     font-size: 0.7rem;
     color: #999;
     text-align: center;
@@ -631,7 +633,7 @@ option {
     color: white;
 }
 #draw_rectangle_icon {
-    background-color: #f2f2f2;
+    background-color: #fff;
 }
 
 .radiocube {
@@ -724,7 +726,86 @@ option {
 #datalayer_info span.label {
     color: #888;
     font-size: 0.9rem;
-    
 }
 
+.content.datacube table {
+    background-color: transparent;
+    color: white;
+/*     margin: 10px 20px 20px 20px; */
+    margin: 10px auto 20px auto;
+    width: 70%;
+/*     width: calc(100% - 40px); */
+}
+.content.datacube #datacube_layers tbody {
+    background-color: #666;
+    border: 1px dashed #6aaf7a;
+}
+.content.datacube table tr {
+    background-color: transparent;
+}
 
+#datacube_btn_build {
+    width: 40%;
+    height: 2.0rem;
+    vertical-align: middle;
+    background-color: #6aaf7a;
+    cursor: pointer;
+}
+#datacube_params td {
+    text-align: right;
+    color: #fdc086;
+    padding: 2px 4px;
+}
+
+#datacube_params td.label {
+    text-align: left;
+    color: #bfbfbf;
+
+}
+#datacube_resolution,
+#datacube_crs {
+    width: 80px;
+    background-color: #333;
+    color: #f2f2f2;
+    border: none;
+}
+#datacube_crs {
+    width: auto;
+}
+#datacube_crs_units {
+    color: #9d9dfb;
+}
+.snapshot {
+    display: inline-block;
+/*     float: center; */
+    text-align: center;
+    cursor: pointer;
+    padding: 2px 4px 4px 4px;
+    border-radius: 2px;
+    vertical-align: middle;
+    transition: 0.5s ease;
+    -o-transition: 0.5s ease;
+    -webkit-transition: 0.5s ease;
+}
+div.img_hover div:last-child {
+  display: none;  
+}
+div.img_hover:hover div:last-child {
+  display: block;  
+}
+div.img_hover:hover div:first-child {
+  display: none;  
+}
+#datacube_layers tbody td {
+    padding: 2px 6px;
+    vertical-align: middle;
+    
+}
+#datacube_layers td.name {
+    font-size: 0.9rem;
+}
+#datacube_layers tr.instructions td {
+    font-style: italic;
+    color: #f2f2f2;
+    padding: 4px 4px;
+}

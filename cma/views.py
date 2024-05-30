@@ -11,6 +11,9 @@ from . import models
 # Default home page
 def home(request):
     
+    # Get CRS options
+    crs_opts = {c.name: model_to_dict(c) for c in models.CRS.objects.all()}
+    
     # Get commodity list
     cdr = cdr_utils.CDR()
     commodities = sorted([
@@ -43,7 +46,10 @@ def home(request):
         'COMMODITIES': json.dumps(commodities),
         'commodities': commodities,
         'DATALAYERS_LOOKUP': json.dumps(datalayers_lookup),
-        'datalayers': datalayers
+        'datalayers': datalayers,
+        'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
+        'crs_options': crs_opts,
+        'CRS_OPTIONS': json.dumps(crs_opts)
     }
     
     return render(request, 'cma/cma.html', context)

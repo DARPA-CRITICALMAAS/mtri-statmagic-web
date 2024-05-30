@@ -1,4 +1,5 @@
 // Interactive JS code for the CMA viewer/modeler
+// const WMS_URL = `http://${MAPSERVER_SERVER}.mtri.org/cgi-bin/mapserv?`;
 const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
 const MAPFILE = '/var/www/mapfiles/statmagic.map';
 var images;
@@ -19,13 +20,28 @@ function onLoad() {
     // Add draw control to map 
     addDrawControl();
     
+    // Trigger CRS select to load units/resolution  
+    onCRSselect();
+    
+//     // Register onClick events for the "Add to cube" buttons
+//     $('.radiocube label').on('click', function(cmp) {
+//         onRadioCubeClick(cmp);
+//     });
+//     
     // Add mineral sites contrl
 //     createMineralSitesControl();
     
     // Toggle open the DATA LAYERS panel by default
     toggleHeader($('#datalayer_container .header.toptop'));
     toggleHeader($('#datalayer_container .header.Geophysics'));
+    
+    toggleHeader($('.header.datacube'));
 }
+
+// function onRadioCubeClick(cmp) { 
+//     console.log(cmp);
+//     
+// }
 
 // function buildDataLayer
 
@@ -369,6 +385,8 @@ function createMineralSitesControl() {
     MAP.addControl(new controlPanel());
 }
 
+
+
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
     if (v && drawnLayer) {
@@ -455,17 +473,67 @@ function onRadioCubeClick(cmp) {
     var el = $(cmp);
     var for_radio = el.prop('for');
     var radio = $(`input[name='${for_radio}']`);
-
     var valnew = el.prop('class');
+//     console.log(valnew);
+    var layername = for_radio.replace('radiocube_','');
     
+    // Update 'checked' property
     radio.prop('checked',false);
     $(`input[name='${for_radio}'][value='${valnew}']`).prop('checked',true);
     
-    // Update 'checked' properties
+    // Add/remove layer from the datacube layer list
+    console.log(valnew);
+    if (valnew == 'no') {
+        $(`#datacube_layers tr[data-layername='${layername}']`).remove();
+        
+        // If there are no rows left, show instructions again
+        if ($('#datacube_layers tbody tr').length == 1) {
+            console.log('showing instur');
+            $('#datacube_layers tr.instructions').show();
+        }
+    } else {
+        // Hide instructions 
+        $('#datacube_layers tr.instructions').hide();
+        
+        // Add row 
+        var icon_height = 13;
+        $('#datacube_layers tr:last').after(`
+            <tr data-layername='${layername}'>
+                <td class='name'>${layername}</td>
+                <td class='processing'>[none] edit</td>
+                <td class='remove'>
+                    <div class='img_hover' onclick=''>
+                        <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
+                            <img src="/static/cma/img/icon_trash2.png" height="${icon_height}px" />
+                        </div>
+                        <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
+                            <img src="/static/cma/img/icon_trash2_hover.png" height="${icon_height}px" />
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `);
+        
+    }
+}
+
+function onRemoveDataCubeLayerClick(cmp) {
+    var tr = $(cmp).closest('tr');
+    var layername = tr.attr('data-layername');
     
-//     radio.val(valnew);
+    // Update the "Add to cube" button 
+    onRadioCubeClick($(`label[for='radiocube_${layername}'][class='no']`)[0]);//.trigger('click');
     
-//     console.log(value);
+    // Remove table row
+//     tr.remove();
+    
+}
+
+function onCRSselect() {
+    var crs_name = $('#datacube_crs').val();
+    var crs = CRS_OPTIONS[crs_name];
+    $('#datacube_crs_units').html(crs.units);
+    $('#datacube_resolution').val(crs.default_resolution);
     
 }
 

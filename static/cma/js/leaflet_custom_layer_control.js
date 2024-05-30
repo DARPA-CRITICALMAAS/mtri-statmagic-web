@@ -35,7 +35,7 @@ var CartoDB_DarkMatter = L.tileLayer(
 
 var basemap_options = {
     'OSM Mapnik': OpenStreetMap_Mapnik,
-    'ESRI Gray' : Esri_WorldGrayCanvas,
+//     'ESRI Gray' : Esri_WorldGrayCanvas,
     'ESRI Aerial': Esri_WorldImagery,
     'CartoDB Dark': CartoDB_DarkMatter,
 //     'Macrostrat': Macrostrat,

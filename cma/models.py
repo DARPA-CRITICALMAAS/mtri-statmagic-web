@@ -40,3 +40,14 @@ class DataLayer(models.Model):
     stats_minimum = models.FloatField(null=True)
     stats_maximum = models.FloatField(null=True)
     color = models.CharField(max_length=20,null=True)
+    
+    
+class CRS(models.Model):
+    class Meta:
+        db_table = 'crs'
+        
+    name = models.CharField(max_length=200, unique=True)
+    proj4text = models.CharField(max_length=2000)
+    units = models.CharField(max_length=10)
+    default_resolution = models.FloatField()
+    

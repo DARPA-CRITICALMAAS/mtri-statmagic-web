@@ -140,4 +140,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MAPSERVER_SERVER = 'vm-apps2'
+MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'

@@ -105,11 +105,53 @@
             </div>
         
             <div class='collapse'>
-                <div class='header topbar'><span class="collapse">+ </span> Build data cube</div>
-                <div class='content'>
+                <div class='header topbar datacube'><span class="collapse">+ </span> Build data cube</div>
+                <div class='content datacube'>
+                    <table id='datacube_layers'>
+                        <thead><tr>
+                            <td>Layer</td>
+                            <td>Processing</td>
+                            <td>Remove</td>
+                        </tr></thead>
+                        <tbody>
+                            <tr class='instructions'>
+                                <td colspan=3 align='center'>Use data layer selector to add layers to cube</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table id='datacube_params'>
+                        <tr>
+                            <td class='label'>CRS:</td>
+                            <td><select id='datacube_crs' onChange='onCRSselect();'>
+                            {% for crs_name, cobj in crs_options.items %}
+                                <option value='{{crs_name}}'>{{crs_name}}</option>
+                            {% endfor %}
+                               <!-- <option value='epsg:4326'>WGS84 (EPSG:4326)</option>
+                                <option value='epsg:4326'>Conus Albers (EPSG:5070)</option>-->
+                            </select></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Resolution (<span id='datacube_crs_units'></span>):</td>
+                            <td><input type='number' id='datacube_resolution' /></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Extent:</td>
+                            <td>
+                                upload geojson | draw: <a onClick=drawStart("polygon")>
+                                <img src="/static/cma/img/draw-polygon-icon.png" 
+                                    height="17"
+                                    id="draw_polygon_icon" /></a>
+                                <a onClick=drawStart("rectangle")>
+                                <img src="/static/cma/img/draw-rectangle-icon.png"
+                                    height="17"
+                                    id="draw_rectangle_icon" ></a>
+                            </td>
+                        </tr>
+                    </table>
+                    <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
                 </div>
             </div>
-        
         </div>
     </div>
     <div class='flex-child map'><div id='map'></div></div>
@@ -118,6 +160,8 @@
 <script type="text/javascript">
     const COMMODITIES = {{ COMMODITIES|safe }};
     const DATALAYERS_LOOKUP = {{ DATALAYERS_LOOKUP|safe }};
+    const MAPSERVER_SERVER = '{{ MAPSERVER_SERVER }}';
+    const CRS_OPTIONS = {{ CRS_OPTIONS|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>
