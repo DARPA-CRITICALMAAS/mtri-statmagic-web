@@ -597,6 +597,8 @@ span.collapse {
     overflow-y: auto;
     overflow-x: clip;
     direction: rtl;
+    scrollbar-color: #555 #888;
+    scrollbar-width: thin;
 }
 #datalayer_container .collapse.sub {
     direction: ltr;
