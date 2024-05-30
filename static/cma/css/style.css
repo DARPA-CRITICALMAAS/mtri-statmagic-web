@@ -596,6 +596,11 @@ span.collapse {
     max-height: 500px;
     overflow-y: auto;
     overflow-x: clip;
+    direction: rtl;
+}
+#datalayer_container .collapse.sub {
+    direction: ltr;
+    
 }
 .datalayer_table tbody tr.subcategory_label
 {
@@ -831,6 +836,7 @@ div.img_hover:hover div:first-child {
     font-weight: 500;
     color: #fff;
     padding: 6px 8px;
+    overflow-wrap: normal;
 }
 #datacube_layers tr.instructions td {
     font-style: italic;
