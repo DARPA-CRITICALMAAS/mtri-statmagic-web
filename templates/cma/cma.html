@@ -24,6 +24,49 @@
     </div>
 </div>
 
+<div id='datacube_processingsteps' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#datacube_processingsteps').hide()">
+        <img class="close-top-img" height=32 
+            src="{% static 'cma/' %}img/close-dark.png" 
+            onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+            onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='modal_title'><span class='subtitle'>Edit processing steps for layer:</span>
+            <br><div id='processingsteps_layername'></div>
+        </div>
+        <table class='editprocessingsteps_table'>
+            <tr>
+                <td class='colname'>Add processing step:</td>
+                <td class='input'>
+                    <select id='processingsteps_addstep' onChange='onAddProcessingStep();'>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan=2 class='colname'>
+                    <div align='left'>Selected steps (ordered):</div>
+                    <div align='middle'>
+                    <table id='processingsteps_listtable'>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    </div>
+                </td>
+            </tr>
+            <tr >
+                <td colspan=2 align='center'>
+                    <div class='button addcrossing save' onclick='onSaveProcessingStep(this);'>
+                        Save
+                    </div>
+                </td>
+            </tr>
+        </table>
+        
+    </div>
+</div>
+
+
 
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
@@ -109,9 +152,9 @@
                 <div class='content datacube'>
                     <table id='datacube_layers'>
                         <thead><tr>
-                            <td>Layer</td>
+                            <td class='layer'>Layer</td>
                             <td>Processing</td>
-                            <td>Remove</td>
+                            <td></td>
                         </tr></thead>
                         <tbody>
                             <tr class='instructions'>
@@ -132,13 +175,13 @@
                             </select></td>
                         </tr>
                         <tr>
-                            <td class='label'>Resolution (<span id='datacube_crs_units'></span>):</td>
+                            <td class='label'>Spatial res. (<span id='datacube_crs_units'></span>):</td>
                             <td><input type='number' id='datacube_resolution' /></td>
                         </tr>
                         <tr>
                             <td class='label'>Extent:</td>
                             <td>
-                                upload geojson | draw: <a onClick=drawStart("polygon")>
+                                <span class='link'>upload geojson</span> | draw: <a onClick=drawStart("polygon")>
                                 <img src="/static/cma/img/draw-polygon-icon.png" 
                                     height="17"
                                     id="draw_polygon_icon" /></a>
@@ -162,6 +205,7 @@
     const DATALAYERS_LOOKUP = {{ DATALAYERS_LOOKUP|safe }};
     const MAPSERVER_SERVER = '{{ MAPSERVER_SERVER }}';
     const CRS_OPTIONS = {{ CRS_OPTIONS|safe }};
+    const PROCESSING_STEPS = {{ PROCESSING_STEPS|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>

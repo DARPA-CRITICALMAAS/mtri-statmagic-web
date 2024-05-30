@@ -51,3 +51,11 @@ class CRS(models.Model):
     units = models.CharField(max_length=10)
     default_resolution = models.FloatField()
     
+class ProcessingStep(models.Model):
+    class Meta:
+        db_table = 'processingstep'
+        
+    name = models.CharField(max_length=40,unique=True)
+    name_pretty = models.CharField(max_length=100,null=True)
+    description = models.CharField(max_length=1000,null=True)
+    

@@ -21,6 +21,11 @@ def home(request):
         for x in cdr.get_commodity_list() if x['geokb_commodity']
     ])
     
+    # Get processing step options
+    processing_steps = {
+        c.name: model_to_dict(c) for c in models.ProcessingStep.objects.all()
+    }
+    
     # Get data layers
     datalayers = {} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
@@ -49,7 +54,8 @@ def home(request):
         'datalayers': datalayers,
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
         'crs_options': crs_opts,
-        'CRS_OPTIONS': json.dumps(crs_opts)
+        'CRS_OPTIONS': json.dumps(crs_opts),
+        'PROCESSING_STEPS': json.dumps(processing_steps),
     }
     
     return render(request, 'cma/cma.html', context)

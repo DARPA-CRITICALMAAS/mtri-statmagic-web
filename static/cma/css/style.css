@@ -612,11 +612,24 @@ tr.subcategory_label td {
     font-size: 0.8125rem;
     border-bottom: 1px solid #555;
 }
-tr.subcategory_label td.colname,
+td.colname,
 .content.datacube #datacube_layers thead td {
     font-size: 0.7rem;
     color: #999;
     text-align: center;
+}
+.editprocessingsteps_table td.colname {
+    font-size: 0.82rem;
+    color: #999;
+    vertical-align: middle;
+    
+}
+
+
+.content.datacube #datacube_layers thead td.layer {
+    text-align: left;
+    padding-left: 4px;
+    
 }
 
 .datalayer_table input {
@@ -634,6 +647,10 @@ option {
 }
 #draw_rectangle_icon {
     background-color: #fff;
+    border: 1px solid #fc891d;
+}
+#draw_polygon_icon {
+    border: 1px solid #fc891d;
 }
 
 .radiocube {
@@ -720,8 +737,15 @@ option {
 #datalayer_info .modal div {
     margin-bottom: 20px;
 }
-#dl_title {
+#dl_title,
+.modal_title {
     font-size: 1.6rem;
+    color: #f2f2f2;
+    margin-bottom: 20px;
+}
+.modal_title .subtitle {
+    font-size: 1.0rem;
+    color: #999;
 }
 #datalayer_info span.label {
     color: #888;
@@ -738,7 +762,7 @@ option {
 }
 .content.datacube #datacube_layers tbody {
     background-color: #666;
-    border: 1px dashed #6aaf7a;
+    border: 2px dashed #478556;
 }
 .content.datacube table tr {
     background-color: transparent;
@@ -753,7 +777,7 @@ option {
 }
 #datacube_params td {
     text-align: right;
-    color: #fdc086;
+/*     color: #fdc086; */
     padding: 2px 4px;
 }
 
@@ -799,13 +823,81 @@ div.img_hover:hover div:first-child {
 #datacube_layers tbody td {
     padding: 2px 6px;
     vertical-align: middle;
+    border-bottom: 0.5px solid #777;
     
 }
 #datacube_layers td.name {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #fff;
+    padding: 6px 8px;
 }
 #datacube_layers tr.instructions td {
     font-style: italic;
     color: #f2f2f2;
     padding: 4px 4px;
+}
+#datacube_layers tbody tr:hover {
+    background-color: #444;
+}
+#datacube_layers td.remove {
+    padding: 0px 6px;
+}
+.link {
+    color: #fc891d;
+    cursor: pointer;
+    transition: 0.2s ease;
+    -o-transition: 0.2s ease;
+    -webkit-transition: 0.2s ease;
+}
+.link:hover {
+    color: #e26f03;
+}
+a {
+    cursor: pointer;
+}
+#datacube_processingsteps .modal {
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+table.editprocessingsteps_table {
+    border: none;
+}
+table.editprocessingsteps_table tr,
+table.editprocessingsteps_table td {
+    color: white;
+    background-color:transparent;
+    border: 0px;
+    padding: 4px 6px;
+}
+
+#processingsteps_listtable {
+    margin: 10px auto;
+    
+}
+#processingsteps_listtable td {
+    border-bottom: 1px solid #444;
+    color: #ffffcc;
+    font-size: 0.85rem;
+}
+#processingsteps_listtable td.delete {
+    width: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ff4d4d;
+    cursor: pointer;
+    font-family: monospace;
+}
+
+.close-top {
+    position:relative;
+    float:right;
+    cursor: pointer;
+    top: -18px;
+    right:-30px;
 }

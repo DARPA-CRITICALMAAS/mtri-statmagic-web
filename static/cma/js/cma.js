@@ -23,6 +23,15 @@ function onLoad() {
     // Trigger CRS select to load units/resolution  
     onCRSselect();
     
+    // Populate ProcessinStep options
+    populateAddProcessingStep();
+//     var opts = '<option disabled selected hidden>Select...</option>';
+//     $.each(PROCESSING_STEPS, function(p,obj) {
+//         opts += `<option value='${p}'>${obj.name_pretty}</option>`;
+//     });
+//     $('#processingsteps_addstep').html(opts);
+    
+//     $('#datacube_processingsteps').show();
 //     // Register onClick events for the "Add to cube" buttons
 //     $('.radiocube label').on('click', function(cmp) {
 //         onRadioCubeClick(cmp);
@@ -44,6 +53,31 @@ function onLoad() {
 // }
 
 // function buildDataLayer
+
+function getSelectedProcessingSteps() {
+    var l = [];
+    $('#processingsteps_listtable tr').each(function(i,cmp) {
+        l.push($(cmp).attr('data-value'));
+    });
+    
+    return l;
+}
+
+function populateAddProcessingStep() {
+    // Get currently listed options
+    var listed_steps = getSelectedProcessingSteps();
+    
+    var opts = `<option disabled selected hidden>Select...</option>`;
+    $.each(PROCESSING_STEPS, function(p,obj) {
+        if (listed_steps.indexOf(p) > -1) {
+            return;
+        }
+        opts += `<option value='${p}'>${obj.name_pretty}</option>`;
+    });
+    $('#processingsteps_addstep').html(opts);
+
+    
+}
 
 function createMapLayers() {
     
@@ -482,7 +516,6 @@ function onRadioCubeClick(cmp) {
     $(`input[name='${for_radio}'][value='${valnew}']`).prop('checked',true);
     
     // Add/remove layer from the datacube layer list
-    console.log(valnew);
     if (valnew == 'no') {
         $(`#datacube_layers tr[data-layername='${layername}']`).remove();
         
@@ -500,7 +533,7 @@ function onRadioCubeClick(cmp) {
         $('#datacube_layers tr:last').after(`
             <tr data-layername='${layername}'>
                 <td class='name'>${layername}</td>
-                <td class='processing'>[none] edit</td>
+                <td class='processing'><span class='link' onclick='editProcessingSteps(this);'>[none]</span></td>
                 <td class='remove'>
                     <div class='img_hover' onclick=''>
                         <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
@@ -515,6 +548,10 @@ function onRadioCubeClick(cmp) {
         `);
         
     }
+}
+
+function editProcessingSteps(cmp) {
+    $('#datacube_processingsteps').show();
 }
 
 function onRemoveDataCubeLayerClick(cmp) {
@@ -534,7 +571,30 @@ function onCRSselect() {
     var crs = CRS_OPTIONS[crs_name];
     $('#datacube_crs_units').html(crs.units);
     $('#datacube_resolution').val(crs.default_resolution);
+}
+
+function deleteTableRow(cmp) {
+    $(cmp).closest('tr').remove();
+}
+
+function onAddProcessingStep(v,lab) {
+    v = v || $('#processingsteps_addstep').val();
+    lab = lab || PROCESSING_STEPS[v].name_pretty;
     
+    $('#processingsteps_listtable tbody').append(`
+        <tr data-value="${v}">
+            <td>${lab}</td>
+            <td class='delete' onclick="deleteTableRow(this);">x</td>
+        </tr>
+    `);
+    
+    // Re-populates the dropdown only w/ steps that have NOT been selected
+    populateAddProcessingStep();
+}
+
+function onSaveProcessingStep() {
+    console.log('saving');
+    $('#datacube_processingsteps').hide();
 }
 
 onLoad();
