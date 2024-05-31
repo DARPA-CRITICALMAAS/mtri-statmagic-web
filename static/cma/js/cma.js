@@ -479,8 +479,9 @@ function getWKT() {
 function showDataLayerInfo(layer_name) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     
-    $('#dl_title').html(layer_name);
+    $('#dl_title').html(dl.name_pretty);
     $('#dl_description').html(`<span class='label'>Description:</span><br>${dl.description}`);
+    $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.path}' target='_blank'>${dl.path}</a>`);
     $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.source}`);
     
     $('#datalayer_info').show();
