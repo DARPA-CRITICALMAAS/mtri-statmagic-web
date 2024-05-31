@@ -70,7 +70,9 @@
 
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
+        
         <div id='control_panel'>
+            <div id='sidebar_collapse_button'>&#11207;</div>
             <div class='collapse' id='datalayer_container'>
                 <div class='header topbar toptop'><span class="collapse">+ </span> Data layers</div>
                 <div class='content main'>
@@ -148,57 +150,73 @@
             </div>
         
             <div class='collapse'>
-                <div class='header topbar datacube'><span class="collapse">+ </span> Build data cube</div>
-                <div class='content datacube'>
-                    <table id='datacube_layers'>
-                        <thead><tr>
-                            <td class='layer'>Layer</td>
-                            <td>Processing</td>
-                            <td></td>
-                        </tr></thead>
-                        <tbody>
-                            <tr class='instructions'>
-                                <td colspan=3 align='center'>Use data layer selector to add layers to cube</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class='header topbar datacube'><span class="collapse">+ </span> Modeling</div>
+                <div class='content main'>
+                    <div class='collapse sub'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Data</div>
+                        <div class='content datacube'>
+                            <table id='datacube_layers'>
+                                <thead><tr>
+                                    <td class='layer'>Layer</td>
+                                    <td>Processing</td>
+                                    <td></td>
+                                </tr></thead>
+                                <tbody>
+                                    <tr class='instructions'>
+                                        <td colspan=3 align='center'>Use data layer selector to add layers to cube</td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                    <table id='datacube_params'>
-                        <tr>
-                            <td class='label'>CRS:</td>
-                            <td><select id='datacube_crs' onChange='onCRSselect();'>
-                            {% for crs_name, cobj in crs_options.items %}
-                                <option value='{{crs_name}}'>{{crs_name}}</option>
-                            {% endfor %}
-                               <!-- <option value='epsg:4326'>WGS84 (EPSG:4326)</option>
-                                <option value='epsg:4326'>Conus Albers (EPSG:5070)</option>-->
-                            </select></td>
-                        </tr>
-                        <tr>
-                            <td class='label'>Spatial res. (<span id='datacube_crs_units'></span>):</td>
-                            <td><input type='number' id='datacube_resolution' /></td>
-                        </tr>
-                        <tr>
-                            <td class='label'>Extent:</td>
-                            <td>
-                                <span class='link'>upload geojson</span> | draw: <a onClick=drawStart("polygon")>
-                                <img src="/static/cma/img/draw-polygon-icon.png" 
-                                    height="17"
-                                    id="draw_polygon_icon" /></a>
-                                <a onClick=drawStart("rectangle")>
-                                <img src="/static/cma/img/draw-rectangle-icon.png"
-                                    height="17"
-                                    id="draw_rectangle_icon" ></a>
-                            </td>
-                        </tr>
-                    </table>
-                    <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
-                </div>
-            </div>
-        </div>
-    </div>
+                            <table id='datacube_params'>
+                                <tr>
+                                    <td class='label'>CRS:</td>
+                                    <td><select id='datacube_crs' onChange='onCRSselect();'>
+                                    {% for crs_name, cobj in crs_options.items %}
+                                        <option value='{{crs_name}}'>{{crs_name}}</option>
+                                    {% endfor %}
+                                    <!-- <option value='epsg:4326'>WGS84 (EPSG:4326)</option>
+                                        <option value='epsg:4326'>Conus Albers (EPSG:5070)</option>-->
+                                    </select></td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Spatial res. (<span id='datacube_crs_units'></span>):</td>
+                                    <td><input type='number' id='datacube_resolution' /></td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Extent:</td>
+                                    <td>
+                                        <span class='link'>upload geojson</span> | draw: <a onClick=drawStart("polygon")>
+                                        <img src="/static/cma/img/draw-polygon-icon.png" 
+                                            height="17"
+                                            id="draw_polygon_icon" /></a>
+                                        <a onClick=drawStart("rectangle")>
+                                        <img src="/static/cma/img/draw-rectangle-icon.png"
+                                            height="17"
+                                            id="draw_rectangle_icon" ></a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
+                        </div> <!--content datacube-->
+                    </div> <!--collapse sub-->
+                    <div class='collapse sub'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Model</div>
+                        <div class='content model'>
+                        </div> <!--content model-->
+                    </div> <!--collapse sub (model)-->
+                    <div class='collapse sub'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Training</div>
+                        <div class='content training'>
+                        </div><!--collapse sub (training)-->
+                        </div> <!--content training-->
+                    </div> <!--collapse sub (training)-->
+                </div> <!--content main-->
+            </div> <!--collapse (Modeling)-->
+        </div><!--control_panel-->
+<!--     </div>flex-child control_panel -->
     <div class='flex-child map'><div id='map'></div></div>
-</div>
+</div> <!--flex-container main-->
 
 <script type="text/javascript">
     const COMMODITIES = {{ COMMODITIES|safe }};

@@ -25,6 +25,34 @@ function onLoad() {
     
     // Populate ProcessinStep options
     populateAddProcessingStep();
+    
+    
+    // Have the leaflet map update it's size after the control_panel show/hide
+    // transition completes
+    $('.flex-child.control_panel').on('transitionend webkitTransitionEnd oTransitionEnd', function() {
+        MAP.invalidateSize();
+    });
+    
+    // Add control panel collapse listener
+    $('#sidebar_collapse_button').on('click',function(e) {
+        var cmp = $(e.target)//.child('.symbol_container');
+        console.log(cmp.html());
+        var closed = cmp.html() == '⯈';
+
+        if (closed) {
+            $('.flex-child.control_panel').css('width','40%');
+//             $('#sidebar_collapse_button').css('left','40%');
+            cmp.html('⯇');
+        } else {
+            $('.flex-child.control_panel').css('width','0');
+//             $('#sidebar_collapse_button').css('left','0');
+            cmp.html('⯈');
+
+        } 
+//         MAP.invalidateSize();
+    });
+
+    
 //     var opts = '<option disabled selected hidden>Select...</option>';
 //     $.each(PROCESSING_STEPS, function(p,obj) {
 //         opts += `<option value='${p}'>${obj.name_pretty}</option>`;

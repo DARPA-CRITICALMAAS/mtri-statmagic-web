@@ -15,12 +15,17 @@
 }
 
 .flex-child.control_panel {
-    flex: 2;
+    transition: 0.2s;
+    -o-transition: 0.2s;
+    -webkit-transition: 0.2s;
+    width: 40%;
+/*     flex: 2; */
 /*     border: 2px solid yellow; */
 }  
 
 .flex-child.map {
-    flex: 3;
+    flex: auto;
+/*      width: 60%;  */
 }
 
 #map {
@@ -492,7 +497,7 @@ select {
     font-family: 'monospace';
     font-size: 1.3rem;
     color: #b3b3b3;
-    margin-bottom: 3px;
+    margin-bottom: 0px;
 }
 
 .collapse.sub .header.topbar {
@@ -599,6 +604,7 @@ span.collapse {
     direction: rtl;
     scrollbar-color: #555 #888;
     scrollbar-width: thin;
+    margin-top: 0px;
 }
 #datalayer_container .collapse.sub {
     direction: ltr;
@@ -908,4 +914,35 @@ table.editprocessingsteps_table td {
     cursor: pointer;
     top: -18px;
     right:-30px;
+}
+
+.header.topbar.sub {
+    margin-top: 6px;
+}
+
+#sidebar_collapse_button {
+    position: relative;
+    top: 16px;
+    right: -24px;
+/*     left: 100%; */
+    font-size: 1.3rem;
+    width: 24px;
+    float: right;
+    line-height: 40px;
+    padding: 0px; 
+    color: #999;
+    height: 40px;
+    text-align: center;
+    border-radius: 0px 3px 3px 0px;
+    background-color: rgba(40,40,40,.3);
+    z-index: 99999;
+    cursor: pointer;
+}
+#sidebar_collapse_button:hover {
+    background-color: #222;
+    color: #f2f2f2;
+}
+
+#sidebar_collapse_button .symbol_container {
+    margin: auto;
 }
