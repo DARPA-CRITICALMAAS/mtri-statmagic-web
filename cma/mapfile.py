@@ -201,6 +201,8 @@ def write_mapfile(
         robj = rasters[raster]
         raster_path = robj['path']
 
+        projection = '"init=epsg:4326"' if 'Geophysics_LAB_HGM_USCanada_cog.tif' in raster_path else 'AUTO'
+
         layer_type = 'RASTER'
         if robj['layer_type']:
             layer_type = robj['layer_type']
@@ -390,7 +392,7 @@ def write_mapfile(
         m.write(mapfile_text)
 
     #blerg
-    #print(mapfile_text)
+    print(mapfile_text)
 
     # Tell user how to access things for testing
     print('\n\nGetMap examples:\n')

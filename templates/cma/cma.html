@@ -62,15 +62,11 @@
                 </td>
             </tr>
         </table>
-        
     </div>
 </div>
 
-
-
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
-        
         <div id='control_panel'>
             <div id='sidebar_collapse_button'>&#11207;</div>
             <div class='collapse' id='datalayer_container'>
@@ -128,7 +124,7 @@
                                     <tr data-path="{{layer.name}}">
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
-                                        <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon"></td>
+                                        <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
                                         <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
                                         <td>
                                             <div class="radiocube" align="left">
@@ -153,22 +149,40 @@
                 <div class='header topbar datacube'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
                     <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Data</div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Data Cube</div>
                         <div class='content datacube'>
+                        
+                            <!--<div class='collapse sub sub2'>
+                                <div class='header topbar sub'><span class="collapse">+ </span> Load</div>
+                                <div class='content datacube'></div>
+                            </div>
+                            <div class='collapse sub sub2'>
+                            <div class='header topbar sub'><span class="collapse">+ </span> Build</div>-->
+                      <!--      <div class='content datacube'>-->
+                            <div class='modeling_instructions'>
+                            Load an existing <span class='goto' onclick='$("#datacube_id").trigger("focus");'>data cube ID</span>, or use the data layer selector to add layers to build a new data cube
+                            </div>
+                            <table class='modeling_params'>
+                                <tr>
+                                    <td class='label'>Data cube ID:</td>
+                                    <td><input type='text' id='datacube_id' /></td>
+                                </tr>
+                        
+                            </table>
                             <table id='datacube_layers'>
                                 <thead><tr>
-                                    <td class='layer'>Layer</td>
+                                    <td class='layer'>Data layer</td>
                                     <td>Processing</td>
                                     <td></td>
                                 </tr></thead>
                                 <tbody>
                                     <tr class='instructions'>
-                                        <td colspan=3 align='center'>Use data layer selector to add layers to cube</td>
+                                        <td colspan=3 align='center'></td>
                                     </tr>
                                 </tbody>
                             </table>
 
-                            <table id='datacube_params'>
+                            <table id='datacube_params' class='modeling_params'>
                                 <tr>
                                     <td class='label'>CRS:</td>
                                     <td><select id='datacube_crs' onChange='onCRSselect();'>
@@ -198,11 +212,43 @@
                                 </tr>
                             </table>
                             <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
+                   <!--         </div> <!--content datacube (build)-->-->
+<!--                             </div> <!--'collapse sub sub2'--> -->
                         </div> <!--content datacube-->
                     </div> <!--collapse sub-->
                     <div class='collapse sub'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Model</div>
                         <div class='content model'>
+                            <div class='sublabel'>Optimizer</div>
+                            <table class='modeling_params'>
+                                <tr>
+                                    <td class='label'>Param1:</td>
+                                    <td><input type='number' id='model_optimizer1' /></td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Param2:</td>
+                                    <td><input type='number' id='model_optimizer2' /></td>
+                                </tr>
+                            </table>
+                        
+                            <div class='sublabel'>Scheduler</div>
+                            <table class='modeling_params'>
+                                <tr>
+                                    <td class='label'>Mode:</td>
+                                    <td><select id='model_mode'>
+                                        <option value='A'>Option A</option>
+                                        <option value='B'>Option B</option>
+                                    </select></td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Factor:</td>
+                                    <td><input type='number' id='model_factor' /></td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Patience:</td>
+                                    <td><input type='number' id='model_patience' /></td>
+                                </tr>
+                            </table>
                         </div> <!--content model-->
                     </div> <!--collapse sub (model)-->
                     <div class='collapse sub'>

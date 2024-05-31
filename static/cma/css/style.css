@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: Avenir;
-    src: url("/static/fonts/AvenirNext_PC/AvenirNext_PC/AvenirNext-Regular.ttf") format("opentype");
+    src: url("/static/cma/fonts/AvenirNext_PC/AvenirNext_PC/AvenirNext-Regular.ttf") format("opentype");
 }
 
 .flex-container {
@@ -497,6 +497,7 @@ select {
     font-family: 'monospace';
     font-size: 1.3rem;
     color: #b3b3b3;
+    border-bottom: 2px solid #444;
     margin-bottom: 0px;
 }
 
@@ -506,6 +507,15 @@ select {
     font-size: 1.0rem;
     padding: 2px 8px;
     color: #90d590;
+    width: calc(100% - 26px);
+     margin: 0px 10px 0px 0px;
+}
+
+.collapse.sub.sub2 .header.topbar {
+    font-size: 0.85rem;
+    color: #fdc086;
+    text-transform: none;
+    margin: 0px 0px 0px 16px;
 }
 
 .collapse {
@@ -548,7 +558,7 @@ select {
 .collapse .header d:hover {
     color: #333; 
 }
-.collapse .content {
+.collapse div.content {
     display: none;
     /*background-color: #444;*/
 /*     padding: 0px 2px; */
@@ -587,7 +597,7 @@ span.collapse {
 #datacube_layers td.name {
     font-family: 'Open Sans Condensed';
     font-size: 0.85rem;
-    max-width: 200px;
+    max-width: 140px;
 }
 .datalayer_table td.show_chk {
     text-align: center;
@@ -765,46 +775,62 @@ option {
     font-size: 0.9rem;
 }
 
-.content.datacube table {
+.content.datacube table,
+table.modeling_params {
     background-color: transparent;
     color: white;
-/*     margin: 10px 20px 20px 20px; */
     margin: 10px auto 20px auto;
     width: 70%;
-/*     width: calc(100% - 40px); */
 }
 .content.datacube #datacube_layers tbody {
     background-color: #666;
     border: 2px dashed #478556;
 }
-.content.datacube table tr {
+.content.datacube table tr,
+table.modeling_params tr {
     background-color: transparent;
+}
+
+table.modeling_params tr:hover {
+    background-color: rgb(59, 59, 59);
+    
 }
 
 #datacube_btn_build {
     width: 40%;
     height: 2.0rem;
+    line-height: 2.0rem;
     vertical-align: middle;
     background-color: #6aaf7a;
     cursor: pointer;
 }
-#datacube_params td {
+
+.modeling_params td {
     text-align: right;
 /*     color: #fdc086; */
     padding: 2px 4px;
+    vertical-align: middle;
 }
 
-#datacube_params td.label {
+.modeling_params td.label {
     text-align: left;
     color: #bfbfbf;
 
 }
-#datacube_resolution,
-#datacube_crs {
+
+.modeling_params input {
     width: 80px;
     background-color: #333;
     color: #f2f2f2;
     border: none;
+    padding: 3px 6px;
+    margin: 0px;
+}
+.modeling_params input[type='text'] {
+    width: 160px;
+}
+.modeling_params select {
+    margin: 0px;
 }
 #datacube_crs {
     width: auto;
@@ -945,4 +971,49 @@ table.editprocessingsteps_table td {
 
 #sidebar_collapse_button .symbol_container {
     margin: auto;
+}
+
+#site-name {
+    font-family: Avenir;
+    text-shadow: #000 -1px 1px 3px;
+}
+.sublabel {
+    color: #fdc086;
+    font-size: 0.81rem;
+    padding: 12px 0px 0px 46px;
+}
+.collapse div.modeling_instructions {
+    padding: 4px 26px;
+    color: #d9d9d9;
+    font-size: 0.75rem;
+    width: calc(100% - 52px);
+}
+.goto {
+    color: #ccffff;
+    cursor: pointer;
+}
+.goto:hover {
+    color: #33ffff;
+}
+
+.legend.leaflet-control .layer_legend {
+    background-color: rgba(60,60,60,0.8);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 1px;
+    font-family: 'Open Sans Condensed';
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+.legend.leaflet-control .layer_legend table {
+    background-color: transparent;
+    margin: 0px auto;
+    font-family: monospace;
+}
+
+.legend.leaflet-control .layer_legend td,
+.legend.leaflet-control .layer_legend tr {
+    background-color: transparent;
+    vertical-align: top;
+    font-size: 0.81rem;
 }

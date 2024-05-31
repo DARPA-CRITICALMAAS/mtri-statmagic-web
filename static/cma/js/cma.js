@@ -26,6 +26,9 @@ function onLoad() {
     // Populate ProcessinStep options
     populateAddProcessingStep();
     
+    // Create legend control
+    createLegendControl();
+    
     // Have the leaflet map update it's size after the control_panel show/hide
     // transition completes
     $('.flex-child.control_panel').on('transitionend webkitTransitionEnd oTransitionEnd', function() {
@@ -34,36 +37,19 @@ function onLoad() {
     
     // Add control panel collapse listener
     $('#sidebar_collapse_button').on('click',function(e) {
-        var cmp = $(e.target)//.child('.symbol_container');
-        console.log(cmp.html());
+        var cmp = $(e.target);
         var closed = cmp.html() == '⯈';
 
         if (closed) {
             $('.flex-child.control_panel').css('width','40%');
-//             $('#sidebar_collapse_button').css('left','40%');
             cmp.html('⯇');
         } else {
             $('.flex-child.control_panel').css('width','0');
-//             $('#sidebar_collapse_button').css('left','0');
             cmp.html('⯈');
-
         } 
-//         MAP.invalidateSize();
-    });
 
+    });
     
-//     var opts = '<option disabled selected hidden>Select...</option>';
-//     $.each(PROCESSING_STEPS, function(p,obj) {
-//         opts += `<option value='${p}'>${obj.name_pretty}</option>`;
-//     });
-//     $('#processingsteps_addstep').html(opts);
-    
-//     $('#datacube_processingsteps').show();
-//     // Register onClick events for the "Add to cube" buttons
-//     $('.radiocube label').on('click', function(cmp) {
-//         onRadioCubeClick(cmp);
-//     });
-//     
     // Add mineral sites contrl
 //     createMineralSitesControl();
     
@@ -73,13 +59,6 @@ function onLoad() {
     
     toggleHeader($('.header.datacube'));
 }
-
-// function onRadioCubeClick(cmp) { 
-//     console.log(cmp);
-//     
-// }
-
-// function buildDataLayer
 
 function getSelectedProcessingSteps() {
     var l = [];
@@ -446,6 +425,25 @@ function createMineralSitesControl() {
     MAP.addControl(new controlPanel());
 }
 
+function createLegendControl() {
+    
+    // Create legend control
+
+    var legendControl = L.Control.extend({
+        options: {
+            position: 'topright'
+        },
+        onAdd: function () {
+            var c = L.DomUtil.create('div', 'legend');
+            
+            c.innerHTML = `<div id='legend_content'></div>`;
+
+            return c;
+        }
+    });
+    MAP.addControl(new legendControl());
+}
+
 
 
 function validateLoadSitesButton() {
@@ -491,8 +489,6 @@ function showDataLayerInfo(layer_name) {
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     
-    
-    
 //     // ID the associated checkbox
 //     if (target.prop('nodeName') == 'INPUT') {
 //         chk = $(target);
@@ -521,12 +517,52 @@ function onToggleLayerClick(target,layer_name) {
     if (chk.prop('checked')) {
         MAP.addLayer(layer);
         
-        // Add color halo
+        // Add layer color to checkbox
         chk.css({
             'accent-color': `rgb(${datalayer.color})`
         });
+        
+        // Add legend content
+        var w = 60;
+        var h = 14;
+        var lmin = datalayer.stats_minimum;
+        var lmax = datalayer.stats_maximum;
+        var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
+        
+        html = `
+            <div class='layer_legend' id='legendcontent_${layer_name}'>
+                ${datalayer.name_pretty}
+                <table>
+                    <tr>
+                        <td>${lmin.toPrecision(precision)}</td>
+                        <td>
+                            <div class='colorbar'>
+                                <svg height='${h}' width='${w}'>
+                                    <linearGradient id="gradient_${layer_name}">
+                                        <stop stop-color="#fff" offset="0%" />
+                                        <stop stop-color="rgb(${datalayer.color})" offset="100%" />
+                                    </linearGradient>
+                                    <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name})" />
+                                </svg>
+                            </div>
+                        </td>
+                        <td>${lmax.toPrecision(precision)}</td>
+                    </tr>
+                </table>
+            </div>
+        `;
+        
+        $('#legend_content').append(html);
+        
+        // Show legend
+//         $('.legend.leaflet-control').show();
+        
     } else {
+        // Remove layer from map
         MAP.removeLayer(layer);
+
+        // Remove legend content
+        $(`#legendcontent_${layer_name}`).remove();
     }
 }
 
@@ -548,10 +584,12 @@ function onRadioCubeClick(cmp) {
         
         // If there are no rows left, show instructions again
         if ($('#datacube_layers tbody tr').length == 1) {
-            console.log('showing instur');
+//             console.log('showing instur');
             $('#datacube_layers tr.instructions').show();
         }
     } else {
+        var datalayer = DATALAYERS_LOOKUP[layername];
+        
         // Hide instructions 
         $('#datacube_layers tr.instructions').hide();
         
@@ -559,7 +597,7 @@ function onRadioCubeClick(cmp) {
         var icon_height = 13;
         $('#datacube_layers tr:last').after(`
             <tr data-layername='${layername}'>
-                <td class='name'>${layername}</td>
+                <td class='name'>${datalayer.name_pretty}</td>
                 <td class='processing'><span class='link' onclick='editProcessingSteps(this);'>[none]</span></td>
                 <td class='remove'>
                     <div class='img_hover' onclick=''>
