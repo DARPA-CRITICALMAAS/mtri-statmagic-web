@@ -141,3 +141,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'
+
+# Location on the MAPSERVER_SERVER where the sync'd data lives
+TILESERVER_LOCAL_SYNC_FOLDER = '/home/mgbillmi/statmagic/data/datalayer_download/'

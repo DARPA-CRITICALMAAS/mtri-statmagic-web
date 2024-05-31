@@ -26,7 +26,6 @@ function onLoad() {
     // Populate ProcessinStep options
     populateAddProcessingStep();
     
-    
     // Have the leaflet map update it's size after the control_panel show/hide
     // transition completes
     $('.flex-child.control_panel').on('transitionend webkitTransitionEnd oTransitionEnd', function() {

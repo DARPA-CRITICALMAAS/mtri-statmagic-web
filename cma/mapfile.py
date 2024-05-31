@@ -73,7 +73,12 @@ def write_mapfile(
         tif_path = r['path']
         
         if 'http' in tif_path:
-            tif_path = f'/vsicurl_streaming/{tif_path}'
+#            tif_path = f'/vsicurl_streaming/{tif_path}
+            # NOTE: for now sync'ing these locally '
+            tif_path = os.path.join(
+                settings.TILESERVER_LOCAL_SYNC_FOLDER,
+                os.path.basename(tif_path)
+            )
 
         # Load required params
         rkey = r['name']
