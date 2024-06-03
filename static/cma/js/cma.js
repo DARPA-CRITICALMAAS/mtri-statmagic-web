@@ -42,9 +42,11 @@ function onLoad() {
 
         if (closed) {
             $('.flex-child.control_panel').css('width','40%');
+            $('.collapse.modeling').show(); // see below vvv
             cmp.html('⯇');
         } else {
             $('.flex-child.control_panel').css('width','0');
+            $('.collapse.modeling').hide(); // <- hack b/c contents squeeze out bottom otherwise
             cmp.html('⯈');
         } 
 
@@ -596,10 +598,10 @@ function onRadioCubeClick(cmp) {
         
         // Add row 
         var icon_height = 13;
-        $('#datacube_layers tr:last').after(`
-            <tr data-layername='${layername}'>
+        $('#datacube_layers tr.cube_layer:last').after(`
+            <tr class='cube_layer' data-layername='${layername}'>
                 <td class='name'>${datalayer.name_pretty}</td>
-                <td class='processing'><span class='link' onclick='editProcessingSteps(this);'>[none]</span></td>
+                <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
                 <td class='remove'>
                     <div class='img_hover' onclick=''>
                         <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
@@ -612,11 +614,26 @@ function onRadioCubeClick(cmp) {
                 </td>
             </tr>
         `);
-        
+    }
+    
+    // Update header_info 
+    var nlayers = $('#datacube_layers tr.cube_layer').length - 1; // -1 b/c of instructions row 
+    var s = nlayers == 1 ? '' : 's';
+    var el = $('.header_info.datacube');
+    el.html(`[${nlayers} layer${s} added]`);
+    if (nlayers > 0) {
+        el.removeClass('warning');
+    } else {
+        el.addClass('warning');
     }
 }
 
 function editProcessingSteps(cmp) {
+    // Retrieve layername and any existing processing steps
+    $('#processingsteps_layername').html(
+        $(cmp).closest('tr').attr('data-layername')
+    );
+    
     $('#datacube_processingsteps').show();
 }
 
@@ -658,9 +675,22 @@ function onAddProcessingStep(v,lab) {
     populateAddProcessingStep();
 }
 
-function onSaveProcessingStep() {
+function onSaveProcessingSteps() {
     console.log('saving');
     $('#datacube_processingsteps').hide();
+    
+    var layername = $('#processingsteps_layername').html();
+    
+    // Get list of steps from table
+//     var steps = [];
+    var step_html = '<table>';
+    $('#processingsteps_listtable tr').each(function(i,tr) {
+        var step = $(tr).attr('data-value');
+        step_html += `<tr><td data-value='step'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
+//         steps.push(step);
+    });
+    step_html += '</table>';
+    $(`tr[data-layername='${layername}'] span.processingsteps_list`).html(step_html);
 }
 
 onLoad();

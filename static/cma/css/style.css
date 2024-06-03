@@ -60,13 +60,15 @@ td, th {
 
 #branding h1 {
     font-size: 2.0rem;
-/*     font-style: italic; */
     font-weight: 600;
     color: #ccccff;
-    letter-spacing: .04rem;
-/*     font-family: Avenir, 'PT Sans' */
-    
+    letter-spacing: .20rem;
+    font-family: Avenir;
+    text-shadow: #222 -1px 1px 3px;
 }
+#branding h1 .compress {
+    letter-spacing: 0.02rem;
+} 
 
 div.breadcrumbs {
 /*     display: none; */
@@ -599,6 +601,10 @@ span.collapse {
     font-size: 0.85rem;
     max-width: 140px;
 }
+#datacube_layers td.name {
+    vertical-align: top;
+    
+}
 .datalayer_table td.show_chk {
     text-align: center;
 }
@@ -949,15 +955,14 @@ table.editprocessingsteps_table td {
 #sidebar_collapse_button {
     position: relative;
     top: 16px;
-    right: -24px;
-/*     left: 100%; */
-    font-size: 1.3rem;
-    width: 24px;
+    font-size: 1.0rem;
+    right: -18px;
+    width: 18px;
     float: right;
-    line-height: 40px;
     padding: 0px; 
-    color: #999;
-    height: 40px;
+    color: #cccccc;
+    line-height: 60px;
+    height: 60px;
     text-align: center;
     border-radius: 0px 3px 3px 0px;
     background-color: rgba(40,40,40,.3);
@@ -971,11 +976,6 @@ table.editprocessingsteps_table td {
 
 #sidebar_collapse_button .symbol_container {
     margin: auto;
-}
-
-#site-name {
-    font-family: Avenir;
-    text-shadow: #000 -1px 1px 3px;
 }
 .sublabel {
     color: #fdc086;
@@ -1021,7 +1021,6 @@ table.editprocessingsteps_table td {
 }
 a:link {
     color: #5b80b2;
-    
 }
 a:hover {
     color: #4da6ff;
@@ -1032,4 +1031,76 @@ a:visited {
 
 #dl_url {
     font-size: 0.8rem;
+}
+#modeling_buttons_table {
+    width: calc(100% - 12px);
+    margin: 10px 6px;
+    
+}
+#modeling_buttons_table tr {
+    background: transparent;
+}
+#modeling_buttons_table td {
+    padding: 0px 4px;
+    width: 25%;
+    
+}
+#modeling_buttons_table div.button {
+/*     width: 24%; */
+    width: auto;
+    margin: 0px auto;
+    font-size: 1rem;
+    border-radius: 2px;
+    background-color: #666;
+    color: #cccccc; 
+/*     opacity: 0.5; */
+    border: 2px solid #cd7aad;
+}
+
+#modeling_buttons_table div.button.pretrain {
+    border-color: #cd7aad;
+/*     color: w; */
+}
+#modeling_buttons_table div.button.train {
+    border-color: #bd5189;
+/*     color: black; */
+}
+#modeling_buttons_table div.button.test {
+    border-color: #a33e63;
+/*     color: white; */
+}
+#modeling_buttons_table div.button.predict {
+    border-color: #8a0f44;
+/*     color: white; */
+}
+#modeling_buttons_table div.button:hover {
+    opacity: 1.0;
+    color: white;
+    background-color: #333; 
+/*     border-width: 4px; */
+}
+.content.datacube #datacube_layers .processingsteps_list table {
+    margin: 0px;
+}
+.content.datacube #datacube_layers .processingsteps_list table tbody {
+    border: none;
+    background-color: transparent;
+}
+.content.datacube #datacube_layers .processingsteps_list table tr:hover {
+    background-color: transparent;
+}
+#datacube_layers .processingsteps_list table td {
+    font-size: 0.70rem;
+    border: none;
+    color: #ffffcc;
+}
+
+.header_info {
+    font-size: 0.85rem;
+    color: #baba5e;
+    text-transform: none;
+    font-style: italic;
+}
+.header_info.warning {
+    color: #d65c5c;
 }
