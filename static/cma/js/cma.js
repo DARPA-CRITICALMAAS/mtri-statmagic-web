@@ -629,11 +629,24 @@ function onRadioCubeClick(cmp) {
 }
 
 function editProcessingSteps(cmp) {
-    // Retrieve layername and any existing processing steps
+    var tr = $(cmp).closest('tr');
+    
+    // Update layername 
     $('#processingsteps_layername').html(
-        $(cmp).closest('tr').attr('data-layername')
+        tr.attr('data-layername')
     );
     
+    // Empty current table
+    $('#processingsteps_listtable tbody').html('');
+    populateAddProcessingStep();
+     
+    // Load any existing processing steps
+    $(cmp).find('tr').each(function(i,tr0) {
+        var v = $(tr0).find('td').attr('data-value');
+//         console.log(tr0, v);
+        onAddProcessingStep(v,PROCESSING_STEPS[v].name_pretty);
+    });
+   
     $('#datacube_processingsteps').show();
 }
 
@@ -686,7 +699,7 @@ function onSaveProcessingSteps() {
     var step_html = '<table>';
     $('#processingsteps_listtable tr').each(function(i,tr) {
         var step = $(tr).attr('data-value');
-        step_html += `<tr><td data-value='step'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
+        step_html += `<tr><td data-value='${step}'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
 //         steps.push(step);
     });
     step_html += '</table>';

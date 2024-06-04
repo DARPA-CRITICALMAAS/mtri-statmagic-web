@@ -90,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'statmagic',
         'USER': 'django_user_statmagic',
-        'PASSWORD': 'gimme_gimme_gallium',
+        'PASSWORD': os.environ['DJANGO_USER_STATMAGIC_PGPASS'],
         'HOST' : 'per510c',
         'PORT': '5433'
     }
