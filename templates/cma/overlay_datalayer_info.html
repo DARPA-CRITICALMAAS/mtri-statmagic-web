@@ -1,0 +1,15 @@
+{% load static %}
+<div id='datalayer_info' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#datalayer_info').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div id='dl_title'></div>
+        <div id='dl_description'></div>
+        <div id='dl_url'></div>
+        <div id='dl_source'></div>
+    </div>
+</div>

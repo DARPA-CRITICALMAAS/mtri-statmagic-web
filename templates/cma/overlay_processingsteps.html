@@ -1,0 +1,41 @@
+{% load static %}
+<div id='datacube_processingsteps' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#datacube_processingsteps').hide()">
+        <img class="close-top-img" height=32 
+            src="{% static 'cma/' %}img/close-dark.png" 
+            onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+            onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='modal_title'><span class='subtitle'>Edit processing steps for layer:</span>
+            <br><div id='processingsteps_layername'></div>
+        </div>
+        <table class='editprocessingsteps_table'>
+            <tr>
+                <td class='colname'>Add processing step:</td>
+                <td class='input'>
+                    <select id='processingsteps_addstep' onChange='onAddProcessingStep();'>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan=2 class='colname'>
+                    <div align='left'>Selected steps (ordered):</div>
+                    <div align='middle'>
+                    <table id='processingsteps_listtable'>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    </div>
+                </td>
+            </tr>
+            <tr >
+                <td colspan=2 align='center'>
+                    <div class='button addcrossing save' onclick='onSaveProcessingSteps(this);'>
+                        Save
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>

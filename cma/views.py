@@ -1,10 +1,13 @@
-import json
+import json, os
 from django.shortcuts import render
 from django.forms.models import model_to_dict
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.encoding import force_str
 from django.http import HttpResponse
 from cdr import cdr_utils
 from . import util
 from . import models
+from osgeo import gdal
 
 # Functions for handling requests
 
@@ -60,6 +63,69 @@ def home(request):
     
     return render(request, 'cma/cma.html', context)
 
+@csrf_exempt
+def get_shp_as_geojson(request):
+    '''
+    Handles a POST request w/ shapefile files. Returns the vector geometry in
+    geojson format.
+    '''
+    params = {}
+    params = util.process_params(request,params,post=True)
+    flist = request.FILES.getlist('file_shp')
+    
+    # Write the files to a temporary location
+    sid = util.getUniqueID()
+    files = []
+    shp = None
+    for f in flist:
+        ext = os.path.splitext(f.name)[1]
+        tf = os.path.join('/tmp',f'{sid}{ext}')
+        files.append(tf)
+        if ext == '.shp':
+            shp = tf
+        if ext == '.prj':
+            prj = tf
+        with open(tf, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+                
+    # Now use ogr to convert to geojson
+    tmpgj = os.path.join('/tmp',f'{sid}.gj')
+    gdal.VectorTranslate(tmpgj,shp,format='GeoJSON')
+    
+    with open(tmpgj,'r') as f:
+        gj = json.loads(f.read())
+    
+    response = HttpResponse(
+        json.dumps({
+            'geojson': [gj],
+            'params': params,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
+@csrf_exempt
+def get_geojson_from_file(request):
+    '''
+    Handles a POST request w/ shapefile files. Returns the vector geometry in
+    geojson format.
+    '''
+    params = {}
+    params = util.process_params(request,params,post=True)
+    flist = request.FILES.getlist('file_geojson')
+
+    gj = force_str(flist[0].read())
+    response = HttpResponse(
+        json.dumps({
+            'geojson': [json.loads(gj)],
+            'params': params,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
 
 # Function for handling datacube creation requests
 def create_datacube(request): 

@@ -24,5 +24,7 @@ urlpatterns = [
     path('get_mineral_sites', cma_views.get_mineral_sites),
     path('create_datacube', cma_views.create_datacube),
     path('run_cma_model', cma_views.run_cma_model),
+    path('get_shp_as_geojson', cma_views.get_shp_as_geojson),
+    path('get_geojson_from_file', cma_views.get_geojson_from_file),
     path(r'', cma_views.home),
 ]

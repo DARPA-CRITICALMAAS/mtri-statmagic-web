@@ -1,0 +1,31 @@
+<div class="overlay modal_uploadshp">
+    <div class="modal">
+        <form id="uploadForm">
+        <table>
+            <tr>
+                <td class='main_label'>Select shapefile:</td>
+                <td class='input'>
+                    <input id='file_shp' class='file' type='file' name='file_shp' multiple >
+                    <label for='file_shp'>
+                        <span>CHOOSE FILES</span>
+                    </label>
+                </td>   
+            </tr>
+            <tr class='instructions'>
+                <td>
+                <td>
+                    Select all of the <span class='highlight shp'>.shp</span>, <span class='highlight shx'>.shx</span>, <span class='highlight prj'>.prj</span>, and <span class='highlight dbf'>.dbf</span> files associated with the shapefile.
+                </td>
+            </tr>
+            <tr height="20px"></tr>
+            <tr height="20px"></tr>
+            <tr class='footer_buttons load_aoi'>
+                <td colspan=2>
+                    <div class='button cancel' onclick='$(".modal_uploadshp").hide();'>Cancel</div>
+                    <div class='button submit disabled'>Submit</div>
+                </td>
+            </tr>
+        </table>
+        </form>
+    </div>
+</div>

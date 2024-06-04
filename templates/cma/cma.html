@@ -16,61 +16,11 @@
 {% endblock %}
 
 {% block content %}
-<div id='datalayer_info' class='overlay'>
-    <div class="modal" >
-        <div class="close-top" onclick="$('#datalayer_info').hide()">
-            <img class="close-top-img" height=32 
-                src="{% static 'cma/' %}img/close-dark.png" 
-                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
-                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
-        </div>
-        <div id='dl_title'></div>
-        <div id='dl_description'></div>
-        <div id='dl_url'></div>
-        <div id='dl_source'></div>
-    </div>
-</div>
 
-<div id='datacube_processingsteps' class='overlay'>
-    <div class="modal" >
-        <div class="close-top" onclick="$('#datacube_processingsteps').hide()">
-        <img class="close-top-img" height=32 
-            src="{% static 'cma/' %}img/close-dark.png" 
-            onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
-            onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
-        </div>
-        <div class='modal_title'><span class='subtitle'>Edit processing steps for layer:</span>
-            <br><div id='processingsteps_layername'></div>
-        </div>
-        <table class='editprocessingsteps_table'>
-            <tr>
-                <td class='colname'>Add processing step:</td>
-                <td class='input'>
-                    <select id='processingsteps_addstep' onChange='onAddProcessingStep();'>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td colspan=2 class='colname'>
-                    <div align='left'>Selected steps (ordered):</div>
-                    <div align='middle'>
-                    <table id='processingsteps_listtable'>
-                        <tbody>
-                        </tbody>
-                    </table>
-                    </div>
-                </td>
-            </tr>
-            <tr >
-                <td colspan=2 align='center'>
-                    <div class='button addcrossing save' onclick='onSaveProcessingSteps(this);'>
-                        Save
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
-</div>
+{% include './overlay_uploadshp.html' %}
+{% include './overlay_uploadgeojson.html' %} 
+{% include './overlay_datalayer_info.html' %}
+{% include './overlay_processingsteps.html' %}
 
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
@@ -148,7 +98,6 @@
                         </div>
                     </div>
                 {% endfor %}
-                    
                 </div>
             </div>
         
@@ -179,7 +128,7 @@
                             <table id='datacube_layers'>
                                 <thead><tr>
                                     <td class='layer'>Data layer</td>
-                                    <td>Processing</td>
+                                    <td>Processing steps</td>
                                     <td></td>
                                 </tr></thead>
                                 <tbody>
@@ -207,7 +156,7 @@
                                 <tr>
                                     <td class='label'>Extent:</td>
                                     <td>
-                                        <span class='link'>upload geojson</span> | draw: <a onClick=drawStart("polygon")>
+                                        <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">shp</span> / draw: <a onClick=drawStart("polygon")>
                                         <img src="/static/cma/img/draw-polygon-icon.png" 
                                             height="17"
                                             id="draw_polygon_icon" /></a>

@@ -2,10 +2,19 @@
 // const WMS_URL = `http://${MAPSERVER_SERVER}.mtri.org/cgi-bin/mapserv?`;
 const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
 const MAPFILE = '/var/www/mapfiles/statmagic.map';
+const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
-var AJAX_GET_MINERAL_SITES;
+const DRAW_STYLE = {
+    color: 'orange',
+    weight: 4,
+    opacity: 1,
+    fillOpacity: 0.1,
+    strokeOpacity: 1,
+    pointerEvents: 'None'
+}
+var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE;
 
 
 // Stuff to do when the page loads
@@ -277,27 +286,19 @@ function getWMSLayer(
 
 function addDrawControl() {
     // Add draw control and functionality
-    var draw_style = {
-        color: 'orange',
-        weight: 4,
-        opacity: 1,
-        fillOpacity: 0.1,
-        strokeOpacity: 1,
-        pointerEvents: 'None'
-    }
     
     var drawControl = new L.Control.Draw({
         draw: {
             polyline: false,
             polygon: {
-                shapeOptions: draw_style
+                shapeOptions: DRAW_STYLE
             },
             circle: false,
 //             marker: {
 //                 icon: marker_icon
 //             },
             rectangle: {
-                shapeOptions: draw_style
+                shapeOptions: DRAW_STYLE
             },
             circlemarker: false,
             marker: false,
@@ -643,7 +644,6 @@ function editProcessingSteps(cmp) {
     // Load any existing processing steps
     $(cmp).find('tr').each(function(i,tr0) {
         var v = $(tr0).find('td').attr('data-value');
-//         console.log(tr0, v);
         onAddProcessingStep(v,PROCESSING_STEPS[v].name_pretty);
     });
    
@@ -689,21 +689,216 @@ function onAddProcessingStep(v,lab) {
 }
 
 function onSaveProcessingSteps() {
-    console.log('saving');
     $('#datacube_processingsteps').hide();
     
     var layername = $('#processingsteps_layername').html();
     
     // Get list of steps from table
-//     var steps = [];
     var step_html = '<table>';
     $('#processingsteps_listtable tr').each(function(i,tr) {
         var step = $(tr).attr('data-value');
         step_html += `<tr><td data-value='${step}'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
-//         steps.push(step);
     });
     step_html += '</table>';
     $(`tr[data-layername='${layername}'] span.processingsteps_list`).html(step_html);
 }
+
+
+function updateSHPlabel(shp,el_id) {
+    el_id = el_id || 'file_shp';
+    var c = $(`label[for=${el_id}]`).find('span');
+    c.removeClass('selected');
+    if (shp) {
+        c.html(shp);
+        c.addClass('selected');
+    } else {
+        c.html('CHOOSE FILES');
+    }
+}
+
+// detect a change in a file input with an id of “the-file-input”
+$("#file_shp").change(function() {
+    // will log a FileList object, view gifs below
+    console.log(this.files);
+
+    var shp, dbf;
+    var submitButton = $('.modal_uploadshp tr.footer_buttons').find('.button.submit');
+    var formData = new FormData($('#uploadForm')[0]);
+    
+    // Validate inputs
+    var files_by_ext = {};
+    $.each(this.files, function(i,file) {
+        formData.append('file',file);
+        var ext = file.name.split('.').pop();
+        files_by_ext[ext] = file;
+    });
+    
+    var exts = Object.keys(files_by_ext);
+    var missing_exts = [];
+    $.each(REQUIRED_SHP_EXTS, function(i,ext) {
+        var extspan = $('.modal_uploadshp').find(`span.${ext}`);
+        extspan.removeClass('allgood');
+        if (!exts.includes(ext)) {
+            missing_exts.push(ext);
+        } else {
+            extspan.addClass('allgood');
+        }
+    });
+    if (missing_exts.length == 0) {
+        submitButton.removeClass('disabled');
+        updateSHPlabel(files_by_ext.shp.name);
+            
+    } else {
+        submitButton.addClass('disabled');
+        updateSHPlabel();
+        
+        return;
+    }
+    
+});
+
+// // detect a change in a file input with an id of “the-file-input”
+// $("#file_geojson").change(function() {
+//     // will log a FileList object, view gifs below
+//     console.log(this.file);
+// 
+//     var submitButton = $('.modal_uploadgj tr.footer_buttons').find('.button.submit');
+//     var formData = new FormData($('#uploadForm_gj')[0]);
+//     
+//     submitButton.removeClass('disabled');
+//     updateSHPlabel(this.file.name,'file_geojson');
+// });
+
+
+function processGetAOIResponse(response,onEachFeature) {
+//     clearDrawnLayers();
+    
+    var ds = JSON.parse(JSON.stringify(DRAW_STYLE));
+    if (onEachFeature) {
+        ds.pointerEvents = 'all';
+    }
+    var DRAWNLAYER;
+    $.each(response.geojson, function(i,geojson) {
+        DRAWNLAYER = L.geoJson(geojson,{
+            style: ds,
+            onEachFeature: onEachFeature,
+        });
+        drawnItems.addLayer(DRAWNLAYER);
+        
+    });
+    
+    return DRAWNLAYER;
+    
+}
+
+$('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {
+
+    var shp, dbf;
+    var formData = new FormData($('#uploadForm')[0]);
+
+    $.each($('#file_shp')[0].files, function(i,file) {
+        formData.append('file',file);
+    });
+                                                
+    $('.modal_uploadshp').hide();
+    if (AJAX_UPLOAD_SHAPEFILE) {
+        AJAX_UPLOAD_SHAPEFILE.abort();
+    }
+//     AUDIO.submit.play();
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_shp_as_geojson', {
+        processData: false,
+        contentType: false,
+        data: formData,
+        type: 'POST',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            // Reset upload form
+            updateSHPlabel();
+            $('.modal_uploadshp').hide();
+
+            var e = $('#file_shp');
+            e.wrap('<form>').closest('form').get(0).reset();
+            e.unwrap();
+            
+            // Remove existing drawings before starting new one
+            if (drawnLayer && MAP.hasLayer(drawnLayer)) {
+                MAP.removeLayer(drawnLayer);
+            }
+            
+            // Process new drawn layer
+            drawnLayer = processGetAOIResponse(response);
+//             drawnItems.addLayer(drawnLayer); // <<< this already gets added in processGetAOIResponse
+            finishDraw(drawnLayer);
+            
+        },
+        error: function(response) {
+            console.log(response);
+//             AUDIO.error.play();
+            alert(response.responseText);
+//             $('.submission_opts').show();
+//             $('#burn_id_filter').show();
+//             $('.modal_uploadshp').show();
+//             $('.loading_user_submission').hide();
+            
+            updateSHPlabel();
+        },
+    });
+});
+
+//$('.modal_uploadgj tr.footer_buttons.load_aoi_gj').find('.button.submit').on('click',function() {
+$('#file_geojson').on('change', function() {
+    var formData = new FormData($('#uploadForm_gj')[0]);
+
+    $.each($('#file_geojson')[0].files, function(i,file) {
+        formData.append('file',file);
+    });
+                                    
+    console.log(formData);
+    $('.modal_uploadgj').hide();
+    if (AJAX_UPLOAD_SHAPEFILE) {
+        AJAX_UPLOAD_SHAPEFILE.abort();
+    }
+//     AUDIO.submit.play();
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_geojson_from_file', {
+        processData: false,
+        contentType: false,
+        data: formData,
+        type: 'POST',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            // Reset upload form
+            updateSHPlabel();
+            $('.modal_uploadgj').hide();
+
+            var e = $('#uploadForm_gj');
+            e.wrap('<form>').closest('form').get(0).reset();
+            e.unwrap();
+            
+            // Remove existing drawings before starting new one
+            if (drawnLayer && MAP.hasLayer(drawnLayer)) {
+                MAP.removeLayer(drawnLayer);
+            }
+            
+            // Process new drawn layer
+            drawnLayer = processGetAOIResponse(response);
+//             drawnItems.addLayer(drawnLayer); // <<< this already gets added in processGetAOIResponse
+            finishDraw(drawnLayer);
+            
+        },
+        error: function(response) {
+            console.log(response);
+//             AUDIO.error.play();
+            alert(response.responseText);
+//             $('.submission_opts').show();
+//             $('#burn_id_filter').show();
+//             $('.modal_uploadshp').show();
+//             $('.loading_user_submission').hide();
+            
+            updateSHPlabel();
+        },
+    });
+});
 
 onLoad();

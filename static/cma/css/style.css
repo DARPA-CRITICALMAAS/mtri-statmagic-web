@@ -655,7 +655,7 @@ tr.subcategory_label td.colname,
 }
 
 
-.content.datacube #datacube_layers thead td.layer {
+.content.datacube #datacube_layers thead td {
     text-align: left;
     padding-left: 4px;
     
@@ -1081,6 +1081,7 @@ a:visited {
 }
 .content.datacube #datacube_layers .processingsteps_list table {
     margin: 0px;
+    width: 100%;
 }
 .content.datacube #datacube_layers .processingsteps_list table tbody {
     border: none;
@@ -1104,3 +1105,126 @@ a:visited {
 .header_info.warning {
     color: #d65c5c;
 }
+
+
+.file {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+.file + label {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    background-color: #538cc6;
+    padding: 6px 26px;
+    border-radius: 3px;
+    display: inline-block;
+    cursor: pointer;
+    transition: 0.5s ease;
+    -o-transition: 0.5s ease;
+    -webkit-transition: 0.5s ease;
+}
+
+.file + label:hover {
+    background-color: #2273c3;
+}
+.file.xml + label {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: #888;
+    background-color: transparent;
+    padding: 2px 2px;
+    float: left;
+    border-radius: 1px;
+    display: inline-block;
+    cursor: pointer;
+    transition: 0.5s ease;
+    -o-transition: 0.5s ease;
+    -webkit-transition: 0.5s ease;
+}
+.file.xml + label:hover {
+    background-color: #111;
+    font-weight: bold;
+}
+.modal_uploadshp .modal {
+    height: auto;
+    
+}
+.modal_uploadshp td {
+    padding: 2px 8px;
+}
+.modal_uploadshp td.input {
+    text-align: right;
+}
+.modal_uploadshp tr {
+    background-color: transparent;
+    
+}
+.modal_uploadshp tr.instructions td {
+/*     padding-left: 40px; */
+    font-size: 13px;
+    color: #999;
+    text-align: right;
+}
+.modal_uploadshp td.main_label {
+    width: 100px;
+    color: #f2f2f2;
+}
+.modal_uploadshp .footer_buttons td {
+    padding-top: 10px;    
+}
+.footer_buttons {
+    text-align: center;
+}
+.footer_buttons td {
+    padding-right: 6px;
+    padding-bottom: 10px;
+}
+.footer_buttons .button {
+    color: #f2f2f2;
+    padding: 4px 12px;
+    margin: 0px 1px;
+    font-weight: bold;
+    font-size: 1.5rem;
+    display: inline;
+    border-radius: 4px;
+}
+.footer_buttons .button.submit {
+    background-color: #318131;
+}
+.footer_buttons .button.submit:hover {
+    background-color: #3fa63f;
+    color: #fff;
+}
+.footer_buttons .button.submit.disabled {
+    pointer-events: none;
+    opacity: 0.3;
+}
+.modal_uploadshp .footer_buttons td {
+    padding-top: 10px;    
+}
+form {
+    margin-block-end: 2px;
+}
+#uploadForm {
+    margin-top: 6px;
+}
+
+.modal_uploadshp span.highlight {
+    color: #ff8080;
+}
+span.highlight.allgood {
+    color: #66ff66;
+}
+.modal_uploadshp .highlight {
+    font-weight: 600;
+    
+}
+
+/*.content.datacube #datacube_layers tbody {
+    box-shadow: 10px -5px rgba(90,90,90,0.5 );
+}*/
