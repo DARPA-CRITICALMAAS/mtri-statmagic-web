@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_vite',
     'cma',
 ]
 
@@ -127,13 +128,21 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Vite configuration
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": DEBUG,
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 STATICFILES_DIRS = [
     BASE_DIR / "static",
+    BASE_DIR / "static" / "react" / "dist"
 ]
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "assets"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

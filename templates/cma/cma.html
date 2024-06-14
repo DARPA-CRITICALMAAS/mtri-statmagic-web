@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% load django_vite %}
 
 {% block extrastyle %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -13,6 +14,10 @@
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="https://www.unpkg.com/wicket@1.3.8/wicket.js"></script>
+
+{% vite_hmr_client %}
+{% vite_react_refresh %}
+{% vite_asset 'js/react_component.jsx' %}
 {% endblock %}
 
 {% block content %}
@@ -226,6 +231,7 @@
                     </div> <!--collapse sub (model_run)-->
                 </div> <!--content main-->
             </div> <!--collapse (Modeling)-->
+            <div id="react"></div>
         </div><!--control_panel-->
     </div><!--flex-child control_panel -->
     <div class='flex-child map'><div id='map'></div></div>
