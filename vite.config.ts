@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve, join } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve, join } from 'path';
 
 const PROJ_ROOT = "/usr/local/project/mtri-statmagic-web";
 const INPUT_DIR = `${PROJ_ROOT}/static/react`;
@@ -28,8 +28,7 @@ export default defineConfig({
     rollupOptions: {
       // The bundle's entry point(s)
       input: {
-        react: join(INPUT_DIR, '/js/react_component.jsx')
-        // react: join(OUTPUT_DIR, '/js/react_component.jsx')
+        react: join(INPUT_DIR, '/js/info_component.tsx')
       }
     }
   }
