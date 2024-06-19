@@ -28,9 +28,11 @@ if 'apps' in HOST:
     # Load production key from ENV
     SECRET_KEY = os.environ['SECRET_KEY'] 
     DEBUG = False
+    DJANGO_VITE_DEV = False
 else:
     SECRET_KEY = 'django-insecure-horfy%^!-p6s)tda@@=iyslwunl@!0+b@hxvh)fm*f0hxpxvu-'
     DEBUG = True
+    DJANGO_VITE_DEV = True
 
 
 
@@ -131,7 +133,7 @@ USE_TZ = True
 # Vite configuration
 DJANGO_VITE = {
     "default": {
-        "dev_mode": True,
+        "dev_mode": DJANGO_VITE_DEV,
     }
 }
 
