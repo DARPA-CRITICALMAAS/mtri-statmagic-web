@@ -1,6 +1,6 @@
 import Image from 'react-bootstrap/Image';
 
-function InfoModal() {
+function InfoButton() {
 
     function edit_modal() {
         // Select DOM elements from the existing 'datalayer_info' modal
@@ -15,7 +15,7 @@ function InfoModal() {
         dl_description.innerHTML = `
             <span class="label">Description</span>
             <br>
-            This is a description. and
+            This web application acts as an interface for running TA3 models for the CriticalMAAS program.
         `
 
         dl_url.innerHTML = ``
@@ -23,7 +23,9 @@ function InfoModal() {
         dl_source.innerHTML = `
             <span class="label">Usage</span>
             <br>
-            Here is how you use this web application...
+            Available data layers can be visualized and inspected.
+            <br>
+            Selected layers can be queued for processing.
             `
 
         datalayer_info.style.display = "block";
@@ -44,4 +46,4 @@ function InfoModal() {
 }
 
 // Export component so it can be imported elsewhere
-export default InfoModal;
+export default InfoButton;
