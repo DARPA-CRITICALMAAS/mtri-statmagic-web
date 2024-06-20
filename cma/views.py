@@ -17,12 +17,12 @@ def home(request):
     # Get CRS options
     crs_opts = {c.name: model_to_dict(c) for c in models.CRS.objects.all()}
     
-    # Get commodity list
-    cdr = cdr_utils.CDR()
-    commodities = sorted([
-        x['geokb_commodity']
-        for x in cdr.get_commodity_list() if x['geokb_commodity']
-    ])
+    ## Get commodity list
+    #cdr = cdr_utils.CDR()
+    #commodities = sorted([
+        #x['geokb_commodity']
+        #for x in cdr.get_commodity_list() if x['geokb_commodity']
+    #])
     
     # Get processing step options
     processing_steps = {
@@ -46,13 +46,12 @@ def home(request):
         datalayers_lookup[d.name] = data
 
         
-        
     
     
     # Put any data/info you want available on front-end in this dict
     context = {
-        'COMMODITIES': json.dumps(commodities),
-        'commodities': commodities,
+        #'COMMODITIES': json.dumps(commodities),
+        #'commodities': commodities,
         'DATALAYERS_LOOKUP': json.dumps(datalayers_lookup),
         'datalayers': datalayers,
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
@@ -62,6 +61,25 @@ def home(request):
     }
     
     return render(request, 'cma/cma.html', context)
+
+def get_metadata(request):
+    
+    # Get commodity list
+    cdr = cdr_utils.CDR()
+    commodities = sorted([
+        x['geokb_commodity']
+        for x in cdr.get_commodity_list() if x['geokb_commodity']
+    ])
+
+    response = HttpResponse(
+        json.dumps({
+            'commodities': commodities,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
 
 @csrf_exempt
 def get_shp_as_geojson(request):

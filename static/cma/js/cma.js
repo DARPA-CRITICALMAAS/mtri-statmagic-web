@@ -2,6 +2,7 @@
 // const WMS_URL = `http://${MAPSERVER_SERVER}.mtri.org/cgi-bin/mapserv?`;
 const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
 const MAPFILE = '/var/www/mapfiles/statmagic.map';
+var COMMODITIES;
 const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
 var drawnItems = new L.FeatureGroup();
@@ -69,6 +70,29 @@ function onLoad() {
     toggleHeader($('#datalayer_container .header.Geophysics'));
     
     toggleHeader($('.header.datacube'));
+    
+    // Get metadata
+    getMetadata();
+}
+
+function getMetadata() {
+    $.ajax(`/get_metadata`, {
+        data: {},
+        success: function(response) {
+            COMMODITIES = response.commodities;
+            
+            // Now load these to the dropdown
+            var opts = `<option disabled selected hidden>Select...</option>`;
+            $.each(COMMODITIES, function(i,c) {
+                opts += `<option value='${c}'>${c}</option>`;
+            });
+            $('#commodity').html(opts);
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+    
 }
 
 function getSelectedProcessingSteps() {
