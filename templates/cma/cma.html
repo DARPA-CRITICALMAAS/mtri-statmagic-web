@@ -106,7 +106,15 @@
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
-                    <div class='collapse sub'>
+                    <div class='model_select_div'>
+                        Select model: <select id='model_select' onChange="onModelSelect();">
+                            <option value="" disabled selected hidden>Select...</option>
+                            
+                        </select>
+                       
+                    </div>
+                    <div class='selected_model_description'></div>
+                    <div class='collapse sub collapse_datacube'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Data Cube <span class='header_info datacube warning'>[0 layers added]</span></div>
                         <div class='content datacube'>
                         
@@ -174,10 +182,10 @@
 <!--                             </div> <!--'collapse sub sub2'--> -->
                         </div> <!--content datacube-->
                     </div> <!--collapse sub-->
-                    <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Model</div>
+                    <div class='collapse sub collapse_parameters'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Parameters</div>
                         <div class='content model'>
-                            <div class='sublabel'>Optimizer</div>
+                            <!--<div class='sublabel'>Optimizer</div>
                             <table class='modeling_params'>
                                 <tr>
                                     <td class='label'>Param1:</td>
@@ -206,14 +214,14 @@
                                     <td class='label'>Patience:</td>
                                     <td><input type='number' id='model_patience' /></td>
                                 </tr>
-                            </table>
+                            </table>-->
                         </div> <!--content model-->
                     </div> <!--collapse sub (model)-->
-                    <div class='collapse sub'>
+                    <div class='collapse sub collapse_training'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
                         <div class='content training'></div> <!--content training-->
                     </div> <!--collapse sub (training)-->
-                    <div class='collapse sub'>
+                    <div class='collapse sub collapse_model_run'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Run</div>
                         <div class='content model_run'>
                             <table id='modeling_buttons_table'>
@@ -235,6 +243,7 @@
 
 <script type="text/javascript">
 //     const COMMODITIES = {{ COMMODITIES|safe }};
+    const MODELS = {{ MODELS|safe }};
     const DATALAYERS_LOOKUP = {{ DATALAYERS_LOOKUP|safe }};
     const MAPSERVER_SERVER = '{{ MAPSERVER_SERVER }}';
     const CRS_OPTIONS = {{ CRS_OPTIONS|safe }};

@@ -580,7 +580,8 @@ span.collapse {
     width: calc(100% - 24px);
     
 }
-.datalayer_table tr {
+.datalayer_table tr,
+.model_parameters_table tr {
     background-color: transparent;
     color: white;
     font-size: 0.8rem;
@@ -588,11 +589,13 @@ span.collapse {
     -o-transition: 0.3s ease;
     -webkit-transition: 0.3s ease;
 }
-.datalayer_table tbody tr:nth-child(odd) {
+.datalayer_table tbody tr:nth-child(odd),
+.model_parameters_table tbody tr:nth-child(odd) {
     background-color: rgb(78, 78, 78);
     
 }
-.datalayer_table td {
+.datalayer_table td,
+.model_parameters_table td {
     padding: 2px 4px;
 }
 .datalayer_table td.name,
@@ -626,12 +629,14 @@ span.collapse {
     direction: ltr;
     
 }
-.datalayer_table tbody tr.subcategory_label
+.datalayer_table tbody tr.subcategory_label,
+.model_parameters_table tbody tr.subcategory_label
 {
     background-color: transparent;
     
 }
-.datalayer_table tbody tr:hover {
+.datalayer_table tbody tr:hover,
+.model_parameters_table tbody tr:hover {
     background-color: #222;
     
 }
@@ -640,6 +645,7 @@ tr.subcategory_label td {
     color: #fdc086;
     font-size: 0.8125rem;
     border-bottom: 1px solid #555;
+    text-align: left;
 }
 tr.subcategory_label td.colname,
 .content.datacube #datacube_layers thead td {
@@ -673,6 +679,10 @@ select {
 }
 option {
     color: white;
+}
+select:invalid {
+    color: #666;
+    
 }
 #draw_rectangle_icon {
     background-color: #fff;
@@ -1222,7 +1232,69 @@ span.highlight.allgood {
 }
 .modal_uploadshp .highlight {
     font-weight: 600;
+}
+
+.model_select_div {
+    color: #999;
+    font-size: 1.0rem;
+    text-align: center;
+    margin: 0px auto;
+    vertical-align: middle;
+}
+.model_select_div select {
+    margin-left: 3px;
+    width: auto;
+    font-size: 1.1rem;
+    padding: 3px 6px;
+    height: 2.0rem;
+}
+.selected_model_description {
+    margin: 4px 10px 10px 10px;
+    color: #c1c18b;
     
+}
+
+
+.collapse_training,
+.collapse_model_run, 
+.collapse_parameters, 
+.collapse_datacube {
+    display: none;
+    
+}
+
+table.model_parameters_table {
+    margin: 0px auto;
+/*     width: 100%; */
+
+    
+}
+.model_parameters_table td {
+    text-align: right;
+    vertical-align: middle;
+/*     line-height: 0.8rem; */
+    padding: 1px 6px;
+}
+.model_parameters_table td.label {
+    text-align: left;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    color: #ccc;
+}
+
+.model_parameters_table input {
+    padding: 1px 6px;
+    width: auto;
+    background-color: #333;
+    color: #f2f2f2;
+    border: none;
+}
+.model_parameters_table input[type="number"] {
+    width: 40px;
+    
+}
+.model_parameters_table select {
+    width: auto;
 }
 
 /*.content.datacube #datacube_layers tbody {

@@ -62,6 +62,13 @@ function onLoad() {
 
     });
     
+    // Load models to dropdown
+    var opts = `<option disabled value='' selected hidden>Select...</option>`;
+    $.each(MODELS, function(i,m) {
+        opts += `<option value='${m.name}'>${m.name_pretty}</option>`;
+    });
+    $('#model_select').html(opts);
+    
     // Add mineral sites contrl
 //     createMineralSitesControl();
     
@@ -73,6 +80,145 @@ function onLoad() {
     
     // Get metadata
     getMetadata();
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function onModelSelect() {
+    var model = MODELS[$('#model_select').val()];
+    
+    // First hide everything
+    $('.collapse_datacube').hide();
+//     $('.collapse_parameters').hide();
+//     $('.collapse_training').hide();
+//     $('.collapse_model_run').hide();
+
+    // Then build everything back up
+    $('.selected_model_description').html(model.description);
+    
+    // Show data cube builder interface
+    if (model.uses_datacube) {
+        $('.collapse_datacube').show();
+    }
+    
+    // Build parameters table 
+    var showhide_groups = {};
+    ptable_html = '<table class="model_parameters_table">';
+    var group_current;
+    $.each(Object.keys(model.parameters).sort(), function(g,group_name) {
+        if (group_name != '_') {
+            ptable_html += `
+                <tr class='subcategory_label'>
+                    <td>${capitalizeFirstLetter(group_name)}</td>
+                    <td></td>
+                </tr>
+            `;
+        }
+        $.each(model.parameters[group_name], function(i,p) {
+            // Add group subcategory row if new
+//             if (group_current != p.group_name && ['null','',undefined,null].indexOf(p.group_name) == -1) {
+//                 ptable_html += `
+//                     <tr class='subcategory_label'>
+//                         <td>${capitalizeFirstLetter(p.group_name)}</td>
+//                         <td></td>
+//                     </tr>
+//                 `;
+//                 group_current = p.group_name;
+//                 
+//             }
+            
+            var pid = `${model.name}__${p.name}`;
+            if (p.only_show_with) {
+                var pshow = `${model.name}__${p.only_show_with}`;
+                if (!showhide_groups[pshow]) {
+                    showhide_groups[pshow] = [];
+                }
+                showhide_groups[pshow].push(pid);
+            }
+            var input_html;
+            if (p.input_type != 'select') {
+                var attrs = '';
+                var onChange = '';
+    //             var onChange = p.input_type == 'checkbox' ? ' onchange="onModelParameterCheckboxChange(this);"' : '';
+                
+                if (p.html_attributes) {
+                    $.each(p.html_attributes, function(attr,v) {
+                        attrs += ` ${attr}="${v}"`;
+                    });
+                }
+                input_html = `
+                    <input id="${pid}" type="${p.input_type}" ${attrs}${onChange} />
+                `
+            } else {
+                var opts = '';
+                if (p.options) {
+                    $.each(p.options, function(j,opt) {
+                        opts += `<option value="${opt}">${opt}</option>`;
+                    });
+                }
+                input_html = `
+                    <select id="${model.name}__${p.name}">
+                        ${opts}
+                    </select>
+                `;
+            }
+            
+            ptable_html += `
+                <tr id="${pid}_tr">
+                    <td class='label'>${p.name_pretty}:</td>
+                    <td>
+                        ${input_html}
+                    </td>
+                </tr>
+            `;
+            
+        }); // parameter loop
+    }); // group loop
+    ptable_html += '</table>';
+    $('.content.model').html(ptable_html);
+    
+    // Create listeners for show/hide checkboxes
+    $.each(showhide_groups, function(chk,ps) {
+        $(`#${chk}`).on('change', function(e) {
+//             console.log(e, $(e).is(':checked'));
+            var checked = $(e.target).is(':checked');
+            $.each(ps, function(i,p) {
+                $(`#${p}_tr`).toggle(checked);
+            });
+        });
+    });
+  
+    // Now trigger change to set initial display
+    
+    
+    // Build buttons
+    var button_html = '';
+    $.each(model.buttons.buttons, function(i,button) {
+        console.log(i,button);
+        button_html += `
+            <td>
+                <div class='button ${button.label}'>${button.label}</div>
+            </td>`;
+    });
+    $('#modeling_buttons_table tr').html(button_html);
+    
+    
+    // Show all sections
+    $('.collapse_parameters').show();
+    $('.collapse_training').show();
+    $('.collapse_model_run').show();
+    
+    
+  
+    
+    
+    
+}
+
+function onModelParameterCheckboxChange(cmp) {
+    console.log(cmp);
 }
 
 function getMetadata() {

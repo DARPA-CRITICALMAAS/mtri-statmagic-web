@@ -29,6 +29,30 @@ def home(request):
         c.name: model_to_dict(c) for c in models.ProcessingStep.objects.all()
     }
     
+    # Get models and model parameters
+    model_opts = {}
+    for mp in models.ModelParameter.objects.select_related('model').all():
+        modelname = mp.model.name
+
+        # Add model if not included yet
+        if modelname not in model_opts:
+            model_opts[modelname] = model_to_dict(mp.model)
+            
+            model_opts[modelname]['parameters'] = {}
+            
+        # Add group if not included yet
+        group = mp.group_name
+        if not group:
+            group = '_'
+        if group not in model_opts[modelname]['parameters']:
+            model_opts[modelname]['parameters'][group] = [];
+            
+        pdict = model_to_dict(mp)
+        if mp.only_show_with is not None:
+            pdict['only_show_with'] = mp.only_show_with.name
+        model_opts[modelname]['parameters'][group].append(pdict)
+
+    
     # Get data layers
     datalayers = {} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
@@ -52,6 +76,7 @@ def home(request):
     context = {
         #'COMMODITIES': json.dumps(commodities),
         #'commodities': commodities,
+        'MODELS': json.dumps(model_opts),
         'DATALAYERS_LOOKUP': json.dumps(datalayers_lookup),
         'datalayers': datalayers,
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
