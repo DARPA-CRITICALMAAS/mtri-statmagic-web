@@ -55,7 +55,7 @@ class CDR():
                 'knowledge/csv/mineral_site_grade_and_tonnage/copper'
 
         csv : bool
-            Indicates whether or not response is a CSV; if not assumed to be
+            Indicates whether or not response is a CSV; if not, assumed to be
             JSON
 
         Returns
@@ -240,9 +240,21 @@ class CDR():
             f'maps/list?size={size}&page={page}'
         )
 
+    ####################################
+    # Prospectivity
+    def get_prospectivity_input_layers(self):
+        return self.run_query(
+            f'prospectivity/input/layers'
+        )
 
-### Testing code...
-#cdr = CDR()
+
+# ### Testing code...
+# cdr = CDR()
+# res = cdr.get_prospectivity_input_layers()
+# for r in res:
+#     if r['data_source']['format'] == 'tif':
+#         print(r)
+#
 
 #print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))
 #print(cdr.get_cog_count()) # <- returns "0" for some reason

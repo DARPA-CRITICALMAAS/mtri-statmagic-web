@@ -1,37 +1,22 @@
-'''
-Backend utility code.
-'''
-
-import json, os, random, requests, string
-from datetime import datetime as dt
+import json, httpx
+import requests
 import numpy as np
-from django.conf import settings
+import pandas as pd
+from collections import Counter
+#import geopandas as gpd
+# from shapely import wkt
+# from shapely.wkt import loads
+# from shapely.errors import WKTReadingError
+#
+#
+# def safe_wkt_load(wkt_string):
+#     try:
+#         return loads(wkt_string)
+#     except WKTReadingError as e:
+#         print(f"Error converting WKT: {e}")
+#         return None
 
 
-
-def process_params(req,params,post=False):
-    r = req.GET if not post else req.POST
-    for param in params:
-        if param in r:#.has_key(param):
-            params[param] = r[param]
-            
-    return params
-
-def getUniqueID():
-    '''
-    UniqueID is time of creation + 6 random characters
-    '''
-    return '{}_{}'.format(
-        dt.now().strftime('%Y%m%d%H%M'),
-        ''.join(
-            random.SystemRandom().choice(
-                string.ascii_uppercase + string.digits
-                ) for _ in range(4)
-            )
-        )
-
-
-# SPARQL utils from Joe Paki
 def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=False):
     # add prefixes
     final_query = f'''
@@ -47,6 +32,15 @@ def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=Fal
         \n{query}
     '''
 
+    # client = httpx.Client(follow_redirects=True)
+    # client.get(
+    #     f'{endpoint}/{query}',
+    #     headers = {
+    #         "Content-Type": "application/x-www-form-urlencoded",
+    #         "Accept": "application/sparql-results+json"  # Requesting JSON format
+    #     },
+    # )
+
     # send query
     response = requests.post(
         url=endpoint,
@@ -57,9 +51,13 @@ def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=Fal
         },
         verify=False  # Set to False to bypass SSL verification as per the '-k' in curl
     )
+
+
+
     #print(response.text)
     try:
         qres = response.json()
+        print(qres)
         if "results" in qres and "bindings" in qres["results"]:
             df = pd.json_normalize(qres['results']['bindings'])
             if values:
@@ -71,19 +69,11 @@ def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=Fal
 
 
 def run_minmod_query(query, values=False):
-    return run_sparql_query(
-        query,
-        endpoint='https://minmod.isi.edu/sparql',
-        values=values
-    )
+    return run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=values)
 
 
 def run_geokb_query(query, values=False):
-    return run_sparql_query(
-        query,
-        endpoint='https://geokb.wikibase.cloud/query/sparql',
-        values=values
-    )
+    return run_sparql_query(query, endpoint='https://geokb.wikibase.cloud/query/sparql', values=values)
 
 
 def get_commodity_list():
@@ -95,8 +85,10 @@ def get_commodity_list():
             ?ci :name ?cn .
         } 
     '''
+    res = run_minmod_query(query, values=True)
+    print(res)
 
-    return sorted(run_minmod_query(query, values=True)["cn.value"].unique())
+    return sorted(res["cn.value"].unique())
 
 
 def get_default_commodity_list():
@@ -163,3 +155,6 @@ def get_mineral_sites(commodity: str):
     """.format(commodity)
     print("sparkutils:", query)
     return query
+
+
+get_commodity_list()

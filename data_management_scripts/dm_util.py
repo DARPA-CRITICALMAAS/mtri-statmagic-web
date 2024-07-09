@@ -5,6 +5,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "statmagic.settings"
 import django
 django.setup()
 from django.conf import settings
+from cma import models
 from cma.models import DataLayer
 
 DB = settings.DATABASES['default']
