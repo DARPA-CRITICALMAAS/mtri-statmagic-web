@@ -106,6 +106,53 @@
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
+                    <div class='cma_start_div'>
+                         <div id="btn_cma_initialize" class='button load_sites cma' onClick='showInitializeCMAform();'>Initialize CMA</div>
+                         <div id="btn_cma_load" class='button load_sites cma' onClick=''>Load CMA</div>
+                         <div id="cma_initialize_form">
+                            <div class='cma_navigate' onclick='showCMAstart();'>&#11178</div>
+                         <table id='cma_initialize_params' class='modeling_params'>
+                            <tr>
+                                <td class='label'>CMA name:</td>
+                                <td><input type='text' id='cma_name' /></td>
+                            </tr>
+                            <tr>
+                                <td class='label'>CMA mineral:</td>
+                                <td><input type='text' id='cma_mineral' /></td>
+                            </tr>
+                            <tr>
+                                <td class='label'>CRS:</td>
+                                <td><select id='cma_crs' onChange='onCRSselect();'>
+                                {% for crs_name, cobj in crs_options.items %}
+                                    <option value='{{crs_name}}'>{{crs_name}}</option>
+                                {% endfor %}
+                                </select></td>
+                            </tr>
+                            <tr>
+                                <td class='label'>Spatial res. (<span id='cma_crs_units'></span>):</td>
+                                <td><input type='number' id='cma_resolution' /></td>
+                            </tr>
+                            <tr>
+                                <td class='label'>Extent:</td>
+                                <td>
+                                    <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">shp</span> / draw: <a onClick=drawStart("polygon")>
+                                    <img src="/static/cma/img/draw-polygon-icon.png" 
+                                        height="17"
+                                        id="draw_polygon_icon" /></a>
+                                    <a onClick=drawStart("rectangle")>
+                                    <img src="/static/cma/img/draw-rectangle-icon.png"
+                                        height="17"
+                                        id="draw_rectangle_icon" ></a>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class='cma_button_container'>
+                         <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick=''>Initialize</div>
+                         <div id="btn_cma_initialize_cancel" class='button load_sites cmainit' onClick='showCMAstart();'>Cancel</div>
+                         </div>
+                        </div> <!--cma_initialize_form-->
+                        <div id='cma_validate_message' class='form_validation_message'></div>
+                    </div> <!--cma_start_div-->
                     <div class='model_select_div'>
                         Select model: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
@@ -148,35 +195,7 @@
                                 </tbody>
                             </table>
 
-                            <table id='datacube_params' class='modeling_params'>
-                                <tr>
-                                    <td class='label'>CRS:</td>
-                                    <td><select id='datacube_crs' onChange='onCRSselect();'>
-                                    {% for crs_name, cobj in crs_options.items %}
-                                        <option value='{{crs_name}}'>{{crs_name}}</option>
-                                    {% endfor %}
-                                    <!-- <option value='epsg:4326'>WGS84 (EPSG:4326)</option>
-                                        <option value='epsg:4326'>Conus Albers (EPSG:5070)</option>-->
-                                    </select></td>
-                                </tr>
-                                <tr>
-                                    <td class='label'>Spatial res. (<span id='datacube_crs_units'></span>):</td>
-                                    <td><input type='number' id='datacube_resolution' /></td>
-                                </tr>
-                                <tr>
-                                    <td class='label'>Extent:</td>
-                                    <td>
-                                        <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">shp</span> / draw: <a onClick=drawStart("polygon")>
-                                        <img src="/static/cma/img/draw-polygon-icon.png" 
-                                            height="17"
-                                            id="draw_polygon_icon" /></a>
-                                        <a onClick=drawStart("rectangle")>
-                                        <img src="/static/cma/img/draw-rectangle-icon.png"
-                                            height="17"
-                                            id="draw_rectangle_icon" ></a>
-                                    </td>
-                                </tr>
-                            </table>
+                            
                             <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
                    <!--         </div> <!--content datacube (build)-->-->
 <!--                             </div> <!--'collapse sub sub2'--> -->

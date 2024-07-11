@@ -76,6 +76,7 @@ function onLoad() {
     toggleHeader($('#datalayer_container .header.toptop'));
     toggleHeader($('#datalayer_container .header.Geophysics'));
     
+    toggleHeader($('.header.modeling'));
     toggleHeader($('.header.datacube'));
     
     // Get metadata
@@ -517,6 +518,9 @@ function finishDraw(layer) {
     
     // Enable/disable load sites button
     validateLoadSitesButton();
+    
+    // Validate CMA initialization form
+    validateCMAinitializeForm();
 }
 
 function loadMineralSites() {
@@ -833,10 +837,10 @@ function onRemoveDataCubeLayerClick(cmp) {
 }
 
 function onCRSselect() {
-    var crs_name = $('#datacube_crs').val();
+    var crs_name = $('#cma_crs').val();
     var crs = CRS_OPTIONS[crs_name];
-    $('#datacube_crs_units').html(crs.units);
-    $('#datacube_resolution').val(crs.default_resolution);
+    $('#cma_crs_units').html(crs.units);
+    $('#cma_resolution').val(crs.default_resolution);
 }
 
 function deleteTableRow(cmp) {
@@ -961,6 +965,57 @@ function processGetAOIResponse(response,onEachFeature) {
     
 }
 
+function showInitializeCMAform() {
+    $('.button.cma').hide();
+    
+    $('#cma_initialize_form').show();
+    
+    // Run validation
+    validateCMAinitializeForm();
+    
+}
+function showCMAstart() {
+    $('.button.cma').show();
+    
+    $('#cma_initialize_form').hide();
+    $('#cma_load_form').hide();
+}
+function validateCMAinitializeForm() {
+    var msg = '';
+    
+    // Name needs to be set and unique
+    if ($('#cma_name').val() == '') {
+        msg += "'CMA name' is not set<br>";
+    }
+    
+    // TODO: check for name uniqueness
+    
+    // Mineral needs to be set 
+    if ($('#cma_mineral').val() == '') {
+        msg += "'CMA mineral' is not set<br>";
+    }
+    
+    // Spatial res needs to be set 
+    if ($('#cma_resolution').val() == '') {
+        msg += "'Spatial res.' is not set'";
+    }
+    
+    // Extent needs to be set
+    if (!drawnLayer) {
+        msg += "'Extent' is not set'";
+    }
+    
+    // Now check if there's a message and disable/enable as needed
+    if (msg) {
+        $('#btn_cma_initialize_submit').addClass('disabled');
+    } else {
+        $('#btn_cma_initialize_submit').removeClass('disabled');
+    }
+    $('#cma_validate_message').html(msg);
+    
+    
+}
+
 $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {
 
     var shp, dbf;
@@ -1015,6 +1070,10 @@ $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('clic
         },
     });
 });
+
+$('#cma_initialize_params input').on('change', function() {
+    validateCMAinitializeForm();
+})
 
 //$('.modal_uploadgj tr.footer_buttons.load_aoi_gj').find('.button.submit').on('click',function() {
 $('#file_geojson').on('change', function() {

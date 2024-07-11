@@ -255,7 +255,7 @@ tr.m-basemap-year-divider td,
 tr.m-basemap-headeroo td { 
     text-align: left;
     font-size: 13px;
-    font-family: monospace, Arial;
+    font-family: monospace, ui-monospace, Arial;
     color: #c2c2c2;
     padding: 4px 4px 2px 4px;
     border-top: 1px dashed #444;
@@ -276,7 +276,7 @@ tr.m-basemap-selector td {
     font-size: 13px;
     text-align: left;
     vertical-align: top;
-    font-family: monospace, Arial;
+    font-family: monospace, ui-monospace, Arial;
 }
 tr.m-basemap-selector td.control_label {
     cursor: default;
@@ -310,7 +310,7 @@ tr.m-basemap-selector td.control_label.product {
     text-align: left;
     vertical-align: middle;
     font-size: 12px;
-    font-family: monospace;
+    font-family: monospace, ui-monospace;
     padding: 3px 0px 1px 14px;
 }
 tr.m-basemap-selector td.control_input {
@@ -434,7 +434,7 @@ tr.m-basemap-selector.divider {
 }
 .controlPanel table {
     padding: 4px;
-    font-family: monospace, Arial;
+    font-family: monospace, ui-monospace, Arial;
     margin: 0px auto;
     
 }
@@ -496,7 +496,7 @@ select {
     transition: 0.5s ease;
     -o-transition: 0.5s ease;
     -webkit-transition: 0.5s ease;
-    font-family: 'monospace';
+    font-family: monospace, ui-monospace;
     font-size: 1.3rem;
     color: #b3b3b3;
     border-bottom: 2px solid #444;
@@ -573,7 +573,7 @@ select {
 span.collapse {
     font-weight: 700;
     color: #f2f2f2;
-    font-family: monospace;
+    font-family: monospace, ui-monospace;
 }
 .datalayer_table {
     margin: 0px 12px;
@@ -702,7 +702,7 @@ select:invalid {
 .radiocube input + label {
     background-color: #666;
     color: #999;
-    font-family: monospace;
+    font-family: monospace, ui-monospace;
     cursor: pointer;
     transition: 0.3s ease;
     -o-transition: 0.3s ease;
@@ -848,10 +848,10 @@ table.modeling_params tr:hover {
 .modeling_params select {
     margin: 0px;
 }
-#datacube_crs {
+#cma_crs {
     width: auto;
 }
-#datacube_crs_units {
+#cma_crs_units {
     color: #9d9dfb;
 }
 .snapshot {
@@ -947,7 +947,7 @@ table.editprocessingsteps_table td {
     font-weight: 600;
     color: #ff4d4d;
     cursor: pointer;
-    font-family: monospace;
+    font-family: monospace, ui-monospace;
 }
 
 .close-top {
@@ -1019,7 +1019,7 @@ table.editprocessingsteps_table td {
 .legend.leaflet-control .layer_legend table {
     background-color: transparent;
     margin: 0px auto;
-    font-family: monospace;
+    font-family: monospace, ui-monospace;
     font-weight: normal;
 }
 
@@ -1235,6 +1235,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
+    display: none;
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1295,6 +1296,46 @@ table.model_parameters_table {
 }
 .model_parameters_table select {
     width: auto;
+}
+#cma_initialize_form {
+    display: none;
+    
+}
+.cma_navigate {
+    color: #999;
+    position: relative;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-size: 1.0rem;
+    cursor: pointer;
+    float: left;
+}
+.cma_navigate:hover {
+    color: #f2f2f2;
+}
+.cma_button_container {
+    text-align: center;
+    margin: 10px auto;
+    width: 70%;
+    
+}
+
+.button.cmainit {
+    margin: 0px 10px;
+    display: inline-block;
+    width: 25%;
+}
+#btn_cma_initialize_cancel {
+    background-color: #a97070;
+}
+#btn_cma_initialize_cancel:hover {
+    background-color: #cf1717;
+}
+.form_validation_message {
+    text-align: center;
+    margin: 4px auto;
+    color: #e06c6c;
+    font-size: 0.8rem;
 }
 
 /*.content.datacube #datacube_layers tbody {
