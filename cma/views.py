@@ -56,7 +56,9 @@ def home(request):
     # Get data layers
     datalayers = {} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
-    for d in models.DataLayer.objects.all().order_by('category','subcategory','name'):
+    for d in models.DataLayer.objects.filter(disabled=False).order_by(
+        'category','subcategory','name'
+        ):
         if d.category not in datalayers:
             datalayers[d.category] = {}
         if d.subcategory not in datalayers[d.category]:
@@ -69,8 +71,6 @@ def home(request):
         datalayers[d.category][d.subcategory].append(data)
         datalayers_lookup[d.name] = data
 
-        
-    
     
     # Put any data/info you want available on front-end in this dict
     context = {

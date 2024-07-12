@@ -1235,7 +1235,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
-    display: none;
+/*     display: none; */
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1315,7 +1315,7 @@ table.model_parameters_table {
 }
 .cma_button_container {
     text-align: center;
-    margin: 10px auto;
+    margin: 20px auto 4px auto;
     width: 70%;
     
 }
@@ -1338,6 +1338,97 @@ table.model_parameters_table {
     font-size: 0.8rem;
 }
 
+.leaflet-top .cma_header.leaflet-control {
+    margin-top: 0px;
+    margin-right: 0px;
+    min-width: 200px;
+    background-color: rgba(68,68,68,0.85);
+    text-align: center;
+    padding: 0px 0px 10px 0px;
+    border-radius: 0px 0px 0px 10px;
+}
+.cma_header table {
+    min-width: 180px;
+    margin: 2px auto;
+    
+}
+.cma_header tr {
+    background: transparent;
+    
+}
+.cma_header td {
+    text-align: center;
+    background-color: transparent;
+    color: white;
+    font-size: 0.8rem;
+    padding: 4px 2px 2px 2px;
+    border: none;
+    
+}
+
+.button.cma {
+    padding: 3px 5px;
+    color: #ffcc66;
+    background-color: transparent;
+    font-size: 0.8rem;
+    line-height: 0.85rem;
+    margin: 0px auto;
+}
+#cma_loaded {
+    color: #90d5c4;
+    font-weight: bold;
+    font-size: 1.0rem;
+}
+#cma_loaded.notactive {
+    color: #999;
+    font-weight: normal;
+    
+}
+
+.leaflet-top.leaflet-left {
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+#cma_initialize_params table {
+    width: 100%;
+}
+#cma_initialize_params td {
+    font-size: 0.75rem;
+    text-align: right;
+    color: #f2f2f2;
+}
+#cma_initialize_params td.label {
+    text-align: left;
+}
+.cma_initiate_title {
+    color: #999;
+    font-size: 1.0rem;
+    padding-top: 6px;
+    
+}
+
+#modeling_initial_message {
+    padding: 4px 20px;
+    color: #f2f2f2;
+    font-size: 1.0rem;
+    
+}
+.start_cma_link {
+    color: #ffcc66;
+    cursor: pointer;
+}
+.start_cma_link:hover {
+    color: #ffb366;
+}
+
+#processingsteps_listtable td.edit img {
+    cursor: pointer;
+    fill: white;
+    
+}
+/*#btn_cma_load {
+    color: #ffb366;
+}*/
 /*.content.datacube #datacube_layers tbody {
     box-shadow: 10px -5px rgba(90,90,90,0.5 );
 }*/

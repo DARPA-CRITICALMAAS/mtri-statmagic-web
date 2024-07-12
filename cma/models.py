@@ -41,6 +41,7 @@ class DataLayer(models.Model):
     stats_minimum = models.FloatField(null=True)
     stats_maximum = models.FloatField(null=True)
     color = models.CharField(max_length=20,null=True)
+    disabled = models.BooleanField(default=False)
     
     
 class CRS(models.Model):
@@ -74,16 +75,12 @@ class Model(models.Model):
     uses_datacube = models.BooleanField(default=True)
     buttons = models.JSONField(null=True,blank=True) # <- define model run buttons
     
-class ModelParameter(models.Model):
-    def __str__(self):
-        return f'{self.model}__{self.name}'
-    
+class ProcessParameter(models.Model):
     class Meta:
-        db_table = 'model_parameter'
+        abstract = True
         ordering = ['order']
-        unique_together = ('model','name')
         
-    model = models.ForeignKey(Model,on_delete=models.CASCADE)
+    
     name = models.CharField(max_length=100)
     name_pretty = models.CharField(max_length=100,null=True)
     description = models.CharField(max_length=2000,null=True,blank=True)
@@ -97,8 +94,28 @@ class ModelParameter(models.Model):
             ('select','select'),
         )
     )
-    html_attributes = models.JSONField(null=True,blank=True,help_text="Use this field to provide optional HTML element attributes to include with the input or select elemetnt") # <- (optional) add additional HTML element attributes here
+    html_attributes = models.JSONField(# <- (optional) add additional HTML element attributes here
+        null=True,
+        blank=True,
+        help_text="Use this field to provide optional HTML element attributes to include with the input or select elemetnt"
+    ) 
     options = ArrayField(models.CharField(max_length=20),null=True,blank=True)  # <- (optional) for 'select' input types, option values
     group_name = models.CharField(max_length=100, null=True,blank=True)
     only_show_with = models.ForeignKey('self',on_delete=models.CASCADE,null=True,blank=True)
     order = models.IntegerField()
+    
+    
+class ModelParameter(ProcessParameter):
+    class Meta:
+        db_table = 'model_parameter'
+        unique_together = ('model','name')
+        
+    model = models.ForeignKey(Model,on_delete=models.CASCADE)
+    
+    
+class ProcessingStepParameter(ProcessParameter):
+    class Meta:
+        db_table = 'processingstep_parameter'
+        unique_together = ('processingstep','name')
+        
+    processingstep = models.ForeignKey(ProcessingStep,on_delete=models.CASCADE)

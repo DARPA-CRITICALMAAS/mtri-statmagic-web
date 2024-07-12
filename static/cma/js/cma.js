@@ -27,6 +27,30 @@ function onLoad() {
     // Build map layer control
     createLayerControl();
     
+    // Add top CMA choose control
+    addCMAControl();
+    
+    // Load CRS options
+    var opts = ``;
+    $.each(CRS_OPTIONS, function(crs,cobj) {
+        var selected = crs == 'Conus Albers (EPSG:5070)' ? ' selected' : '';
+        opts += `<option value='${crs}'${selected}>${crs}</option>`;
+    });
+    $('#cma_crs').html(opts);
+    
+    // Add listeners for CMA initiate parameter validation
+    $('#cma_initialize_params input').on('change', function() {
+        validateCMAinitializeForm();
+    });
+    $('#cma_mineral').on('input', function(e) {
+        var mineral = $(e.target).val();
+        var date = getDateAsYYYYMMDD();
+        var desc = $('#cma_description').val();
+        if (desc == '' || desc == `${mineral.slice(0,mineral.length-1)}_${date}`) {
+            $('#cma_description').val(`${mineral}_${date}`);
+        }
+    });
+    
     // Add draw control to map 
     addDrawControl();
     
@@ -62,6 +86,10 @@ function onLoad() {
 
     });
     
+    // Set default CRS to CONUS Albers
+    $('#cma_crs').val("Conus Albers (EPSG:5070)");
+    onCRSselect();
+    
     // Load models to dropdown
     var opts = `<option disabled value='' selected hidden>Select...</option>`;
     $.each(MODELS, function(i,m) {
@@ -83,32 +111,95 @@ function onLoad() {
     getMetadata();
 }
 
+function addCMAControl() {
+    var Title = L.Control.extend({
+        options: {
+            position: 'topright'
+        },
+
+        onAdd: function () {
+            var c = L.DomUtil.create('div', 'cma_header');
+            
+            c.innerHTML = `
+                <div class='cma_start_div'>
+                    <table>
+                        <tr>
+                            <td>
+                                <div id="btn_cma_initialize" class='button load_sites cma' onClick='showInitializeCMAform();'>Initiate CMA</div>
+                            </td>
+                            <td>
+                                <div id="btn_cma_load" class='button load_sites cma' onClick='loadCMA();'>Load CMA</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan=2>CMA: <span id='cma_loaded' class='notactive'>[none active]</span></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div id="cma_initialize_form">
+                    <div class='cma_navigate' onclick='showCMAstart();'>&#11178</div>
+                    <div class='cma_initiate_title'>Initiate CMA</div>
+                    <table id='cma_initialize_params' class='modeling_params'>
+                        <tr>
+                            <td class='label'>CMA mineral:</td>
+                            <td><input type='text' id='cma_mineral' /></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>CMA description:</td>
+                            <td><input type='text' id='cma_description' /></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>CRS:</td>
+                            <td>
+                                <select id='cma_crs' onChange='onCRSselect();'>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Spatial res. (<span id='cma_crs_units'></span>):</td>
+                            <td><input type='number' id='cma_resolution' /></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Extent:</td>
+                            <td>
+                                <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">shp</span> / draw: <a onClick=drawStart("polygon")>
+                                <img src="/static/cma/img/draw-polygon-icon.png" 
+                                    height="17"
+                                    id="draw_polygon_icon" /></a>
+                                <a onClick=drawStart("rectangle")>
+                                <img src="/static/cma/img/draw-rectangle-icon.png"
+                                    height="17"
+                                    id="draw_rectangle_icon" ></a>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class='cma_button_container'>
+                        <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick='initiateCMA();'>Submit</div>
+                        <div id="btn_cma_initialize_cancel" class='button load_sites cmainit' onClick='showCMAstart();'>Cancel</div>
+                        </div>
+                        <div id='cma_validate_message' class='form_validation_message'></div>
+                </div> <!--cma_start_div-->
+            </div> <!--cma_initialize_form-->
+            `;
+
+            return c;
+        }
+    });
+    var c = new Title();
+    c.addTo(MAP);
+    
+}
+
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function onModelSelect() {
-    var model = MODELS[$('#model_select').val()];
-    
-    // First hide everything
-    $('.collapse_datacube').hide();
-//     $('.collapse_parameters').hide();
-//     $('.collapse_training').hide();
-//     $('.collapse_model_run').hide();
-
-    // Then build everything back up
-    $('.selected_model_description').html(model.description);
-    
-    // Show data cube builder interface
-    if (model.uses_datacube) {
-        $('.collapse_datacube').show();
-    }
-    
-    // Build parameters table 
+function buildParametersTable(obj, table_selector) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
     var group_current;
-    $.each(Object.keys(model.parameters).sort(), function(g,group_name) {
+    $.each(Object.keys(obj.parameters).sort(), function(g,group_name) {
         if (group_name != '_') {
             ptable_html += `
                 <tr class='subcategory_label'>
@@ -117,22 +208,10 @@ function onModelSelect() {
                 </tr>
             `;
         }
-        $.each(model.parameters[group_name], function(i,p) {
-            // Add group subcategory row if new
-//             if (group_current != p.group_name && ['null','',undefined,null].indexOf(p.group_name) == -1) {
-//                 ptable_html += `
-//                     <tr class='subcategory_label'>
-//                         <td>${capitalizeFirstLetter(p.group_name)}</td>
-//                         <td></td>
-//                     </tr>
-//                 `;
-//                 group_current = p.group_name;
-//                 
-//             }
-            
-            var pid = `${model.name}__${p.name}`;
+        $.each(obj.parameters[group_name], function(i,p) {
+            var pid = `${obj.name}__${p.name}`;
             if (p.only_show_with) {
-                var pshow = `${model.name}__${p.only_show_with}`;
+                var pshow = `${obj.name}__${p.only_show_with}`;
                 if (!showhide_groups[pshow]) {
                     showhide_groups[pshow] = [];
                 }
@@ -160,7 +239,7 @@ function onModelSelect() {
                     });
                 }
                 input_html = `
-                    <select id="${model.name}__${p.name}">
+                    <select id="${obj.name}__${p.name}">
                         ${opts}
                     </select>
                 `;
@@ -169,28 +248,49 @@ function onModelSelect() {
             ptable_html += `
                 <tr id="${pid}_tr">
                     <td class='label'>${p.name_pretty}:</td>
-                    <td>
-                        ${input_html}
-                    </td>
+                    <td>${input_html}</td>
                 </tr>
             `;
             
         }); // parameter loop
     }); // group loop
     ptable_html += '</table>';
-    $('.content.model').html(ptable_html);
+    
+    $(table_selector).html(ptable_html);
     
     // Create listeners for show/hide checkboxes
     $.each(showhide_groups, function(chk,ps) {
         $(`#${chk}`).on('change', function(e) {
-//             console.log(e, $(e).is(':checked'));
             var checked = $(e.target).is(':checked');
             $.each(ps, function(i,p) {
                 $(`#${p}_tr`).toggle(checked);
             });
         });
     });
-  
+}
+
+function onModelSelect() {
+    var model = MODELS[$('#model_select').val()];
+    
+    // First hide everything
+    $('.collapse_datacube').hide();
+//     $('.collapse_parameters').hide();
+//     $('.collapse_training').hide();
+//     $('.collapse_model_run').hide();
+
+    // Then build everything back up
+    $('.selected_model_description').html(model.description);
+    
+    // Show data cube builder interface
+    if (model.uses_datacube) {
+        $('.collapse_datacube').show();
+    }
+    
+    // Build parameters table 
+    buildParametersTable(model,'.content.model');
+    
+    
+
     // Now trigger change to set initial display
     
     
@@ -846,15 +946,40 @@ function onCRSselect() {
 function deleteTableRow(cmp) {
     $(cmp).closest('tr').remove();
 }
+function showProcessingStepParameters(el) {
+    console.log(el);
+    var pstep = $(el).closest('tr').attr('data-value');
+    var psobj = PROCESSING_STEPS[pstep];
+    $('.parameters_form_title').html(pstep.name_pretty);
+    
+    if (psobj.parameters) {
+        buildParametersTable(psobj,'.parameters_form_table');
+    }
+        
+    
+}
 
 function onAddProcessingStep(v,lab) {
     v = v || $('#processingsteps_addstep').val();
     lab = lab || PROCESSING_STEPS[v].name_pretty;
     
+    var edit = '<td></td>';
+    if (PROCESSING_STEPS[v].parameters) {
+        edit = `
+            <td class='edit' title='Edit step parameters'>
+                <img onclick='showProcessingStepParameters(this);' 
+                     height=14
+                     src="/static/cma/img/form.svg" />
+            </td>
+        `;
+        
+    }
+    
     $('#processingsteps_listtable tbody').append(`
         <tr data-value="${v}">
+            ${edit}
             <td>${lab}</td>
-            <td class='delete' onclick="deleteTableRow(this);">x</td>
+            <td title='Delete processing step' class='delete' onclick="deleteTableRow(this);">x</td>
         </tr>
     `);
     
@@ -966,7 +1091,7 @@ function processGetAOIResponse(response,onEachFeature) {
 }
 
 function showInitializeCMAform() {
-    $('.button.cma').hide();
+    $('.cma_start_div').hide();
     
     $('#cma_initialize_form').show();
     
@@ -975,7 +1100,7 @@ function showInitializeCMAform() {
     
 }
 function showCMAstart() {
-    $('.button.cma').show();
+    $('.cma_start_div').show();
     
     $('#cma_initialize_form').hide();
     $('#cma_load_form').hide();
@@ -984,8 +1109,8 @@ function validateCMAinitializeForm() {
     var msg = '';
     
     // Name needs to be set and unique
-    if ($('#cma_name').val() == '') {
-        msg += "'CMA name' is not set<br>";
+    if ($('#cma_description').val() == '') {
+        msg += "'CMA description' is not set<br>";
     }
     
     // TODO: check for name uniqueness
@@ -1015,6 +1140,37 @@ function validateCMAinitializeForm() {
     
     
 }
+
+function zeroPad(num, places) {
+    var zero = places - num.toString().length + 1;
+    return Array(+(zero > 0 && zero)).join("0") + num;
+}
+
+function getDateAsYYYYMMDD(dt) {
+    dt = dt || new Date();
+    return dt.getFullYear() + '-' + 
+           zeroPad(dt.getMonth()+1,2) + '-' + 
+           zeroPad(dt.getDate(),2);
+}
+
+function loadCMA() {
+    // TODO: load it
+    console.log('loading CMA eventually...');
+}
+
+function initiateCMA() {
+    console.log('initiating CMA eventually...');
+    
+    var cma_description = $('#cma_description').val();
+    
+    $('#cma_loaded').html(cma_description);
+    $('#cma_loaded').removeClass('notactive');
+    showCMAstart();
+    
+    $('#modeling_initial_message').hide();
+    $('.model_select_div').show();
+}
+
 
 $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {
 
@@ -1070,10 +1226,6 @@ $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('clic
         },
     });
 });
-
-$('#cma_initialize_params input').on('change', function() {
-    validateCMAinitializeForm();
-})
 
 //$('.modal_uploadgj tr.footer_buttons.load_aoi_gj').find('.button.submit').on('click',function() {
 $('#file_geojson').on('change', function() {
