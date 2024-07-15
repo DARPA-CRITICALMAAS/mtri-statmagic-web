@@ -189,6 +189,12 @@ function addCMAControl() {
     var c = new Title();
     c.addTo(MAP);
     
+    // Add listeners to stop click propagation to underlying map 
+    $('.cma_header input').on('dblclick', function(e) {
+        console.log('stopping propagation');
+        e.stopPropagation();
+    });
+    
 }
 
 function capitalizeFirstLetter(string) {
