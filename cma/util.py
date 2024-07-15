@@ -2,10 +2,12 @@
 Backend utility code.
 '''
 
-import json, os, random, requests, string
+import json, math, os, random, re, requests, string
 from datetime import datetime as dt
+from osgeo import ogr
 import numpy as np
 from django.conf import settings
+from django.http import Http404
 
 
 
@@ -163,3 +165,93 @@ def get_mineral_sites(commodity: str):
     """.format(commodity)
     print("sparkutils:", query)
     return query
+
+
+def validate_wkt_geom(wkt):
+    '''
+    Validates and returns a dict of parameter for the given WKT
+    
+    Example WKT input:
+    'POLYGON((-108.1+39.4,-107.9+39.4,-107.9+39.3,-108.1+39.3,-108.0929+39.4))'
+    
+    '''
+
+    wkt_string = wkt.replace('+', ' ')
+    
+    if re.compile(r'^POLYGON\(([\-\.\d\(\) \+,]*)\)$').match(wkt) == None:
+        raise Http404('WKT Polygon format is invalid: {0}'.format(wkt))
+    
+    #wkt_string = fix_wkt_coords(wkt_string)
+
+    return wkt_string
+
+
+def create_fishnet(
+        output_file,
+        xmin, xmax, ymin, ymax,
+        resolution,
+        clip_polygon,
+    ):
+    
+    xmin = float(xmin)
+    xmax = float(xmax)
+    ymin = float(ymin)
+    ymax = float(ymax)
+    resolution = float(resolution)
+
+    # get rows
+    rows = math.ceil((ymax - ymin) / resolution)
+
+    # get columns
+    cols = math.ceil((xmax - xmin) / resolution)
+
+    # create output file
+    outDriver = ogr.GetDriverByName('ESRI Shapefile')
+    if os.path.exists(output_file):
+        os.remove(output_file)
+    outDataSource = outDriver.CreateDataSource(output_file)
+    outLayer = outDataSource.CreateLayer(
+        output_file,
+        geom_type=ogr.wkbLineString
+    )
+    featureDefn = outLayer.GetLayerDefn()
+
+    # create grid cells
+    for i in range(cols+1):
+        line = ogr.Geometry(ogr.wkbLineString)
+        px = xmin + (i * resolution)
+        line.AddPoint(px, ymin)
+        line.AddPoint(px, ymax)
+
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(line)
+        outLayer.CreateFeature(outFeature)
+        outFeature = None
+
+    for j in range(rows+1):
+        line = ogr.Geometry(ogr.wkbLineString)
+        py = ymin + (j * resolution)
+        line.AddPoint(xmin, py)
+        line.AddPoint(xmax, py)
+
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(line)
+        outLayer.CreateFeature(outFeature)
+        outFeature = None
+
+    # Save and close DataSources
+    outDataSource = None
+
+    # Now clip
+    outDataSource = outDriver.CreateDataSource('test_fishnet_clipped.shp')
+    outLayerClip = outDataSource.CreateLayer(
+        'test_fishnet_clipped.shp',
+        geom_type=ogr.wkbLineString
+    )
+
+    #clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt
+    #spat_ref = osr.SpatialReference()
+    spat_ref = outLayer.GetSpatialRef()
+    ds_clip = outDriver.CreateDataSource( "/vsimem/blahblah.shp" )
+    clip_layer = ds_clip.CreateLayer('blahblah.shp',spat_ref,ogr.wkbPolygon)
+    ogr.Layer.Clip(outLayer,clip_layer,outLayerClip)

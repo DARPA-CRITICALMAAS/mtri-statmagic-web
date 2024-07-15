@@ -1,4 +1,4 @@
-Django==4.2.13
+Django==4.2.14
 httpx==0.27.0
 numpy==1.24.4
 pandas==2.0.3

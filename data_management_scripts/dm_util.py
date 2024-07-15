@@ -1,4 +1,5 @@
-import atexit, json, os, pg, re, sys
+import atexit, json, os, math, pg, re, sys
+from osgeo import ogr
 currpath = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(currpath))
 os.environ["DJANGO_SETTINGS_MODULE"] = "statmagic.settings"
@@ -24,3 +25,60 @@ def exit():
 
 def getDataLayers():
     return DataLayer.objects.all().order_by('category','subcategory','name')
+
+
+def create_fishnet(
+        output_file,
+        xmin, xmax, ymin, ymax,
+        resolution,
+    ):
+
+    # get rows
+    rows = math.ceil((ymax - ymin) / resolution)
+
+    # get columns
+    cols = math.ceil((xmax - xmin) / resolution)
+
+    # create output file
+    outDriver = ogr.GetDriverByName('ESRI Shapefile')
+    if os.path.exists(output_file):
+        os.remove(output_file)
+    outDataSource = outDriver.CreateDataSource(output_file)
+    outLayer = outDataSource.CreateLayer(
+        output_file,
+        geom_type=ogr.wkbLineString
+    )
+    featureDefn = outLayer.GetLayerDefn()
+
+    # create grid cells
+    for i in range(cols+1):
+        line = ogr.Geometry(ogr.wkbLineString)
+        px = xmin + (i * resolution)
+        line.AddPoint(px, ymin)
+        line.AddPoint(px, ymax)
+
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(line)
+        outLayer.CreateFeature(outFeature)
+        outFeature = None
+
+    for j in range(rows+1):
+        line = ogr.Geometry(ogr.wkbLineString)
+        py = ymin + (j * resolution)
+        line.AddPoint(xmin, py)
+        line.AddPoint(xmax, py)
+
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(line)
+        outLayer.CreateFeature(outFeature)
+        outFeature = None
+
+    # Save and close DataSources
+    outDataSource = None
+
+    # Now clip
+    outDataSource = outDriver.CreateDataSource('test_fishnet_clipped.shp')
+    outLayerClip = outDataSource.CreateLayer('test_fishnet_clipped.shp', geom_type=ogr.wkbLineString)
+
+    clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
+    ogr.Layer.Clip(outLayer,clip_polygon,outLayerClip)

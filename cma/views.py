@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from cdr import cdr_utils
 from . import util
 from . import models
-from osgeo import gdal
+from osgeo import gdal, ogr
 
 # Functions for handling requests
 
@@ -220,7 +220,6 @@ def get_mineral_sites(request):
     }
     params = util.process_params(request, params)
     
-    
     # TODO: construct and fire off query to the Knowledge graph, then filter
     #       the results by geometry (if provided)
     sites = None
@@ -235,4 +234,26 @@ def get_mineral_sites(request):
     response['Content-Type'] = 'application/json'
     
     return response
+    
+def get_fishnet(request):
+    params = {
+        'resolution': 1000,
+        'resolution_units': 'm',
+        'extent_wkt': '', # WKT polygon indicating AOI
+    }
+    params = util.process_params(request, params)
+    print(params['extent_wkt'])
+    extent_wkt = util.validate_wkt_geom(params['extent_wkt'])
+    
+    output_file = 'test_fishnet.shp'
+    
+    clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
+    (xmin,ymin,xmax,ymax) = clip_polygon.GetEnvelope()
+    
+    util.create_fishnet(
+        output_file,
+        xmin, xmax, ymin, ymax,
+        params['resolution'],
+        clip_polygon=clip_polygon
+    )
     

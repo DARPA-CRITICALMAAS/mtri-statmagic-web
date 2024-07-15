@@ -27,5 +27,6 @@ urlpatterns = [
     path('run_cma_model', cma_views.run_cma_model),
     path('get_shp_as_geojson', cma_views.get_shp_as_geojson),
     path('get_geojson_from_file', cma_views.get_geojson_from_file),
+    path('get_fishnet', cma_views.get_fishnet),
     path(r'', cma_views.home),
 ]

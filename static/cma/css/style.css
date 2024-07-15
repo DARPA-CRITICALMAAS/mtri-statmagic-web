@@ -1235,7 +1235,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
-/*     display: none; */
+    display: none;
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1424,7 +1424,6 @@ table.model_parameters_table {
 #processingsteps_listtable td.edit img {
     cursor: pointer;
     fill: white;
-    
 }
 /*#btn_cma_load {
     color: #ffb366;
