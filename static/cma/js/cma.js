@@ -7,11 +7,12 @@ const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
+var FISHNET_LAYER = new L.FeatureGroup();
 const DRAW_STYLE = {
     color: 'orange',
     weight: 4,
     opacity: 1,
-    fillOpacity: 0.1,
+    fillOpacity: 0.01,
     strokeOpacity: 1,
     pointerEvents: 'None'
 }
@@ -23,6 +24,9 @@ function onLoad() {
     
     // Creates map layers from the datalayers lookup
     createMapLayers();
+    
+    // Add fishnet layer
+    MAP.addLayer(FISHNET_LAYER);
     
     // Build map layer control
     createLayerControl();
@@ -39,9 +43,10 @@ function onLoad() {
     $('#cma_crs').html(opts);
     
     // Add listeners for CMA initiate parameter validation
-    $('#cma_initialize_params input').on('change', function() {
-        validateCMAinitializeForm();
+    $('#cma_initialize_params input').on('change', function(el) {
+        validateCMAinitializeForm(el);
     });
+
     $('#cma_mineral').on('input', function(e) {
         var mineral = $(e.target).val();
         var date = getDateAsYYYYMMDD();
@@ -189,11 +194,17 @@ function addCMAControl() {
     var c = new Title();
     c.addTo(MAP);
     
+    // This is a hack to prevent tiles getting messed up on Safari-like browsers when CMA form is opened.
+    MAP.setZoom(MAP.getZoom()+1);
+    MAP.setZoom(MAP.getZoom()-1)
+    
     // Add listeners to stop click propagation to underlying map 
     $('.cma_header input').on('dblclick', function(e) {
         console.log('stopping propagation');
         e.stopPropagation();
     });
+    // This is for Safari browsers that for whatever reason pass the click 
+    // through to the map instead of focusing on the input element
     $('.cma_header input').on('click', function(e) {
         $(e.target).focus();
     });
@@ -602,6 +613,9 @@ function addDrawControl() {
         if (drawnLayer && MAP.hasLayer(drawnLayer)) {
             MAP.removeLayer(drawnLayer);
         }
+        
+        // Clear fishnet
+        FISHNET_LAYER.clearLayers();
     });
     
     MAP.on(L.Draw.Event.CREATED, function(e) {
@@ -625,8 +639,13 @@ function finishDraw(layer) {
     // Zoom to drawn polygon
     MAP.fitBounds(layer.getBounds(),{padding: [80,80]});
     
+    // TODO: If this drawing is for mineral sites:
+    
     // Enable/disable load sites button
     validateLoadSitesButton();
+    
+    // TODO: If this drawing comes from CMA:
+    getFishnet();
     
     // Validate CMA initialization form
     validateCMAinitializeForm();
@@ -717,7 +736,7 @@ function createLegendControl() {
 
     var legendControl = L.Control.extend({
         options: {
-            position: 'topright'
+            position: 'topleft'
         },
         onAdd: function () {
             var c = L.DomUtil.create('div', 'legend');
@@ -1114,7 +1133,58 @@ function showCMAstart() {
     $('#cma_initialize_form').hide();
     $('#cma_load_form').hide();
 }
-function validateCMAinitializeForm() {
+
+function getFishnet() {
+    
+    // Check to ensure the CMA CRS, spatial resolution, and extent are provided
+    var res = $('#cma_resolution').val();
+    var crs = $('#cma_crs').val();
+    if (!res || !crs || !drawnLayer) {
+        return;
+    }
+    
+    $.ajax('get_fishnet', {
+        data: {
+            resolution: res,
+            srid: CRS_OPTIONS[crs].srid,
+            extent_wkt: getWKT()
+        },
+        type: 'GET',
+        success: function(response) {
+            console.log(this.url,response);
+
+            
+            FISHNET_LAYER.clearLayers();
+            var gj = L.geoJSON(response.geojson, {
+                style: {
+                    weight: 0.5,
+                    opacity: 0.9,
+                    color: 'orange',
+                },
+//                 onEachFeature: function(feature,layer) {}
+            });
+
+            
+            FISHNET_LAYER.addLayer(gj);
+            
+            
+        },
+        error: function(response) {
+            console.log(response);
+            alert(response.responseText);
+        },
+    });
+    
+    console.log('getting fishnet...');
+    
+}
+
+function validateCMAinitializeForm(el) {
+    console.log(el);
+    if (el && ['cma_resolution','cma_crs'].indexOf($(el.target).attr('id')) > -1) {
+        getFishnet();
+    }
+    
     var msg = '';
     
     // Name needs to be set and unique

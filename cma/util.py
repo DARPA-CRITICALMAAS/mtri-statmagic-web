@@ -2,12 +2,13 @@
 Backend utility code.
 '''
 
-import json, math, os, random, re, requests, string
+import json, math, os, pg, random, re, requests, string
 from datetime import datetime as dt
 from osgeo import ogr, osr
 import numpy as np
 from django.conf import settings
-from django.http import Http404
+from django.core.exceptions import BadRequest
+from django.db import connection
 
 
 
@@ -179,7 +180,7 @@ def validate_wkt_geom(wkt):
     wkt_string = wkt.replace('+', ' ')
     
     if re.compile(r'^POLYGON\(([\-\.\d\(\) \+,]*)\)$').match(wkt) == None:
-        raise Http404('WKT Polygon format is invalid: {0}'.format(wkt))
+        raise BadRequest('WKT Polygon format is invalid: {0}'.format(wkt))
     
     #wkt_string = fix_wkt_coords(wkt_string)
 
@@ -187,71 +188,74 @@ def validate_wkt_geom(wkt):
 
 
 def create_fishnet(
-        output_file,
-        xmin, xmax, ymin, ymax,
         resolution,
-        clip_polygon,
+        fishnet_srid,
+        clip_polygon_wkt,
     ):
+    '''
+        clip_polygon_wkt: already validated WKT string
+    '''
     
-    xmin = float(xmin)
-    xmax = float(xmax)
-    ymin = float(ymin)
-    ymax = float(ymax)
+    #clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
+    
+    (xmin, xmax, ymin, ymax) = runSQL(
+        f'''
+            SELECT ST_XMin(a.geom), ST_XMax(a.geom), ST_YMin(a.geom), ST_YMax(a.geom)
+            FROM (
+                SELECT(ST_Transform(
+                    ST_GeomFromText('{clip_polygon_wkt}',4326),
+                    {fishnet_srid}
+                )) as geom
+            ) a
+        ''')
+
     resolution = float(resolution)
 
-    # get rows
+    # get rows/columns
     rows = math.ceil((ymax - ymin) / resolution)
-
-    # get columns
     cols = math.ceil((xmax - xmin) / resolution)
 
-    # create output file
-    outDriver = ogr.GetDriverByName('ESRI Shapefile')
-    if os.path.exists(output_file):
-        os.remove(output_file)
-    outDataSource = outDriver.CreateDataSource(output_file)
-    outLayer = outDataSource.CreateLayer(
-        output_file,
-        geom_type=ogr.wkbLineString
-    )
-    featureDefn = outLayer.GetLayerDefn()
+    mls = 'MULTILINESTRING('
 
     # create grid lines
     for i in range(cols+1):
         line = ogr.Geometry(ogr.wkbLineString)
         px = xmin + (i * resolution)
-        line.AddPoint(px, ymin)
-        line.AddPoint(px, ymax+resolution)
-
-        outFeature = ogr.Feature(featureDefn)
-        outFeature.SetGeometry(line)
-        outLayer.CreateFeature(outFeature)
-        outFeature = None
+        mls += f'({px} {ymin}, {px} {ymax+resolution}),'
 
     for j in range(rows+1):
         line = ogr.Geometry(ogr.wkbLineString)
         py = ymin + (j * resolution)
-        line.AddPoint(xmin, py)
-        line.AddPoint(xmax+resolution, py)
+        mls += f'({xmin} {py}, {xmax+resolution} {py}),'
 
-        outFeature = ogr.Feature(featureDefn)
-        outFeature.SetGeometry(line)
-        outLayer.CreateFeature(outFeature)
-        outFeature = None
+    mls = mls.rstrip(',')
+    mls += ')'
 
-    # Save and close data source
-    outDataSource = None
+    print(mls)
+    print('fishnet made, now clipping...')
 
-    # Now clip
-    outDataSource = outDriver.CreateDataSource('test_fishnet_clipped.shp')
-    outLayerClip = outDataSource.CreateLayer(
-        'test_fishnet_clipped.shp',
-        geom_type=ogr.wkbLineString
-    )
+    sql = f'''
+        SELECT ST_AsGeoJSON(ST_Intersection(
+            ST_Transform(
+                ST_GeomFromText('{mls}',{fishnet_srid}),
+                4326
+            ),
+            ST_GeomFromText('{clip_polygon_wkt}',4326)
+        ))
+    '''
 
-    #clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt
+    return runSQL(sql)[0]
 
-    #spat_ref = outLayer.GetSpatialRef()
-    ds_clip = outDriver.CreateDataSource( "/vsimem/blahblah.shp" )
-    clip_layer = ds_clip.CreateLayer('blahblah.shp',srs,ogr.wkbPolygon)
-    ogr.Layer.Clip(outLayer,clip_layer,outLayerClip)
+    
+def runSQL(sql):
+    '''
+    Run raw SQL query, returning just the first row
+    '''
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+        res = cursor.fetchone()
+        
+    return res
+        
+    
+    

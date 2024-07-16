@@ -52,6 +52,7 @@ class CRS(models.Model):
     proj4text = models.CharField(max_length=2000)
     units = models.CharField(max_length=10)
     default_resolution = models.FloatField()
+    srid = models.IntegerField(null=True, unique=True)
     
 class ProcessingStep(models.Model):
     class Meta:

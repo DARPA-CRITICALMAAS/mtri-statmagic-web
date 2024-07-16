@@ -235,27 +235,38 @@ def get_mineral_sites(request):
     
     return response
     
+    
 def get_fishnet(request):
     params = {
         'resolution': 1000,
-        'resolution_units': 'm',
-        'extent_wkt': '', # WKT polygon indicating AOI
+        'srid': 5070,
+        'extent_wkt': '', # WKT polygon indicating AOI, in lat/lon
     }
     params = util.process_params(request, params)
-    print(params['extent_wkt'])
+    
+    # Scrub the SRID input to prevent SQL-injection attacks since it will 
+    # be used in raw SQL
+    try:
+        int(params['srid'])
+    except:
+        raise BadRequest("Parameter 'srid' must be an integer")
+    
     extent_wkt = util.validate_wkt_geom(params['extent_wkt'])
     
-    output_file = 'test_fishnet.shp'
-    
-    clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
-    (xmin,xmax,ymin,ymax) = clip_polygon.GetEnvelope()
-    
-    print(xmin,ymin,xmax,ymax)
-    
-    util.create_fishnet(
-        output_file,
-        xmin, xmax, ymin, ymax,
+    gj = json.loads(util.create_fishnet(
+        #xmin, xmax, ymin, ymax,
         params['resolution'],
-        clip_polygon=clip_polygon
-    )
+        params['srid'],
+        clip_polygon_wkt=extent_wkt
+    ))
     
+    print(gj)
+    
+    # Return response as JSON to client
+    response = HttpResponse(json.dumps({
+        'geojson': gj,
+        'params': params
+    }))
+    response['Content-Type'] = 'application/json'
+    
+    return response

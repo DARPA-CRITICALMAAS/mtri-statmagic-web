@@ -1342,10 +1342,10 @@ table.model_parameters_table {
     margin-top: 0px;
     margin-right: 0px;
     min-width: 200px;
-    background-color: rgba(68,68,68,0.85);
+    background-color: rgba(68,68,68,0.9);
     text-align: center;
     padding: 0px 0px 10px 0px;
-    border-radius: 0px 0px 0px 10px;
+    border-radius: 0px 0px 0px 6px;
 }
 
 /*safari only*/
@@ -1398,8 +1398,9 @@ _::-webkit-full-page-media, _:future, :root select {
 }
 
 .leaflet-top.leaflet-left {
-    left: 50%;
-    transform: translate(-50%, 0%);
+    margin-left: 20px;
+/*     left: 50%; */
+/*     transform: translate(-50%, 0%); */
 }
 #cma_initialize_params table {
     width: 100%;
@@ -1416,15 +1417,14 @@ _::-webkit-full-page-media, _:future, :root select {
     color: #999;
     font-size: 1.0rem;
     padding-top: 6px;
-    
 }
 
 #modeling_initial_message {
     padding: 4px 20px;
     color: #f2f2f2;
     font-size: 1.0rem;
-    
 }
+
 .start_cma_link {
     color: #ffcc66;
     cursor: pointer;
