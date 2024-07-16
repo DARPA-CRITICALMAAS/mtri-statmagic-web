@@ -1347,6 +1347,18 @@ table.model_parameters_table {
     padding: 0px 0px 10px 0px;
     border-radius: 0px 0px 0px 10px;
 }
+
+/*safari only*/
+_::-webkit-full-page-media, _:future, :root select {
+    -webkit-appearance: none; 
+    padding: 3px 8px;
+}
+
+.cma_header input::-webkit-outer-spin-button,
+.cma_header input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 .cma_header table {
     min-width: 180px;
     margin: 2px auto;

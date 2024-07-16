@@ -194,6 +194,9 @@ function addCMAControl() {
         console.log('stopping propagation');
         e.stopPropagation();
     });
+    $('.cma_header input').on('click', function(e) {
+        $(e.target).focus();
+    });
     
 }
 

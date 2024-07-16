@@ -4,7 +4,7 @@ Backend utility code.
 
 import json, math, os, random, re, requests, string
 from datetime import datetime as dt
-from osgeo import ogr
+from osgeo import ogr, osr
 import numpy as np
 from django.conf import settings
 from django.http import Http404
@@ -216,12 +216,12 @@ def create_fishnet(
     )
     featureDefn = outLayer.GetLayerDefn()
 
-    # create grid cells
+    # create grid lines
     for i in range(cols+1):
         line = ogr.Geometry(ogr.wkbLineString)
         px = xmin + (i * resolution)
         line.AddPoint(px, ymin)
-        line.AddPoint(px, ymax)
+        line.AddPoint(px, ymax+resolution)
 
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(line)
@@ -232,14 +232,14 @@ def create_fishnet(
         line = ogr.Geometry(ogr.wkbLineString)
         py = ymin + (j * resolution)
         line.AddPoint(xmin, py)
-        line.AddPoint(xmax, py)
+        line.AddPoint(xmax+resolution, py)
 
         outFeature = ogr.Feature(featureDefn)
         outFeature.SetGeometry(line)
         outLayer.CreateFeature(outFeature)
         outFeature = None
 
-    # Save and close DataSources
+    # Save and close data source
     outDataSource = None
 
     # Now clip
@@ -250,8 +250,8 @@ def create_fishnet(
     )
 
     #clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt
-    #spat_ref = osr.SpatialReference()
-    spat_ref = outLayer.GetSpatialRef()
+
+    #spat_ref = outLayer.GetSpatialRef()
     ds_clip = outDriver.CreateDataSource( "/vsimem/blahblah.shp" )
-    clip_layer = ds_clip.CreateLayer('blahblah.shp',spat_ref,ogr.wkbPolygon)
+    clip_layer = ds_clip.CreateLayer('blahblah.shp',srs,ogr.wkbPolygon)
     ogr.Layer.Clip(outLayer,clip_layer,outLayerClip)

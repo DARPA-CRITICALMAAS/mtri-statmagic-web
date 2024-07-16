@@ -248,7 +248,9 @@ def get_fishnet(request):
     output_file = 'test_fishnet.shp'
     
     clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
-    (xmin,ymin,xmax,ymax) = clip_polygon.GetEnvelope()
+    (xmin,xmax,ymin,ymax) = clip_polygon.GetEnvelope()
+    
+    print(xmin,ymin,xmax,ymax)
     
     util.create_fishnet(
         output_file,
