@@ -9,7 +9,7 @@ class DataLayer(models.Model):
         
     name = models.CharField(max_length=200, unique=True)
     name_alt = models.CharField(max_length=300)
-    description = models.CharField(max_length=2000, )
+    description = models.CharField(max_length=2000)
     source = models.CharField(max_length=400)
     #external_link = models.CharField(max_length=1000, unique=True)
     path = models.CharField(max_length=1000, unique=True)
@@ -55,6 +55,8 @@ class CRS(models.Model):
     srid = models.IntegerField(null=True, unique=True)
     
 class ProcessingStep(models.Model):
+    def __str__(self):
+        return self.name
     class Meta:
         db_table = 'processingstep'
         
@@ -81,7 +83,6 @@ class ProcessParameter(models.Model):
         abstract = True
         ordering = ['order']
         
-    
     name = models.CharField(max_length=100)
     name_pretty = models.CharField(max_length=100,null=True)
     description = models.CharField(max_length=2000,null=True,blank=True)
@@ -107,6 +108,9 @@ class ProcessParameter(models.Model):
     
     
 class ModelParameter(ProcessParameter):
+    def __str__(self):
+        return f'{self.model}__{self.name}'
+    
     class Meta:
         db_table = 'model_parameter'
         unique_together = ('model','name')
@@ -115,6 +119,9 @@ class ModelParameter(ProcessParameter):
     
     
 class ProcessingStepParameter(ProcessParameter):
+    def __str__(self):
+        return f'{self.processingstep}__{self.name}'
+    
     class Meta:
         db_table = 'processingstep_parameter'
         unique_together = ('processingstep','name')

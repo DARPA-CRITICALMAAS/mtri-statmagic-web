@@ -78,7 +78,7 @@
                                     <td>{{subcategory}}</td>
                                     <td class='colname'>Info</td>
                                     <td class='colname'>Show</td>
-                                    <td class='colname'>Add to cube</td>
+                                    <td class='colname radiocube'>Add to cube</td>
                                 </tr>
                                 {% for layer in layers %}
                                     <tr data-path="{{layer.name}}">
@@ -116,6 +116,7 @@
                        
                     </div>
                     <div class='selected_model_description'></div>
+              <!--      <div class='button selected_model_config'>Config</div>-->
                     <div class='collapse sub collapse_datacube'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Data Cube <span class='header_info datacube warning'>[0 layers added]</span></div>
                         <div class='content datacube'>
@@ -130,13 +131,13 @@
                             <div class='modeling_instructions'>
                             Load an existing <span class='goto' onclick='$("#datacube_id").trigger("focus");'>data cube ID</span>, or use the <b>DATA LAYERS</b> selector to add layers to build a new data cube
                             </div>
-                            <table class='modeling_params'>
+          <!--                  <table class='modeling_params'>
                                 <tr>
                                     <td class='label'>Data cube ID:</td>
                                     <td><input type='text' id='datacube_id' /></td>
                                 </tr>
                         
-                            </table>
+                            </table>-->
                             <table id='datacube_layers'>
                                 <thead><tr>
                                     <td class='layer'>Data layer</td>
@@ -151,16 +152,16 @@
                             </table>
 
                             
-                            <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div>
+<!--                             <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div> -->
                    <!--         </div> <!--content datacube (build)-->-->
 <!--                             </div> <!--'collapse sub sub2'--> -->
                         </div> <!--content datacube-->
                     </div> <!--collapse sub-->
-                    <div class='collapse sub collapse_parameters'>
+    <!--                <div class='collapse sub collapse_parameters'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Parameters</div>
-                        <div class='content model'>
-                        </div> <!--content model-->
-                    </div> <!--collapse sub (model)-->
+                        <div class='content model'>-->
+                        <!--</div>--> <!--content model-->
+                   <!-- </div>--> <!--collapse sub (model)-->
                     <div class='collapse sub collapse_training'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
                         <div class='content training'></div> <!--content training-->
@@ -183,7 +184,6 @@
         </div><!--control_panel-->
     </div><!--flex-child control_panel -->
     <div class='flex-child map'>
-<!--        <div id='cma_header'>Test</div>-->
         <div id='map'></div>
     </div>
 </div> <!--flex-container main-->

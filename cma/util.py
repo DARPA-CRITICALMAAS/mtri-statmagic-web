@@ -193,10 +193,11 @@ def create_fishnet(
         clip_polygon_wkt,
     ):
     '''
+        resolution: float (spatial resolution in units of the provided SRID)
+        fishnet_srid: int (SRID id as indicated in the CRS model)
         clip_polygon_wkt: already validated WKT string
     '''
     
-    #clip_polygon = ogr.CreateGeometryFromWkt(extent_wkt)
     
     (xmin, xmax, ymin, ymax) = runSQL(
         f'''
@@ -214,6 +215,9 @@ def create_fishnet(
     # get rows/columns
     rows = math.ceil((ymax - ymin) / resolution)
     cols = math.ceil((xmax - xmin) / resolution)
+    print(rows + cols)
+    if rows + cols > 500:
+        return {'message': 'Resolution too high to produce a grid preview'}
 
     mls = 'MULTILINESTRING('
 
@@ -230,10 +234,7 @@ def create_fishnet(
 
     mls = mls.rstrip(',')
     mls += ')'
-
-    print(mls)
-    print('fishnet made, now clipping...')
-
+    
     sql = f'''
         SELECT ST_AsGeoJSON(ST_Intersection(
             ST_Transform(

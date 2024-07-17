@@ -7,6 +7,7 @@ const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
+var DATACUBE_CONFIG = [];
 var FISHNET_LAYER = new L.FeatureGroup();
 const DRAW_STYLE = {
     color: 'orange',
@@ -16,7 +17,7 @@ const DRAW_STYLE = {
     strokeOpacity: 1,
     pointerEvents: 'None'
 }
-var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE;
+var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
 
 // Stuff to do when the page loads
@@ -30,6 +31,9 @@ function onLoad() {
     
     // Build map layer control
     createLayerControl();
+    
+    // Add loading spinner control
+    addLoadingSpinnerControl();
     
     // Add top CMA choose control
     addCMAControl();
@@ -180,10 +184,12 @@ function addCMAControl() {
                         </tr>
                     </table>
                     <div class='cma_button_container'>
-                        <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick='initiateCMA();'>Submit</div>
+                        
                         <div id="btn_cma_initialize_cancel" class='button load_sites cmainit' onClick='showCMAstart();'>Cancel</div>
-                        </div>
-                        <div id='cma_validate_message' class='form_validation_message'></div>
+                        <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick='initiateCMA();'>Submit</div>
+                    </div>
+                    <div id='cma_validate_message' class='form_validation_message'></div>
+                    <div id='cma_fishnet_message' class='form_validation_message'></div>
                 </div> <!--cma_start_div-->
             </div> <!--cma_initialize_form-->
             `;
@@ -211,11 +217,29 @@ function addCMAControl() {
     
 }
 
+function addLoadingSpinnerControl() {
+    var Title = L.Control.extend({
+        options: {
+            position: 'bottomright'
+        },
+
+        onAdd: function () {
+            var c = L.DomUtil.create('div', 'loading_fishnet');
+            
+            c.innerHTML = `...loading grid preview <div class='loading_spinner'></div>`;
+
+            return c;
+        }
+    });
+    var c = new Title();
+    c.addTo(MAP);
+}
+
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function buildParametersTable(obj, table_selector) {
+function buildParametersTable(obj, table_selector,dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
     var group_current;
@@ -245,6 +269,12 @@ function buildParametersTable(obj, table_selector) {
                 
                 if (p.html_attributes) {
                     $.each(p.html_attributes, function(attr,v) {
+                        
+                        // If default has been modified, use that value
+                        if (attr == 'value' && dobj && dobj[p.name]) {
+                            v = dobj[p.name];
+                        }
+    
                         attrs += ` ${attr}="${v}"`;
                     });
                 }
@@ -255,7 +285,13 @@ function buildParametersTable(obj, table_selector) {
                 var opts = '';
                 if (p.options) {
                     $.each(p.options, function(j,opt) {
-                        opts += `<option value="${opt}">${opt}</option>`;
+                        var selected = '';
+                        
+                        // If default has been modified, use that value
+                        if (dobj && opt == dobj[p.name]) {
+                            selected = ' selected';
+                        }
+                        opts += `<option value="${opt}"${selected}>${opt}</option>`;
                     });
                 }
                 input_html = `
@@ -266,7 +302,7 @@ function buildParametersTable(obj, table_selector) {
             }
             
             ptable_html += `
-                <tr id="${pid}_tr">
+                <tr id="${pid}_tr" title="${p.description}">
                     <td class='label'>${p.name_pretty}:</td>
                     <td>${input_html}</td>
                 </tr>
@@ -305,6 +341,9 @@ function onModelSelect() {
     if (model.uses_datacube) {
         $('.collapse_datacube').show();
     }
+    
+    // Show selection buttons in Data Layers
+    $('.radiocube').show();
     
     // Build parameters table 
     buildParametersTable(model,'.content.model');
@@ -768,6 +807,11 @@ function getWKT() {
     
     // Convert the drawn layer to WKT so that it can be sent as a URL parameter
     var gj = drawnLayer.toGeoJSON();
+    
+    // A loaded-from-file GeoJSON layer may be a FeatureCollection, in which 
+    // case we need to unwrap to find the first feature
+    var gj = gj.geometry ? gj : gj.features[0];
+    
     var new_coords = gj.geometry.coordinates[0].map(function(val) {
         return val.map(x => Number(x.toFixed(6)));
     });
@@ -885,16 +929,22 @@ function onRadioCubeClick(cmp) {
     $(`input[name='${for_radio}'][value='${valnew}']`).prop('checked',true);
     
     // Add/remove layer from the datacube layer list
+    
+    // Remove layer from cube
     if (valnew == 'no') {
+        // TODO: if/when multiple instances of single data layer are allowed, 
+        // this will need to be updated b/c data-layername might not be unique
+        var dcid = $(`#datacube_layers tr[data-layername='${layername}']`).attr('data-datacubeindex');
+        DATACUBE_CONFIG.splice(dcid,1);
         $(`#datacube_layers tr[data-layername='${layername}']`).remove();
         
         // If there are no rows left, show instructions again
         if ($('#datacube_layers tbody tr').length == 1) {
-//             console.log('showing instur');
             $('#datacube_layers tr.instructions').show();
         }
-    } else {
+    } else { // Add layer to cube
         var datalayer = DATALAYERS_LOOKUP[layername];
+        DATACUBE_CONFIG.push({layername: layername, processingsteps: []});
         
         // Hide instructions 
         $('#datacube_layers tr.instructions').hide();
@@ -902,7 +952,7 @@ function onRadioCubeClick(cmp) {
         // Add row 
         var icon_height = 13;
         $('#datacube_layers tr.cube_layer:last').after(`
-            <tr class='cube_layer' data-layername='${layername}'>
+            <tr class='cube_layer' data-layername='${layername}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
                 <td class='name'>${datalayer.name_pretty}</td>
                 <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
                 <td class='remove'>
@@ -939,6 +989,12 @@ function editProcessingSteps(cmp) {
         tr.attr('data-layername')
     );
     
+    // Update datacube layer index 
+    $('#processingsteps_layername').attr(
+        'data-datacubeindex',
+        tr.attr('data-datacubeindex')
+    );
+    
     // Empty current table
     $('#processingsteps_listtable tbody').html('');
     populateAddProcessingStep();
@@ -969,27 +1025,63 @@ function onCRSselect() {
     var crs = CRS_OPTIONS[crs_name];
     $('#cma_crs_units').html(crs.units);
     $('#cma_resolution').val(crs.default_resolution);
+    getFishnet();
 }
 
 function deleteTableRow(cmp) {
     $(cmp).closest('tr').remove();
 }
+
 function showProcessingStepParameters(el) {
-    console.log(el);
-    var pstep = $(el).closest('tr').attr('data-value');
+//     console.log(el);
+    var tr = $(el).closest('tr')
+    var pstep = tr.attr('data-value');
+    var psid = tr.attr('data-index');
     var psobj = PROCESSING_STEPS[pstep];
-    $('.parameters_form_title').html(pstep.name_pretty);
+
+    
+    // Update form title
+    $('.parameters_form_title').html(psobj.name_pretty);
+    $('.parameters_form_title').attr('data-parent_type','processingstep');
+    $('.parameters_form_title').attr('data-parent_id',pstep);
+    
+    var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
+
+//     console.log(getParametersFromHTMLattrs(tr[0]));
     
     if (psobj.parameters) {
-        buildParametersTable(psobj,'.parameters_form_table');
+        buildParametersTable(
+            psobj,
+            '.parameters_form_table',
+            getParametersFromHTMLattrs(tr[0])
+        );
     }
-        
+    
+    // Now show the modal interface
+    $('.overlay.parameters_form').show();
     
 }
 
 function onAddProcessingStep(v,lab) {
     v = v || $('#processingsteps_addstep').val();
     lab = lab || PROCESSING_STEPS[v].name_pretty;
+    
+    // TODO: load any params!
+    
+    // Looks in DATACUBE_CONFIG to see if there are any
+    var layername = $('#processingsteps_layername').html();
+    var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
+    
+    // Index of the processing step
+    var psid = $('#processingsteps_listtable tr').length;
+    
+    var params = '';
+    if (DATACUBE_CONFIG[dcid].processingsteps[psid]) {
+        $.each(DATACUBE_CONFIG[dcid].processingsteps[psid].parameters, function(p,v) {
+                params += ` data-param__${p}="${v}"`;
+            }
+        );
+    }
     
     var edit = '<td></td>';
     if (PROCESSING_STEPS[v].parameters) {
@@ -1004,7 +1096,7 @@ function onAddProcessingStep(v,lab) {
     }
     
     $('#processingsteps_listtable tbody').append(`
-        <tr data-value="${v}">
+        <tr data-value="${v}" data-index="${psid}" ${params}>
             ${edit}
             <td>${lab}</td>
             <td title='Delete processing step' class='delete' onclick="deleteTableRow(this);">x</td>
@@ -1015,15 +1107,36 @@ function onAddProcessingStep(v,lab) {
     populateAddProcessingStep();
 }
 
+function getParametersFromHTMLattrs(el) {
+    // el: raw html element (not jquery)
+    // return json of key/value pairings
+    params = {};
+    $.each(el.attributes, function(i,attr) {
+        if (attr.name.indexOf('param__') > -1) {
+            params[attr.name.split('__')[1]] = attr.value;
+        }
+    });
+    return params;
+}
+
 function onSaveProcessingSteps() {
     $('#datacube_processingsteps').hide();
     
     var layername = $('#processingsteps_layername').html();
+    var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
+    
+    // Reset everything
+    DATACUBE_CONFIG[dcid].processingsteps = [];
     
     // Get list of steps from table
     var step_html = '<table>';
     $('#processingsteps_listtable tr').each(function(i,tr) {
         var step = $(tr).attr('data-value');
+        
+        // Get parameters
+        params = getParametersFromHTMLattrs(tr);
+        
+        DATACUBE_CONFIG[dcid].processingsteps.push({name: step, parameters: params});
         step_html += `<tr><td data-value='${step}'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
     });
     step_html += '</table>';
@@ -1143,7 +1256,13 @@ function getFishnet() {
         return;
     }
     
-    $.ajax('get_fishnet', {
+    if (AJAX_GET_FISHNET) {
+        AJAX_GET_FISHNET.abort();
+    }
+    $('#cma_fishnet_message').hide()
+    $('.loading_fishnet').show();
+    FISHNET_LAYER.clearLayers();
+    AJAX_GET_FISHNET = $.ajax('get_fishnet', {
         data: {
             resolution: res,
             srid: CRS_OPTIONS[crs].srid,
@@ -1152,9 +1271,12 @@ function getFishnet() {
         type: 'GET',
         success: function(response) {
             console.log(this.url,response);
-
-            
-            FISHNET_LAYER.clearLayers();
+            $('.loading_fishnet').hide();
+            if (response.message) {
+                $('#cma_fishnet_message').html(response.message);
+                $('#cma_fishnet_message').show();
+                return;
+            }
             var gj = L.geoJSON(response.geojson, {
                 style: {
                     weight: 0.5,
@@ -1163,19 +1285,17 @@ function getFishnet() {
                 },
 //                 onEachFeature: function(feature,layer) {}
             });
-
             
             FISHNET_LAYER.addLayer(gj);
             
-            
+
         },
         error: function(response) {
             console.log(response);
             alert(response.responseText);
+            $('.loading_fishnet').hide()
         },
     });
-    
-    console.log('getting fishnet...');
     
 }
 
@@ -1216,8 +1336,6 @@ function validateCMAinitializeForm(el) {
         $('#btn_cma_initialize_submit').removeClass('disabled');
     }
     $('#cma_validate_message').html(msg);
-    
-    
 }
 
 function zeroPad(num, places) {
@@ -1235,6 +1353,39 @@ function getDateAsYYYYMMDD(dt) {
 function loadCMA() {
     // TODO: load it
     console.log('loading CMA eventually...');
+}
+
+function saveParametersForm() {
+    
+    var parent_type = $('.parameters_form_title').attr('data-parent_type');
+    var parent_id = $('.parameters_form_title').attr('data-parent_id');
+    var parent_id = $('.parameters_form_title').attr('data-parent_id');
+    
+    if (parent_type == 'processingstep') {
+        // TODO: get layer
+        var layer = $('#processingsteps_layername').html();
+        console.log(parent_id);
+        $.each(PROCESSING_STEPS[parent_id].parameters, function(i,group) {
+            $.each(group, function(j,p) {
+                var pname = `#${parent_id}__${p.name}`;
+                var v = $(pname).val();
+                $(`#processingsteps_listtable tr[data-value='${parent_id}']`).attr(
+                    `data-param__${p.name}`,
+                    $(pname).val()
+                );
+            });
+        });
+    }
+    
+    if (parent_type == 'model') {
+        // TODO
+
+        
+    }
+    
+    $('.parameters_form').hide();
+    
+    
 }
 
 function initiateCMA() {

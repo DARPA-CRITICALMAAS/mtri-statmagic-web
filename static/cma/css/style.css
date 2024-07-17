@@ -669,6 +669,14 @@ tr.subcategory_label td.colname,
 
 .datalayer_table input {
     cursor: pointer;
+
+}
+.datalayer_table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0px 0px;
+    background-color: #999;
+    
 }
 
 select {
@@ -694,6 +702,7 @@ select:invalid {
 
 .radiocube {
     text-align: center;
+    display: none;
     
 }
 .radiocube input[type='radio'] {
@@ -912,13 +921,19 @@ div.img_hover:hover div:first-child {
 a {
     cursor: pointer;
 }
-#datacube_processingsteps .modal {
+#datacube_processingsteps .modal,
+.overlay.parameters_form .modal {
     width: auto;
     height: auto;
     transform: translate(-50%, -50%);
     position: absolute;
     top: 50%;
     left: 50%;
+}
+.overlay.parameters_form .modal {
+    padding: 10px 32px;
+    overflow-y: auto;
+    
 }
 
 table.editprocessingsteps_table {
@@ -1235,7 +1250,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
-    display: none;
+/*     display: none; */
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1266,7 +1281,7 @@ span.highlight.allgood {
 
 table.model_parameters_table {
     margin: 0px auto;
-/*     width: 100%; */
+    width: 100%;
 
     
 }
@@ -1325,10 +1340,10 @@ table.model_parameters_table {
     display: inline-block;
     width: 25%;
 }
-#btn_cma_initialize_cancel {
+.button.cancel {
     background-color: #a97070;
 }
-#btn_cma_initialize_cancel:hover {
+.button.cancel:hover {
     background-color: #cf1717;
 }
 .form_validation_message {
@@ -1352,6 +1367,10 @@ table.model_parameters_table {
 _::-webkit-full-page-media, _:future, :root select {
     -webkit-appearance: none; 
     padding: 3px 8px;
+}
+_::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
+    accent-color: white;
+    
 }
 
 .cma_header input::-webkit-outer-spin-button,
@@ -1436,6 +1455,65 @@ _::-webkit-full-page-media, _:future, :root select {
 #processingsteps_listtable td.edit img {
     cursor: pointer;
     fill: white;
+}
+
+.loading_spinner {
+/*     display: none; */
+    width: 10px;
+    height: 10px;
+    margin: 0px 4px;
+    float: right;
+    border: 3px solid #555;
+    border-top: 3px solid #b3b3b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+.loading_fishnet {
+    color: #666;
+    display: none;
+}
+#cma_fishnet_message {
+    color: #d5d590;
+}
+
+.parameters_form_table {
+    text-align: center;
+    
+}
+.parameters_form_title {
+    margin: 0px 0px 12px 0px;
+    font-size: 1.0rem;
+    color: #f2f2f2;
+}
+.parameters_form .close-top {
+    top: -4px;
+    
+}
+
+.parameters_form .button {
+    min-width: auto;
+    width: 30%;
+    margin: 0px 4px;
+    float: right;
+}
+
+.parameters_form .button.cancel {
+    float: left;
+    
+}
+.overlay.parameters_form {
+/*     display: block; */
+}
+.button_container {
+    margin-top: 20px;
+    min-width: 200px;
+    text-align: center;
+    width: 100%;
+    vertical-align: middle;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 /*#btn_cma_load {
     color: #ffb366;

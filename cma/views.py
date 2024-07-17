@@ -14,6 +14,20 @@ from osgeo import gdal, ogr
 # Default home page
 def home(request):
     
+    def load_parameters(outdict, dobj):
+        # Add group if not included yet
+        group = dobj.group_name
+        if not group:
+            group = '_'
+        if group not in outdict:
+            outdict[group] = [];
+            
+        pdict = model_to_dict(dobj)
+        if dobj.only_show_with is not None:
+            pdict['only_show_with'] = dobj.only_show_with.name
+        outdict[group].append(pdict)
+
+    
     # Get CRS options
     crs_opts = {c.name: model_to_dict(c) for c in models.CRS.objects.all()}
     
@@ -30,6 +44,16 @@ def home(request):
     }
     
     # Get models and model parameters
+    for pp in models.ProcessingStepParameter.objects.select_related('processingstep').all():
+        psname = pp.processingstep.name
+
+        # Add model if not included yet
+        if 'parameters' not in processing_steps[psname]:
+            processing_steps[psname]['parameters'] = {}
+            
+        load_parameters(processing_steps[psname]['parameters'],pp)
+    
+    # Get models and model parameters
     model_opts = {}
     for mp in models.ModelParameter.objects.select_related('model').all():
         modelname = mp.model.name
@@ -37,20 +61,9 @@ def home(request):
         # Add model if not included yet
         if modelname not in model_opts:
             model_opts[modelname] = model_to_dict(mp.model)
-            
             model_opts[modelname]['parameters'] = {}
-            
-        # Add group if not included yet
-        group = mp.group_name
-        if not group:
-            group = '_'
-        if group not in model_opts[modelname]['parameters']:
-            model_opts[modelname]['parameters'][group] = [];
-            
-        pdict = model_to_dict(mp)
-        if mp.only_show_with is not None:
-            pdict['only_show_with'] = mp.only_show_with.name
-        model_opts[modelname]['parameters'][group].append(pdict)
+        
+        load_parameters(model_opts[modelname]['parameters'],mp)
 
     
     # Get data layers
@@ -251,22 +264,23 @@ def get_fishnet(request):
     except:
         raise BadRequest("Parameter 'srid' must be an integer")
     
+    # Also scrub the WKT to ensure it is valid
     extent_wkt = util.validate_wkt_geom(params['extent_wkt'])
     
-    gj = json.loads(util.create_fishnet(
-        #xmin, xmax, ymin, ymax,
+    gj = util.create_fishnet(
         params['resolution'],
         params['srid'],
         clip_polygon_wkt=extent_wkt
-    ))
+    )
     
-    print(gj)
-    
+    data = {'param': params}
+    if 'message' in gj:
+        data['message'] = gj['message']
+    else:
+        data['geojson'] = json.loads(gj)
+        
     # Return response as JSON to client
-    response = HttpResponse(json.dumps({
-        'geojson': gj,
-        'params': params
-    }))
+    response = HttpResponse(json.dumps(data))
     response['Content-Type'] = 'application/json'
     
     return response

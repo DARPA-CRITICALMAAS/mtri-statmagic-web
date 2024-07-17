@@ -249,11 +249,11 @@ class CDR():
 
 #
 # ### Testing code...
-# cdr = CDR()
-# res = cdr.get_prospectivity_input_layers()
-# for r in res:
-#     if r['data_source']['format'] == 'tif':
-#         print(r)
+cdr = CDR()
+res = cdr.get_prospectivity_input_layers()
+for r in res:
+    if r['data_source']['format'] == 'tif':
+        print(r)
 
 
 #print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))
