@@ -334,8 +334,14 @@ function onModelSelect() {
 //     $('.collapse_training').hide();
 //     $('.collapse_model_run').hide();
 
+    
+    
+    
     // Then build everything back up
     $('.selected_model_description').html(model.description);
+    
+    // Show CONFIG button
+    $('.button.selected_model_config').show();
     
     // Show data cube builder interface
     if (model.uses_datacube) {
@@ -1054,6 +1060,33 @@ function showProcessingStepParameters(el) {
             psobj,
             '.parameters_form_table',
             getParametersFromHTMLattrs(tr[0])
+        );
+    }
+    
+    // Now show the modal interface
+    $('.overlay.parameters_form').show();
+    
+}
+
+function showModelParameters(el) {
+
+    var tr = $(el).closest('tr')
+    var pstep = tr.attr('data-value');
+    var psid = tr.attr('data-index');
+    var psobj = PROCESSING_STEPS[pstep];
+    
+    var model = MODELS[$('#model_select').val()];
+
+    // Update form title
+    $('.parameters_form_title').html(model.name_pretty);
+    $('.parameters_form_title').attr('data-parent_type','model');
+    $('.parameters_form_title').attr('data-parent_id',model.name);
+      
+    if (model.parameters) {
+        buildParametersTable(
+            model,
+            '.parameters_form_table',
+            null // <- input previously edit config data here
         );
     }
     

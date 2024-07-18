@@ -1,16 +1,16 @@
 {% load static %}
 <div class="overlay parameters_form">
     <div class="modal">
-
         <div class="close-top" onclick="$('.parameters_form').hide()">
             <img class="close-top-img" height=32 
                 src="{% static 'cma/' %}img/close-dark.png" 
                 onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
                 onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
         </div>
-        <div class='parameters_form_title'></div>
-        <div class='parameters_form_table'>
+        <div class='parameters_form_header'>
+            <span class='parameters_form_title'></span> parameters
         </div>
+        <div class='parameters_form_table'></div>
         <div class='button_container'>
             <div class='button load_sites cmainit cancel' onClick="$('.parameters_form').hide();">Cancel</div>
             <div id="btn_parameters_form_save" class='button load_sites cmainit' onClick='saveParametersForm();'>Save</div>

@@ -252,7 +252,7 @@ class CDR():
 cdr = CDR()
 res = cdr.get_prospectivity_input_layers()
 for r in res:
-    if r['data_source']['format'] == 'tif':
+    if 'LAB' in r['data_source']['description']:# == 'tif':
         print(r)
 
 

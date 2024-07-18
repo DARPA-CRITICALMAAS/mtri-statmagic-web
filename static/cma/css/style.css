@@ -592,7 +592,12 @@ span.collapse {
 .datalayer_table tbody tr:nth-child(odd),
 .model_parameters_table tbody tr:nth-child(odd) {
     background-color: rgb(78, 78, 78);
-    
+}
+.model_parameters_table tbody tr:nth-child(odd) {
+    background-color: rgb(57, 57, 57);
+}
+.model_parameters_table tbody tr:nth-child(even) {
+    background-color: rgb(64, 64, 64);
 }
 .datalayer_table td,
 .model_parameters_table td {
@@ -1250,7 +1255,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
-/*     display: none; */
+    display: none;
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1296,14 +1301,16 @@ table.model_parameters_table {
     font-size: 0.75rem;
     padding: 2px 6px;
     color: #ccc;
+
 }
 
 .model_parameters_table input {
     padding: 1px 6px;
     width: auto;
     background-color: #333;
-    color: #f2f2f2;
+    color: #ccffcc;
     border: none;
+    margin-bottom: 0px;
 }
 .model_parameters_table input[type="number"] {
     width: 40px;
@@ -1311,6 +1318,8 @@ table.model_parameters_table {
 }
 .model_parameters_table select {
     width: auto;
+    color: #ccffcc;
+    margin-bottom: 0px;
 }
 #cma_initialize_form {
     display: none;
@@ -1511,6 +1520,21 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     width: 100%;
     vertical-align: middle;
 }
+.button.selected_model_config {
+    width: 120px;
+    font-size: 1.2rem;
+    background-color: green;
+    
+}
+.parameters_form_header {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.button.selected_model_config {
+    display: none;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
