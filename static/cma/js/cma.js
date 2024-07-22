@@ -185,7 +185,7 @@ function addCMAControl() {
                     </table>
                     <div class='cma_button_container'>
                         
-                        <div id="btn_cma_initialize_cancel" class='button load_sites cmainit' onClick='showCMAstart();'>Cancel</div>
+                        <div id="btn_cma_initialize_cancel" class='button load_sites cmainit cancel' onClick='showCMAstart();'>Cancel</div>
                         <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick='initiateCMA();'>Submit</div>
                     </div>
                     <div id='cma_validate_message' class='form_validation_message'></div>

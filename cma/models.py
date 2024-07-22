@@ -77,7 +77,8 @@ class Model(models.Model):
     description = models.CharField(max_length=1000,null=True)
     uses_datacube = models.BooleanField(default=True)
     buttons = models.JSONField(null=True,blank=True) # <- define model run buttons
-    
+
+
 class ProcessParameter(models.Model):
     class Meta:
         abstract = True
@@ -105,6 +106,7 @@ class ProcessParameter(models.Model):
     group_name = models.CharField(max_length=100, null=True,blank=True)
     only_show_with = models.ForeignKey('self',on_delete=models.CASCADE,null=True,blank=True)
     order = models.IntegerField()
+    optional = models.BooleanField(default=False)
     
     
 class ModelParameter(ProcessParameter):

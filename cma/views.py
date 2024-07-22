@@ -55,7 +55,7 @@ def home(request):
     
     # Get models and model parameters
     model_opts = {}
-    for mp in models.ModelParameter.objects.select_related('model').all():
+    for mp in models.ModelParameter.objects.select_related('model').all().order_by('group_name','order'):
         modelname = mp.model.name
 
         # Add model if not included yet

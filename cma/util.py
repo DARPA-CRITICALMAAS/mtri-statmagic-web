@@ -2,7 +2,7 @@
 Backend utility code.
 '''
 
-import json, math, os, pg, random, re, requests, string
+import json, math, os, random, re, requests, string
 from datetime import datetime as dt
 from osgeo import ogr, osr
 import numpy as np

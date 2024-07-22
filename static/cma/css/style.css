@@ -1255,7 +1255,7 @@ span.highlight.allgood {
 }
 
 .model_select_div {
-    display: none;
+/*     display: none; */
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1524,6 +1524,9 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     width: 120px;
     font-size: 1.2rem;
     background-color: green;
+}
+.button.selected_model_config:hover {
+    
     
 }
 .parameters_form_header {

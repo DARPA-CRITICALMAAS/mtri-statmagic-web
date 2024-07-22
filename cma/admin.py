@@ -6,7 +6,7 @@ class ModelAdmin(admin.ModelAdmin):
     list_display = ('name','name_pretty','description')
     
 class ModelParameterAdmin(admin.ModelAdmin):
-    list_display = ('__str__','group_name','name_pretty','order')
+    list_display = ('__str__','group_name','name_pretty','order','optional')
 
 class ProcessingStepAdmin(admin.ModelAdmin):
     list_display = ('name','name_pretty','description')
