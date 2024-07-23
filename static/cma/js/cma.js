@@ -172,7 +172,7 @@ function addCMAControl() {
                         <tr>
                             <td class='label'>Extent:</td>
                             <td>
-                                <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">shp</span> / draw: <a onClick=drawStart("polygon")>
+                                <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
                                 <img src="/static/cma/img/draw-polygon-icon.png" 
                                     height="17"
                                     id="draw_polygon_icon" /></a>
@@ -1207,19 +1207,31 @@ $("#file_shp").change(function() {
     });
     
     var exts = Object.keys(files_by_ext);
+    
     var missing_exts = [];
+    var name_ext = 'gpkg';
+    
+    if (exts.indexOf('shp') > -1) {
+        name_ext = 'shp';
+    }
     $.each(REQUIRED_SHP_EXTS, function(i,ext) {
         var extspan = $('.modal_uploadshp').find(`span.${ext}`);
         extspan.removeClass('allgood');
-        if (!exts.includes(ext)) {
-            missing_exts.push(ext);
+        extspan.removeClass('notRelevant');
+        if (name_ext != 'shp') {
+            extspan.addClass('notRelevant');
         } else {
-            extspan.addClass('allgood');
+            if (!exts.includes(ext)) {
+                missing_exts.push(ext);
+            } else {
+                extspan.addClass('allgood');
+            }
         }
     });
+
     if (missing_exts.length == 0) {
         submitButton.removeClass('disabled');
-        updateSHPlabel(files_by_ext.shp.name);
+        updateSHPlabel(files_by_ext[name_ext].name);
             
     } else {
         submitButton.addClass('disabled');
@@ -1227,7 +1239,6 @@ $("#file_shp").change(function() {
         
         return;
     }
-    
 });
 
 // // detect a change in a file input with an id of “the-file-input”
@@ -1449,7 +1460,7 @@ $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('clic
         AJAX_UPLOAD_SHAPEFILE.abort();
     }
 //     AUDIO.submit.play();
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_shp_as_geojson', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_vectorfile_as_geojson', {
         processData: false,
         contentType: false,
         data: formData,

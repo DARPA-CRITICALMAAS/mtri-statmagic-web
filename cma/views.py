@@ -100,6 +100,7 @@ def home(request):
     
     return render(request, 'cma/cma.html', context)
 
+
 def get_metadata(request):
     
     # Get commodity list
@@ -120,9 +121,9 @@ def get_metadata(request):
 
 
 @csrf_exempt
-def get_shp_as_geojson(request):
+def get_vectorfile_as_geojson(request):
     '''
-    Handles a POST request w/ shapefile files. Returns the vector geometry in
+    Handles a POST request w/ shapefile OR gpkg files. Returns the vector geometry in
     geojson format.
     '''
     params = {}
@@ -139,28 +140,16 @@ def get_shp_as_geojson(request):
         files.append(tf)
         if ext == '.shp':
             shp = tf
+        if ext == '.gpkg':
+            shp = tf
         if ext == '.prj':
             prj = tf
         with open(tf, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
                 
-    # Now use ogr to convert to geojson
-    tmpgj = os.path.join('/tmp',f'{sid}.gj')
-    gdal.VectorTranslate(tmpgj,shp,format='GeoJSON')
-    
-    with open(tmpgj,'r') as f:
-        gj = json.loads(f.read())
-    
-    response = HttpResponse(
-        json.dumps({
-            'geojson': [gj],
-            'params': params,
-        })
-    )
-    response['Content-Type'] = 'application/json'
-
-    return response
+    ## Now use ogr to convert to geojson
+    return util.convertVectorToGeoJSONresponse(shp,params)
 
 @csrf_exempt
 def get_geojson_from_file(request):

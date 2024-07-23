@@ -1250,6 +1250,9 @@ form {
 span.highlight.allgood {
     color: #66ff66;
 }
+span.highlight.notRelevant {
+    color: #666;
+}
 .modal_uploadshp .highlight {
     font-weight: 600;
 }

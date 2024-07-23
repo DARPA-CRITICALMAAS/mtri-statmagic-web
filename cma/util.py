@@ -3,11 +3,13 @@ Backend utility code.
 '''
 
 import json, math, os, random, re, requests, string
+from pathlib import Path
 from datetime import datetime as dt
-from osgeo import ogr, osr
+from osgeo import gdal, ogr, osr
 import numpy as np
 from django.conf import settings
 from django.core.exceptions import BadRequest
+from django.http import HttpResponse
 from django.db import connection
 
 
@@ -33,6 +35,75 @@ def getUniqueID():
             )
         )
 
+
+def convertVectorToGeoJSONresponse(vector_filepath,params):
+    '''
+    Convert input vector file to geojson, returns json dict
+    
+    '''
+    
+    # Set temp path for geojson file
+    sid = Path(vector_filepath).stem
+    tmpgj = os.path.join('/tmp',f'{sid}.gj')
+
+    gdal.VectorTranslate(
+        tmpgj,
+        vector_filepath,
+        format='GeoJSON',
+    )
+    
+    # Load the gj to a JSON var
+    with open(tmpgj,'r') as f:
+        gj = json.loads(f.read())
+        
+
+    # If FeatureCollection, unwrap to the first feature
+    if gj['type'] == 'FeatureCollection':
+        gj = gj['features'][0]
+        
+    
+    # Get original projection
+    ds = gdal.OpenEx(vector_filepath, 1)
+    layer = ds.GetLayer()
+    srs = layer.GetSpatialRef()
+    srs.AutoIdentifyEPSG()
+    s_srs = srs.GetAuthorityCode(None)
+        
+    # Transform to EPSG:4326 and simplify
+    sql = f'''
+        SELECT ST_AsGeoJSON(
+            ST_Simplify(
+                ST_Transform(
+                    ST_SetSRID(
+                        ST_GeomFromGeoJSON('{str(gj['geometry']).replace("'",'"')}'),
+                        {s_srs}
+                    ),
+                    4326
+                ),
+                0.001
+            )
+        );
+    '''
+    gj = json.loads(runSQL(sql)[0])
+    
+    # Convert multi to single-part polygon
+    if gj['type'] == 'MultiPolygon':
+        gj['type'] = 'Polygon'
+        gj['coordinates'] = gj['coordinates'][0]
+    
+    # Remove temp file
+    os.remove(tmpgj)
+    
+    response = HttpResponse(
+        json.dumps({
+            'geojson': [gj],
+            'params': params,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+        
+    return response
+    
 
 # SPARQL utils from Joe Paki
 def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=False):
