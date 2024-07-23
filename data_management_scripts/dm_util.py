@@ -8,6 +8,7 @@ django.setup()
 from django.conf import settings
 from cma import models
 from cma.models import DataLayer
+import cma.models as models
 
 DB = settings.DATABASES['default']
 

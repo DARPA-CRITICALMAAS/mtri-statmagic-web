@@ -93,9 +93,10 @@ class ProcessParameter(models.Model):
         choices = (
             ('number','number'),
             ('text','text'),
+            ('range','range'),
             ('checkbox','checkbox'),
             ('select','select'),
-        )
+        ),
     )
     html_attributes = models.JSONField(# <- (optional) add additional HTML element attributes here
         null=True,
