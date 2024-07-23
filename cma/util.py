@@ -80,11 +80,11 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
                     ),
                     4326
                 ),
-                0.001
+                0.002
             )
         );
     '''
-    gj = json.loads(runSQL(sql)[0])
+    gj = json.loads(reduce_geojson_precision(runSQL(sql)[0]))
     
     # Convert multi to single-part polygon
     if gj['type'] == 'MultiPolygon':
@@ -104,6 +104,59 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
         
     return response
     
+
+def reduce_geojson_precision(data, remove_zeroes=False):
+    '''
+    The gdal_polygonize process used to vectorize the rasters to geojson 
+    specifies polygon coordinates to an absurd level of precision (15 decimal 
+    places).
+    
+    This function rewrites the coordinates w/ reduced precision as an
+    optimization step; it reduces file size and therefore browser load times.
+    '''
+    
+    # 5 gives us accuracy down to ~1m
+    # see: https://en.wikipedia.org/wiki/Decimal_degrees
+    precision = 4
+    
+    #print(data)
+    #blerg
+    
+    # Regex matching numbers w/ 15 decimal precision
+    coords_match = re.compile(r"\d*\.\d{10}")
+    coords_match2 = re.compile(r"\d*\.\d{9}")
+    coords_match3 = re.compile(r"\d*\.\d{8}")
+
+    # Regex matching "0" value entries
+    dn0_match = re.compile(
+        r'{ "type": "Feature", "properties": { "DN": 0 }(.*)] ] ] } }(,|)')
+    
+    # Regex matching invalid comma instances
+    badCommas_match = re.compile(r',]')
+
+    # Callback function for the regex matching function; reduces precision
+    # of the matched object
+    def mround(match):
+        return "{0:.{1}f}".format(float(match.group()),precision)
+    
+    def remove(match):
+        return ''
+
+    def remove_badCommas(match):
+        return match.group().replace(',','')
+
+    #with open(geojson_path, 'r') as p:
+        #data = p.read()
+
+    if remove_zeroes:
+        data = re.sub(dn0_match, remove, re.sub(coords_match,mround,data))
+    else:
+        data = re.sub(coords_match,mround,data)
+        data = re.sub(coords_match2,mround,data)
+        data = re.sub(coords_match3,mround,data)
+        
+    return re.sub(badCommas_match,remove_badCommas,''.join(data.split()))
+
 
 # SPARQL utils from Joe Paki
 def run_sparql_query(query, endpoint='https://minmod.isi.edu/sparql', values=False):
