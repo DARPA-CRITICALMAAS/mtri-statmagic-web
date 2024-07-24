@@ -80,7 +80,7 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
                     ),
                     4326
                 ),
-                0.002
+                0.002 -- simplify to ~200m 
             )
         );
     '''

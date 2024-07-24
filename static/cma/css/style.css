@@ -1258,7 +1258,7 @@ span.highlight.notRelevant {
 }
 
 .model_select_div {
-/*     display: none; */
+    display: none;
     color: #999;
     font-size: 1.0rem;
     text-align: center;
