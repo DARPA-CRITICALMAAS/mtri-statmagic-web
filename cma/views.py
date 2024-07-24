@@ -15,17 +15,22 @@ from osgeo import gdal, ogr
 def home(request):
     
     def load_parameters(outdict, dobj):
+        # Separate b/t optional/advanced and required
+        reqopt = 'optional' if dobj.optional else 'required'
+        if reqopt not in outdict:
+            outdict[reqopt] = {}
+        
         # Add group if not included yet
         group = dobj.group_name
         if not group:
             group = '_'
-        if group not in outdict:
-            outdict[group] = [];
+        if group not in outdict[reqopt]:
+            outdict[reqopt][group] = [];
             
         pdict = model_to_dict(dobj)
         if dobj.only_show_with is not None:
             pdict['only_show_with'] = dobj.only_show_with.name
-        outdict[group].append(pdict)
+        outdict[reqopt][group].append(pdict)
 
     
     # Get CRS options
@@ -106,8 +111,8 @@ def get_metadata(request):
     # Get commodity list
     cdr = cdr_utils.CDR()
     commodities = sorted([
-        x['geokb_commodity']
-        for x in cdr.get_commodity_list() if x['geokb_commodity']
+        x['name']
+        for x in cdr.get_list_deposit_types() if x['name']
     ])
 
     response = HttpResponse(

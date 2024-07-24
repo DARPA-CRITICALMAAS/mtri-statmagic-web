@@ -658,6 +658,13 @@ tr.subcategory_label td.colname,
     color: #999;
     text-align: center;
 }
+.model_parameters_table tbody tr.subcategory_label.optional td {
+    font-style: italic;
+    cursor: pointer;
+    color: #888;
+    
+}
+
 .editprocessingsteps_table td.colname {
     font-size: 0.82rem;
     color: #999;
@@ -996,7 +1003,7 @@ table.editprocessingsteps_table td {
     text-align: center;
     border-radius: 0px 3px 3px 0px;
     background-color: rgba(40,40,40,.3);
-    z-index: 99999;
+    z-index: 900;
     cursor: pointer;
 }
 #sidebar_collapse_button:hover {
@@ -1256,9 +1263,8 @@ span.highlight.notRelevant {
 .modal_uploadshp .highlight {
     font-weight: 600;
 }
-
 .model_select_div {
-    display: none;
+/*     display: none; */
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1275,7 +1281,6 @@ span.highlight.notRelevant {
 .selected_model_description {
     margin: 4px 10px 10px 10px;
     color: #c1c18b;
-    
 }
 
 
@@ -1284,14 +1289,11 @@ span.highlight.notRelevant {
 .collapse_parameters, 
 .collapse_datacube {
     display: none;
-    
 }
 
 table.model_parameters_table {
     margin: 0px auto;
     width: 100%;
-
-    
 }
 .model_parameters_table td {
     text-align: right;
@@ -1304,7 +1306,6 @@ table.model_parameters_table {
     font-size: 0.75rem;
     padding: 2px 6px;
     color: #ccc;
-
 }
 
 .model_parameters_table input {
@@ -1317,7 +1318,6 @@ table.model_parameters_table {
 }
 .model_parameters_table input[type="number"] {
     width: 40px;
-    
 }
 .model_parameters_table select {
     width: auto;
@@ -1326,7 +1326,6 @@ table.model_parameters_table {
 }
 #cma_initialize_form {
     display: none;
-    
 }
 .cma_navigate {
     color: #999;
@@ -1344,7 +1343,6 @@ table.model_parameters_table {
     text-align: center;
     margin: 20px auto 4px auto;
     width: 70%;
-    
 }
 
 .button.cmainit {
@@ -1524,13 +1522,13 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     vertical-align: middle;
 }
 .button.selected_model_config {
-    width: 120px;
-    font-size: 1.2rem;
-    background-color: green;
+    margin: 10px auto;
+    width: 300px;
+    font-size: 1.1rem;
+    background-color: #5c8a5c;
 }
 .button.selected_model_config:hover {
-    
-    
+    background-color: #006600;
 }
 .parameters_form_header {
     color: #888;

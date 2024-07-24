@@ -188,6 +188,7 @@ $('.header').hover(
 
 function toggleHeader(hdr) {
     var do_hide = false;
+    console.log(hdr);
     $(hdr).find('td.collapse').text(function(_, value){
         do_hide = value == '-';
         return value=='-'?'+':'-'

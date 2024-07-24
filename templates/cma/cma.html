@@ -16,7 +16,7 @@
 
 
 {% endblock %}
-
+f
 {% block content %}
 
 {% include './overlay_uploadshp.html' %}
@@ -107,7 +107,7 @@
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
-                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='loadCMA();' class='start_cma_link'>load</span> a CMA to enable modeling tools.</div>
+                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='loadCMA();' class='start_cma_link'>load</span> a MPM to enable modeling tools.</div>
                     <div class='model_select_div'>
                         Select model: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
@@ -116,7 +116,7 @@
                        
                     </div>
                     <div class='selected_model_description'></div>
-                    <div class='button selected_model_config' onclick='showModelParameters();'>Config</div>
+                    <div class='button selected_model_config' onclick='showModelParameters();'>Configure model parameters</div>
                     <div class='collapse sub collapse_datacube'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Data Cube <span class='header_info datacube warning'>[0 layers added]</span></div>
                         <div class='content datacube'>
@@ -163,7 +163,7 @@
                         <!--</div>--> <!--content model-->
                    <!-- </div>--> <!--collapse sub (model)-->
                     <div class='collapse sub collapse_training'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites <span class='header_info training warning'>[no training data selected]</span></div>
                         <div class='content training'></div> <!--content training-->
                     </div> <!--collapse sub (training)-->
                     <div class='collapse sub collapse_model_run'>

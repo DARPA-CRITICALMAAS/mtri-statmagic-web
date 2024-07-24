@@ -76,6 +76,7 @@ class Model(models.Model):
     name_pretty = models.CharField(max_length=200,null=True)
     description = models.CharField(max_length=1000,null=True)
     uses_datacube = models.BooleanField(default=True)
+    uses_training = models.BooleanField(default=False)
     buttons = models.JSONField(null=True,blank=True) # <- define model run buttons
 
 

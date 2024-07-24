@@ -106,91 +106,100 @@ class CDR():
     ####################################
     # TA2 "knowledge" endpoint convenience functions
 
-    def get_deposit_types(self):
-        return self.run_query('knowledge/deposit_types')
+    def get_list_deposit_types(self):
+        return self.run_query('minerals/deposit-types')
 
-
-    def get_commodity_list(self):
-        return self.run_query('knowledge/commodities')
-
-
-    def get_mineral_site_grade_and_tonnage(self,commodity):
-        '''
-
-        Parameters
-        ----------
-        commodity : str
-            name of commodity, e.g. 'copper'
-
-        Returns
-        -------
-        response : pandas dataframe
-            represents CSV response from API
-        '''
-
+    def get_mineral_sites_search(self, commodity='', candidate='NYF pegmatite', limit=10):
         return self.run_query(
-            f'knowledge/csv/mineral_site_grade_and_tonnage/{commodity}',
-            csv=True
+            f'minerals/sites/search?candidate={candidate}&commodity={commodity}&limit={limit}'
         )
 
-
-    def get_mineral_site_deposit_type_classification_results(self,commodity):
-       return self.run_query(
-           f'knowledge/csv/mineral_site_deposit_type_classificiation_results/{commodity}',
-           csv=True
-       )
-
-
-    def get_hyper_site_results(self,commodity):
-        return self.run_query(
-            f'knowledge/csv/hyper_site_results/{commodity}',
-            csv=True
-        )
-
-
-    def get_mineral_site_inventories(self,commodity):
-        return self.run_query(
-            f'knowledge/csv/mineral_site_inventories/{commodity}',
-            csv=True
-        )
-
-
-    def get_mineral_site_deposit_type_candidates(self,deposit_type_name):
-        '''
-
-        Parameters
-        ----------
-        deposit_type_name : str
-            deposit type name (see list of opts from get_deposit_types()), e.g.:
-            "Epithermal mercury"
-
-        Returns
-        -------
-        response : pandas dataframe
-            represents CSV results from API
-        '''
-        return self.run_query(
-            f'knowledge/mineral_site_deposit_type_candidates/{deposit_type_name}'
-        )
-
-
-    def get_mineral_site_deposit_type_candidates_csv(self, deposit_type_name):
-        '''
-        Parameters
-        ----------
-        deposit_type_name : str
-            deposit type name (see list of opts from get_deposit_types()), e.g.:
-            "Epithermal mercury"
-
-        Returns
-        -------
-        response : dict
-            dict representing JSON response from API
-        '''
-        return self.run_query(
-            f'knowledge/csv/mineral_site_deposit_type_candidates/{deposit_type_name}',
-            csv=True
-        )
+    #
+    # def get_deposit_types(self):
+    #     return self.run_query('knowledge/deposit_types')
+    #
+    #
+    # def get_commodity_list(self):
+    #     return self.run_query('knowledge/commodities')
+    #
+    #
+    # def get_mineral_site_grade_and_tonnage(self,commodity):
+    #     '''
+    #
+    #     Parameters
+    #     ----------
+    #     commodity : str
+    #         name of commodity, e.g. 'copper'
+    #
+    #     Returns
+    #     -------
+    #     response : pandas dataframe
+    #         represents CSV response from API
+    #     '''
+    #
+    #     return self.run_query(
+    #         f'knowledge/csv/mineral_site_grade_and_tonnage/{commodity}',
+    #         csv=True
+    #     )
+    #
+    #
+    # def get_mineral_site_deposit_type_classification_results(self,commodity):
+    #    return self.run_query(
+    #        f'knowledge/csv/mineral_site_deposit_type_classificiation_results/{commodity}',
+    #        csv=True
+    #    )
+    #
+    #
+    # def get_hyper_site_results(self,commodity):
+    #     return self.run_query(
+    #         f'knowledge/csv/hyper_site_results/{commodity}',
+    #         csv=True
+    #     )
+    #
+    #
+    # def get_mineral_site_inventories(self,commodity):
+    #     return self.run_query(
+    #         f'knowledge/csv/mineral_site_inventories/{commodity}',
+    #         csv=True
+    #     )
+    #
+    #
+    # def get_mineral_site_deposit_type_candidates(self,deposit_type_name):
+    #     '''
+    #
+    #     Parameters
+    #     ----------
+    #     deposit_type_name : str
+    #         deposit type name (see list of opts from get_deposit_types()), e.g.:
+    #         "Epithermal mercury"
+    #
+    #     Returns
+    #     -------
+    #     response : pandas dataframe
+    #         represents CSV results from API
+    #     '''
+    #     return self.run_query(
+    #         f'knowledge/mineral_site_deposit_type_candidates/{deposit_type_name}'
+    #     )
+    #
+    #
+    # def get_mineral_site_deposit_type_candidates_csv(self, deposit_type_name):
+    #     '''
+    #     Parameters
+    #     ----------
+    #     deposit_type_name : str
+    #         deposit type name (see list of opts from get_deposit_types()), e.g.:
+    #         "Epithermal mercury"
+    #
+    #     Returns
+    #     -------
+    #     response : dict
+    #         dict representing JSON response from API
+    #     '''
+    #     return self.run_query(
+    #         f'knowledge/csv/mineral_site_deposit_type_candidates/{deposit_type_name}',
+    #         csv=True
+    #     )
 
     ####################################
     # TA1 "maps" endpoint convenience functions
@@ -249,11 +258,14 @@ class CDR():
 
 #
 # ### Testing code...
-cdr = CDR()
-res = cdr.get_prospectivity_input_layers()
-for r in res:
-    if 'LAB' in r['data_source']['description']:# == 'tif':
-        print(r)
+#cdr = CDR()
+#print(cdr.get_mineral_sites_search())
+
+
+# res = cdr.get_prospectivity_input_layers()
+# for r in res:
+#     if 'LAB' in r['data_source']['description']:# == 'tif':
+#         print(r)
 
 
 #print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))

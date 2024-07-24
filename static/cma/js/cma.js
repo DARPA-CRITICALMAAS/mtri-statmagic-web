@@ -134,28 +134,28 @@ function addCMAControl() {
                     <table>
                         <tr>
                             <td>
-                                <div id="btn_cma_initialize" class='button load_sites cma' onClick='showInitializeCMAform();'>Initiate CMA</div>
+                                <div id="btn_cma_initialize" class='button load_sites cma' onClick='showInitializeCMAform();'>Initiate MPM</div>
                             </td>
                             <td>
-                                <div id="btn_cma_load" class='button load_sites cma' onClick='loadCMA();'>Load CMA</div>
+                                <div id="btn_cma_load" class='button load_sites cma' onClick='loadCMA();'>Load MPM</div>
                             </td>
                         </tr>
                         <tr>
-                            <td colspan=2>CMA: <span id='cma_loaded' class='notactive'>[none active]</span></td>
+                            <td colspan=2>MPM: <span id='cma_loaded' class='notactive'>[none active]</span></td>
                         </tr>
                     </table>
                 </div>
                 
                 <div id="cma_initialize_form">
                     <div class='cma_navigate' onclick='showCMAstart();'>&#11178</div>
-                    <div class='cma_initiate_title'>Initiate CMA</div>
+                    <div class='cma_initiate_title'>Initiate MPM</div>
                     <table id='cma_initialize_params' class='modeling_params'>
                         <tr>
-                            <td class='label'>CMA mineral:</td>
+                            <td class='label'>MPM mineral:</td>
                             <td><input type='text' id='cma_mineral' /></td>
                         </tr>
                         <tr>
-                            <td class='label'>CMA description:</td>
+                            <td class='label'>MPM description:</td>
                             <td><input type='text' id='cma_description' /></td>
                         </tr>
                         <tr>
@@ -239,80 +239,104 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function buildParametersTable(obj, table_selector,dobj) {
+function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
-    var group_current;
-    $.each(Object.keys(obj.parameters).sort(), function(g,group_name) {
-        if (group_name != '_') {
+    console.log(mobj);
+    
+    $.each(['required','optional'], function(r,reqopt) {
+        var obj = mobj.parameters[reqopt];
+        
+        if (!obj) {
+            return;
+        }
+        
+        if (reqopt == 'optional') {
             ptable_html += `
-                <tr class='subcategory_label'>
-                    <td>${capitalizeFirstLetter(group_name)}</td>
+                <tr class='subcategory_label optional' onclick='toggleHeader(this);'>
+                    <td><span class='collapse'>-</span> Advanced</td>
                     <td></td>
                 </tr>
             `;
         }
-        $.each(obj.parameters[group_name], function(i,p) {
-            var pid = `${obj.name}__${p.name}`;
-            if (p.only_show_with) {
-                var pshow = `${obj.name}__${p.only_show_with}`;
-                if (!showhide_groups[pshow]) {
-                    showhide_groups[pshow] = [];
-                }
-                showhide_groups[pshow].push(pid);
-            }
-            var input_html;
-            if (p.input_type != 'select') {
-                var attrs = '';
-                var onChange = '';
-    //             var onChange = p.input_type == 'checkbox' ? ' onchange="onModelParameterCheckboxChange(this);"' : '';
-                
-                if (p.html_attributes) {
-                    $.each(p.html_attributes, function(attr,v) {
-                        
-                        // If default has been modified, use that value
-                        if (attr == 'value' && dobj && dobj[p.name]) {
-                            v = dobj[p.name];
-                        }
-    
-                        attrs += ` ${attr}="${v}"`;
-                    });
-                }
-                input_html = `
-                    <input id="${pid}" type="${p.input_type}" ${attrs}${onChange} />
-                `
-            } else {
-                var opts = '';
-                if (p.options) {
-                    $.each(p.options, function(j,opt) {
-                        var selected = '';
-                        
-                        // If default has been modified, use that value
-                        if (dobj && opt == dobj[p.name]) {
-                            selected = ' selected';
-                        }
-                        opts += `<option value="${opt}"${selected}>${opt}</option>`;
-                    });
-                }
-                input_html = `
-                    <select id="${obj.name}__${p.name}">
-                        ${opts}
-                    </select>
+        
+        var group_current;
+        $.each(Object.keys(obj).sort(), function(g,group_name) {
+            if (group_name != '_') {
+                ptable_html += `
+                    <tr class='subcategory_label' data-reqopt='${reqopt}'>
+                        <td>${capitalizeFirstLetter(group_name)}</td>
+                        <td></td>
+                    </tr>
                 `;
             }
-            
-            ptable_html += `
-                <tr id="${pid}_tr" title="${p.description}">
-                    <td class='label'>${p.name_pretty}:</td>
-                    <td>${input_html}</td>
-                </tr>
-            `;
-            
-        }); // parameter loop
-    }); // group loop
-    ptable_html += '</table>';
+            $.each(obj[group_name], function(i,p) {
+                var pid = `${obj.name}__${p.name}`;
+                if (p.only_show_with) {
+                    var pshow = `${obj.name}__${p.only_show_with}`;
+                    if (!showhide_groups[pshow]) {
+                        showhide_groups[pshow] = [];
+                    }
+                    showhide_groups[pshow].push(pid);
+                }
+                var input_html;
+                if (p.input_type != 'select') {
+                    var attrs = '';
+                    var onChange = '';
+        //             var onChange = p.input_type == 'checkbox' ? ' onchange="onModelParameterCheckboxChange(this);"' : '';
+                    
+                    if (p.html_attributes) {
+                        $.each(p.html_attributes, function(attr,v) {
+                            
+                            // If default has been modified, use that value
+                            if (attr == 'value' && dobj && dobj[p.name]) {
+                                v = dobj[p.name];
+                            }
+        
+                            attrs += ` ${attr}="${v}"`;
+                        });
+                    }
+                    input_html = `
+                        <input id="${pid}" type="${p.input_type}" ${attrs}${onChange} />
+                    `
+                } else {
+                    var opts = '';
+                    if (p.options) {
+                        $.each(p.options, function(j,opt) {
+                            var selected = '';
+                            
+                            // If default has been modified, use that value
+                            if (dobj && opt == dobj[p.name]) {
+                                selected = ' selected';
+                            }
+                            opts += `<option value="${opt}"${selected}>${opt}</option>`;
+                        });
+                    }
+                    input_html = `
+                        <select id="${obj.name}__${p.name}">
+                            ${opts}
+                        </select>
+                    `;
+                }
+                
+                ptable_html += `
+                    <tr id="${pid}_tr"
+                        title="${p.description}" 
+                        data-reqopt='${reqopt}'>
+                        <td class='label'>${p.name_pretty}:</td>
+                        <td>${input_html}</td>
+                    </tr>
+                `;
+                
+            }); // parameter loop
+        }); // group loop
+    }); // required/optional loop
+    ptable_html += '<tr class="divider"></tr></table>';
     
     $(table_selector).html(ptable_html);
+    
+     // Toggle to hide advanced options
+    toggleHeader($('.model_parameters_table tr.subcategory_label.optional')[0]);
     
     // Create listeners for show/hide checkboxes
     $.each(showhide_groups, function(chk,ps) {
@@ -327,15 +351,13 @@ function buildParametersTable(obj, table_selector,dobj) {
 
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
-    
+    console.log(model, $('#model_select').val(), model.uses_training);
     // First hide everything
     $('.collapse_datacube').hide();
+    $('.collapse_training').hide();
 //     $('.collapse_parameters').hide();
 //     $('.collapse_training').hide();
 //     $('.collapse_model_run').hide();
-
-    
-    
     
     // Then build everything back up
     $('.selected_model_description').html(model.description);
@@ -346,6 +368,11 @@ function onModelSelect() {
     // Show data cube builder interface
     if (model.uses_datacube) {
         $('.collapse_datacube').show();
+    }
+    
+    if (model.uses_training == true) {
+        console.log("YES");
+        $('.collapse_training').show();
     }
     
     // Show selection buttons in Data Layers
@@ -373,7 +400,7 @@ function onModelSelect() {
     
     // Show all sections
     $('.collapse_parameters').show();
-    $('.collapse_training').show();
+//     $('.collapse_training').show();
     $('.collapse_model_run').show();
     
     
@@ -1078,7 +1105,7 @@ function showModelParameters(el) {
     var model = MODELS[$('#model_select').val()];
 
     // Update form title
-    $('.parameters_form_title').html(model.name_pretty);
+    $('.parameters_form_title').html(model.name_pretty.split(' - ')[1]);
     $('.parameters_form_title').attr('data-parent_type','model');
     $('.parameters_form_title').attr('data-parent_id',model.name);
       
@@ -1353,14 +1380,14 @@ function validateCMAinitializeForm(el) {
     
     // Name needs to be set and unique
     if ($('#cma_description').val() == '') {
-        msg += "'CMA description' is not set<br>";
+        msg += "'MPM description' is not set<br>";
     }
     
     // TODO: check for name uniqueness
     
     // Mineral needs to be set 
     if ($('#cma_mineral').val() == '') {
-        msg += "'CMA mineral' is not set<br>";
+        msg += "'MPM mineral' is not set<br>";
     }
     
     // Spatial res needs to be set 
