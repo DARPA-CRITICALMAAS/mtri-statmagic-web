@@ -1105,7 +1105,7 @@ function showModelParameters(el) {
     var model = MODELS[$('#model_select').val()];
 
     // Update form title
-    $('.parameters_form_title').html(model.name_pretty.split(' - ')[1]);
+    $('.parameters_form_title').html(model.name_pretty.split('(')[0]);
     $('.parameters_form_title').attr('data-parent_type','model');
     $('.parameters_form_title').attr('data-parent_id',model.name);
       
