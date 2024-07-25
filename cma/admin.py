@@ -17,8 +17,12 @@ class ProcessingStepParameterAdmin(admin.ModelAdmin):
 class CRSAdmin(admin.ModelAdmin):
     list_display = ('name','units','default_resolution')
 
+class DataLayerAdmin(admin.ModelAdmin):
+    list_display = ('name','path','category','disabled')
+
 admin.site.register(models.Model, ModelAdmin)
 admin.site.register(models.ModelParameter, ModelParameterAdmin)
 admin.site.register(models.ProcessingStep, ProcessingStepAdmin)
 admin.site.register(models.ProcessingStepParameter, ProcessingStepParameterAdmin)
 admin.site.register(models.CRS, CRSAdmin)
+admin.site.register(models.DataLayer, DataLayerAdmin)

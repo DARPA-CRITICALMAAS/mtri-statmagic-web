@@ -22,7 +22,7 @@ class DataLayer(models.Model):
         #)
     )
     subcategory = models.CharField(
-        max_length=20,
+        max_length=30,
         #choices = (
             #('seismic','Sei'),
             #('geology', 'Geology'),
@@ -38,9 +38,9 @@ class DataLayer(models.Model):
             ('shp','shp',)
         )
     )
-    stats_minimum = models.FloatField(null=True)
-    stats_maximum = models.FloatField(null=True)
-    color = models.CharField(max_length=20,null=True)
+    stats_minimum = models.FloatField(null=True,blank=True)
+    stats_maximum = models.FloatField(null=True, blank=True)
+    color = models.CharField(max_length=20,null=True, blank=True)
     disabled = models.BooleanField(default=False)
     
     

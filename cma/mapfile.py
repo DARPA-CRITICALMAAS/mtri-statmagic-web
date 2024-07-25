@@ -107,6 +107,7 @@ def write_mapfile(
 
         # Retrieve data range if not already loaded
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
+            print(tif_path)
             ds = gdal.Open(tif_path)
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds

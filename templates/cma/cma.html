@@ -33,11 +33,11 @@ f
                 <div class='header topbar toptop'><span class="collapse">+ </span> Data layers</div>
                 <div class='content main'>
                     <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Mineral sites</div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites</div>
                         <div class='content'>
                             <table class='datalayer_table'>
                                 <tr>
-                                    <td class='label'>Commodity:</td>
+                                    <td class='label'>Deposit type:</td>
                                     <td align='right'>
                                         <select id='commodity' onChange="validateLoadSitesButton();">
                                             <option value="" disabled selected hidden>Select...</option>
@@ -47,7 +47,7 @@ f
                                         </select>
                                     </td>
                                 </tr>
-                                <tr>
+                             <!--   <tr>
                                     <td class='label'>AOI:</td>
                                     <td align='right'><div id='query_instructions'><span class="highlight">
                                         (draw) poly <a onClick=drawStart("polygon")>
@@ -59,7 +59,7 @@ f
                                             height="17"
                                             id="draw_rectangle_icon" ></a>
                                     </div></td>
-                                </tr>
+                                </tr>-->
                                 <tr>
                                     <td colspan=2>
                                         <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load sites</div>
@@ -107,7 +107,7 @@ f
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
-                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='loadCMA();' class='start_cma_link'>load</span> a MPM to enable modeling tools.</div>
+                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='loadCMA();' class='start_cma_link'>load</span> an MPM to enable modeling tools.</div>
                     <div class='model_select_div'>
                         Select model: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
@@ -163,7 +163,7 @@ f
                         <!--</div>--> <!--content model-->
                    <!-- </div>--> <!--collapse sub (model)-->
                     <div class='collapse sub collapse_training'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites <span class='header_info training warning'>[no training data selected]</span></div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
                         <div class='content training'></div> <!--content training-->
                     </div> <!--collapse sub (training)-->
                     <div class='collapse sub collapse_model_run'>
