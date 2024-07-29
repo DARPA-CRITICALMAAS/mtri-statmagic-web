@@ -1,7 +1,7 @@
 import codecs, copy, os, sys
 from django.conf import settings
 from django.forms.models import model_to_dict
-from osgeo import gdal
+from osgeo import gdal, osr
 import numpy as np
 
 
@@ -99,7 +99,6 @@ def write_mapfile(
         classification = ''
         connection_type = ''
         connection = ''
-        
     
         if ext in ('js','json','geojson'):
             connection_type = 'CONNECTIONTYPE OGR'
@@ -112,12 +111,38 @@ def write_mapfile(
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds
             dr = [stats[0],stats[1]]
-            dataset.stats_minimum=stats[0]
-            dataset.stats_maximum=stats[1]
+            dataset.stats_minimum = stats[0]
+            dataset.stats_maximum = stats[1]
             dataset.save()
                         
         else:
             dr = [r['stats_minimum'], r['stats_maximum']]
+            
+        # Retrieve spatial resolution if not already loaded
+        # This just needs to be an approximation for setting templates
+        if r['spatial_resolution_m'] is None:
+    
+            
+
+            tif_path2 = tif_path
+            if 'cdr' not in tif_path and 'vm-apps2' not in tif_path:
+                tif_path2 = f'/net/vm-apps2/{tif_path}'
+            ds = gdal.Open(tif_path2)
+            _, xres, _, _, _, yres  = ds.GetGeoTransform()
+            prj = ds.GetProjection()
+            srs = osr.SpatialReference(prj.title())
+            units = srs.GetLinearUnitsName()
+            print(tif_path, units, xres)
+            # If units are in degrees, do a rough approximation of
+            # resolution in meters w/ assumption that 1 degree ~= 100km
+            # Some projections appear incorrectly set too, so if resolution is
+            # less than 1, we assume degrees
+            if (units in ('degrees','Degrees','degree','Degree')) or xres < 1:
+                xres *= 100000
+            
+            del ds
+            dataset.spatial_resolution_m = int(xres)
+            dataset.save()
 
         # Set custom color
         color = dataset.color.replace(',',' ') 

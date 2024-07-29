@@ -40,6 +40,7 @@ class DataLayer(models.Model):
     )
     stats_minimum = models.FloatField(null=True,blank=True)
     stats_maximum = models.FloatField(null=True, blank=True)
+    spatial_resolution_m = models.FloatField(null=True,blank=True)
     color = models.CharField(max_length=20,null=True, blank=True)
     disabled = models.BooleanField(default=False)
     

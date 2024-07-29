@@ -280,6 +280,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     showhide_groups[pshow].push(pid);
                 }
                 var input_html;
+                var input_td_attrs = '';
                 if (p.input_type != 'select') {
                     var attrs = '';
                     var onChange = '';
@@ -299,6 +300,15 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     input_html = `
                         <input id="${pid}" type="${p.input_type}" ${attrs}${onChange} />
                     `
+                    if (p.input_type == 'range') {
+                        var attrs = p.html_attributes
+                        var v = attrs.value;
+                        
+                        input_html = `<span class='range_label'>${attrs.min}</span>${input_html}<span class='range_label'>${attrs.max}</span><div class='range_value'>${v}</div>`;
+                        
+                        input_td_attrs = ' class="range_td"';
+                        
+                    }
                 } else {
                     var opts = '';
                     if (p.options) {
@@ -324,7 +334,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                         title="${p.description}" 
                         data-reqopt='${reqopt}'>
                         <td class='label'>${p.name_pretty}:</td>
-                        <td>${input_html}</td>
+                        <td${input_td_attrs}>${input_html}</td>
                     </tr>
                 `;
                 
@@ -346,6 +356,13 @@ function buildParametersTable(mobj, table_selector, dobj) {
                 $(`#${p}_tr`).toggle(checked);
             });
         });
+    });
+    
+    // Add listeners for type='range' to update the adjacent labels
+    $('.model_parameters_table input[type="range"]').on('change', function(e) {
+        var rng = $(e.target);
+//         console.log(rng.next('div.range_value'),rng.val());
+        rng.next('span.range_label').next('div.range_value').html(rng.val());
     });
 }
 
@@ -488,8 +505,50 @@ function createLayerControl() {
         minWidth: 260,
         autoPan: false,
     });
+    
+    var ta1_layer = L.vectorGrid.protobuf(
+        'https://api.cdr.land/v1/tiles/system/umn-usc-inferlink/system_version/0.0.5/tile/{z}/{x}/{y}', {
+        fetchOptions: {
+            headers: {
+                Authorization: 'Bearer 8c73dac9721739491be071c73a79c46687148302bc57ef643054a816cf7fea05'
+            },
+        },
+        rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+        attribution: 'UMN',
+        interactive: true,
+        vectorTileLayerStyles: {
+            units: function(properties) {
+                return {
+                    weight: 0.5,
+                    color: properties.color,
+                    fillColor: properties.color,
+                    fillOpacity: 0.5,
+                    fill: true,
+                };
+            },
+            lines: function(properties) {
+                return {
+                    weight: 1,
+                    color: properties.color,
+                };
+            }
+        },
+    });
+    ta1_layer.bindPopup(popup);
+    ta1_layer.on('click', function(e) {
+        console.log(e.layer.properties);
+        popup.setContent(`${e.layer.properties.descrip}; ${e.layer.properties.pattern}`);
+        ta1_layer.openPopup();
+    });
+//     ta1_layer.on('mouseover', function(e) {
+//         console.log(e.layer);
+// //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
+// 
+//         
+//     });
+    
             
-    macrostrat_layer = L.vectorGrid.protobuf(
+    var macrostrat_layer = L.vectorGrid.protobuf(
         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
         attribution: 'Macrostrat',
         interactive: true,
@@ -506,7 +565,7 @@ function createLayerControl() {
                 color: '#7fc97f',
             }
         },
-    }),
+    });
     macrostrat_layer.bindPopup(popup);
     macrostrat_layer.on('click', function(e) {
         popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
@@ -541,16 +600,24 @@ function createLayerControl() {
                 layers: [macrostrat_layer],
                 legend: '',
             },
-            'geophysics': getWMSLayer(
-                'geophysics',
-                'Layers',
-                'GeophysicsMagRTP',
-                null,
-                ''
-            ),
+            'ta1_layer': {
+                group: 'Layers',
+                label: 'TA1 Layer',
+                as_checkbox: true,
+                title: '',
+                layers: [ta1_layer],
+                legend: '',
+            },
+//             'geophysics': getWMSLayer(
+//                 'geophysics',
+//                 'Layers',
+//                 'GeophysicsMagRTP',
+//                 null,
+//                 ''
+//             ),
         },
     };
-    images2 = {}
+//     images2 = {}
     var groups = Object.keys(images2).sort();
     images = {};
     var i = 0;

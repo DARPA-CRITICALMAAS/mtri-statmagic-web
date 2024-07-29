@@ -114,6 +114,9 @@ class CDR():
             f'minerals/sites/search?candidate={candidate}&commodity={commodity}&limit={limit}'
         )
 
+    def get_mineral_systems(self):
+        return self.run_query('minerals/systems')
+
     #
     # def get_deposit_types(self):
     #     return self.run_query('knowledge/deposit_types')
@@ -256,10 +259,22 @@ class CDR():
             f'prospectivity/input/layers'
         )
 
+    ####################################
+    # Tiles
+    def get_tiles_sources(self):
+        return self.run_query(f'tiles/sources')
+
 #
-# ### Testing code...
-#cdr = CDR()
-#print(cdr.get_mineral_sites_search())
+### Testing code...
+cdr = CDR()
+res = cdr.get_tiles_sources()
+
+for r in res:
+    print()
+    #for cog in r:
+    #    print(cog)
+    print(r)
+print(len(res))
 
 
 # res = cdr.get_prospectivity_input_layers()
