@@ -101,6 +101,7 @@ def home(request):
         'crs_options': crs_opts,
         'CRS_OPTIONS': json.dumps(crs_opts),
         'PROCESSING_STEPS': json.dumps(processing_steps),
+        'CDR_API_TOKEN': os.environ['CDR_API_TOKEN'],
     }
     
     return render(request, 'cma/cma.html', context)

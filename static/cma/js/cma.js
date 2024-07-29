@@ -510,7 +510,7 @@ function createLayerControl() {
         'https://api.cdr.land/v1/tiles/system/umn-usc-inferlink/system_version/0.0.5/tile/{z}/{x}/{y}', {
         fetchOptions: {
             headers: {
-                Authorization: 'Bearer 8c73dac9721739491be071c73a79c46687148302bc57ef643054a816cf7fea05'
+                Authorization: `Bearer ${CDR_BEARER}`
             },
         },
         rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
