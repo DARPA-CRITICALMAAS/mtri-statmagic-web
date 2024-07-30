@@ -577,12 +577,65 @@ function createLayerControl() {
 
         
     });
-//     macrostrat_layer.on('mouseout', function(e) {
-// //         console.log(e.layer);
-// //         alert(e.layer.properties.name);
-//         e.layer.setStyle({weight: 0.5});//, fillOpacity: 0.2});
-//         
-//     });
+    
+    // Mapping of 'program' property to color, as used in: https://ngmdb.usgs.gov/emri/#20041
+    var emri_color_map = {
+        'reconnaissance geochemistry': '#ed6192',
+        'geological Mapping': '#e5975e',
+        'geologic mapping': '#e5975e',
+        'geophysics': '#1d8da2',
+        'lidar': '#9c84a3',
+        'hyperspectral': '#807e3f',
+        '3d geological model': '#803f60',
+        'mine waste': '#254434',
+    }
+    
+    function parseEMRIprogram(properties) {
+        return JSON.parse(properties.program)[0].toLowerCase();//properties.program.slice(2,-2).split(',')[0].replace('"','').toLowerCase();
+    }
+    
+    var emri_layer = L.vectorGrid.protobuf(
+        'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
+        fetchOptions: {
+            headers: {
+//                 Authorization: `Bearer ${CDR_BEARER}`
+            },
+        },
+        rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+        attribution: 'Earth MRI',
+        interactive: true,
+        vectorTileLayerStyles: {
+            'acquisitions-1ug54m': function(properties) {
+                return {
+                    weight: 0.5,
+                    color: '#cccccc',
+                    fillColor: emri_color_map[parseEMRIprogram(properties)],
+                    fillOpacity: 0.5,
+                    fill: true,
+                };
+            },
+        },
+    });
+    emri_layer.bindPopup(popup);
+    emri_layer.on('click', function(e) {
+        console.log(e.layer.properties);
+        var prop = e.layer.properties;
+        var contact = JSON.parse(prop.contact)[0];
+        console.log(contact);
+        popup.setContent(`
+            <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
+            <br><br>
+            Year started: <b>${prop.yearstart}</b>
+            <br><br>
+            Contact name: <b>${contact.cname}</b><br>
+            Contact email: <b>${contact.cmail}</b><br>
+            <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
+            <br><br>
+            Keywords: <span class='emri_keyword'>${prop.pkeyword.split(';').join(' <span class="emri_keyword_break">|</span> ')}</span>
+            
+        `);
+        ta1_layer.openPopup();
+    });
     
     
     // Populate the 'images2' object
@@ -593,7 +646,7 @@ function createLayerControl() {
     var images2 = {
         'Layers': {
             'macrostrat': {
-                group: 'Layers',
+                group: 'Reference Layers',
                 label: 'Macrostrat',
                 as_checkbox: true,
                 title: '',
@@ -601,11 +654,19 @@ function createLayerControl() {
                 legend: '',
             },
             'ta1_layer': {
-                group: 'Layers',
+                group: 'Reference Layers',
                 label: 'TA1 Layer',
                 as_checkbox: true,
                 title: '',
                 layers: [ta1_layer],
+                legend: '',
+            },
+            emri_layer: {
+                group: 'Reference Layers',
+                label: 'Earth MRI Acquisitions',
+                as_checkbox: true,
+                title: '',
+                layers: [emri_layer],
                 legend: '',
             },
 //             'geophysics': getWMSLayer(
@@ -811,6 +872,8 @@ function loadMineralSites() {
     
 }
 
+
+
 function createMineralSitesControl() {
     
     // Create "Load Mineral Sites" control
@@ -924,12 +987,22 @@ function getWKT() {
     return wkt.write().replace(/ /g,'+'); 
     
 }
+// Returns a stringified number w/ commas added as appropriate
+function addCommas(x) {
+    if (parseInt(x) >= 1000) {
+        x = parseInt(x).toFixed(0);
+    }
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 function showDataLayerInfo(layer_name) {
     var dl = DATALAYERS_LOOKUP[layer_name];
+    var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
+
     
     $('#dl_title').html(dl.name_pretty);
     $('#dl_description').html(`<span class='label'>Description:</span><br>${dl.description}`);
+    $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr} m`);
     $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.path}' target='_blank'>${dl.path}</a>`);
     $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.source}`);
     
