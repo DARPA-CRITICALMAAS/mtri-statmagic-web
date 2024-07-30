@@ -104,7 +104,7 @@ class CDR():
         return pd.read_csv(io.BytesIO(content_bytes))
 
     ####################################
-    # TA2 "knowledge" endpoint convenience functions
+    # TA2 "mineral" endpoint convenience functions
 
     def get_list_deposit_types(self):
         return self.run_query('minerals/deposit-types')
@@ -116,6 +116,9 @@ class CDR():
 
     def get_mineral_systems(self):
         return self.run_query('minerals/systems')
+
+    def get_mineral_inventories(self, commodity):
+        return self.run_query(f'minerals/inventories/{commodity}')
 
     #
     # def get_deposit_types(self):
@@ -267,14 +270,20 @@ class CDR():
 #
 ### Testing code...
 cdr = CDR()
-res = cdr.get_tiles_sources()
 
-for r in res:
-    print()
-    #for cog in r:
-    #    print(cog)
-    print(r)
-print(len(res))
+print(cdr.get_mineral_inventories('gold'))
+
+#res = cdr.get_mineral_sites_search('copper')
+#print(res)
+
+# res = cdr.get_tiles_sources()
+#
+# for r in res:
+#     print()
+#     #for cog in r:
+#     #    print(cog)
+#     print(r)
+# print(len(res))
 
 
 # res = cdr.get_prospectivity_input_layers()

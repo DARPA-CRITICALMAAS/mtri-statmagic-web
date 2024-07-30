@@ -304,7 +304,9 @@ function buildParametersTable(mobj, table_selector, dobj) {
                         var attrs = p.html_attributes
                         var v = attrs.value;
                         
-                        input_html = `<span class='range_label'>${attrs.min}</span>${input_html}<span class='range_label'>${attrs.max}</span><div class='range_value'>${v}</div>`;
+                        input_html = `
+                            <span class='range_label'>${attrs.min}</span>${input_html}<span class='range_label'>${attrs.max}</span><input class='range_value' type='number' value=${v} />`;
+//                         <div class='range_value'>${v}</div>
                         
                         input_td_attrs = ' class="range_td"';
                         
@@ -359,10 +361,15 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
     
     // Add listeners for type='range' to update the adjacent labels
-    $('.model_parameters_table input[type="range"]').on('change', function(e) {
+    $('.model_parameters_table input[type="range"]').on('input', function(e) {
         var rng = $(e.target);
-//         console.log(rng.next('div.range_value'),rng.val());
-        rng.next('span.range_label').next('div.range_value').html(rng.val());
+        rng.next('span.range_label').next('.range_value').val(rng.val());
+    });
+    
+    // Add listeners for range labels to update the slider
+    $('.model_parameters_table input.range_value').on('change', function(e) {
+        var inp = $(e.target);
+        inp.prev('span.range_label').prev('input[type="range"]').val(inp.val());
     });
 }
 
@@ -547,36 +554,67 @@ function createLayerControl() {
 //         
 //     });
     
-            
-    var macrostrat_layer = L.vectorGrid.protobuf(
+    var macrostrat_layer_units = L.vectorGrid.protobuf(
+        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+        attribution: 'Macrostrat',
+        interactive: true,
+        vectorTileLayerStyles: {
+            units: function (properties) {
+                return {
+                    weight: 0.1,
+                    color: properties.color,
+                    fillColor: properties.color,
+                    fillOpacity: 0.5,
+                    fill: true,
+                };
+            },
+            lines: {
+                weight: 0,
+                
+            }
+        },
+    });
+    macrostrat_layer_units.bindPopup(popup);
+    macrostrat_layer_units.on('click', function(e) {
+        popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
+        console.log(e.layer.properties);
+        macrostrat_layer_units.openPopup();
+
+    });
+    macrostrat_layer_units.on('mouseover', function(e) {
+        e.layer.setStyle({fillOpacity: 0.9});
+    });
+    macrostrat_layer_units.on('mouseout', function(e) {
+        e.layer.setStyle({fillOpacity: 0.5,});
+    });
+    
+    var macrostrat_layer_lines = L.vectorGrid.protobuf(
         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
         attribution: 'Macrostrat',
         interactive: true,
         vectorTileLayerStyles: {
             units: {
-                weight: 0.5,
-                color: '#c96303',
-                fillColor: '#fdc086',
-                fillOpacity: 0.2,
-                fill: true,
+                fillOpacity: 0,
+                weight: 0,
             },
             lines: {
-                weight: 2,
-                color: '#7fc97f',
+                weight: 1,
+                color: '#222',
             }
         },
     });
-    macrostrat_layer.bindPopup(popup);
-    macrostrat_layer.on('click', function(e) {
-        popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
-        macrostrat_layer.openPopup();
-    });
-    macrostrat_layer.on('mouseover', function(e) {
-        console.log(e.layer);
-//         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
-
-        
-    });
+//     macrostrat_layer_lines.bindPopup(popup);
+//     macrostrat_layer_lines.on('click', function(e) {
+//         popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
+//         macrostrat_layer_lines.openPopup();
+//         console.log(e.layer.properties);
+//     });
+//     macrostrat_layer.on('mouseover', function(e) {
+// //         console.log(e.layer);
+// //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
+// 
+//         
+//     });
     
     // Mapping of 'program' property to color, as used in: https://ngmdb.usgs.gov/emri/#20041
     var emri_color_map = {
@@ -631,7 +669,7 @@ function createLayerControl() {
             Contact email: <b>${contact.cmail}</b><br>
             <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
             <br><br>
-            Keywords: <span class='emri_keyword'>${prop.pkeyword.split(';').join(' <span class="emri_keyword_break">|</span> ')}</span>
+            Keywords:<br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
             
         `);
         ta1_layer.openPopup();
@@ -645,17 +683,25 @@ function createLayerControl() {
     //      value: object returned from "getWMSLayer"
     var images2 = {
         'Layers': {
-            'macrostrat': {
+            macrostrat_units: {
                 group: 'Reference Layers',
-                label: 'Macrostrat',
+                label: 'Macrostrat - units',
                 as_checkbox: true,
                 title: '',
-                layers: [macrostrat_layer],
+                layers: [macrostrat_layer_units],
                 legend: '',
             },
-            'ta1_layer': {
+            macrostrat_lines: {
                 group: 'Reference Layers',
-                label: 'TA1 Layer',
+                label: 'Macrostrat - lines',
+                as_checkbox: true,
+                title: '',
+                layers: [macrostrat_layer_lines],
+                legend: '',
+            },
+            ta1_layer: {
+                group: 'Reference Layers',
+                label: 'TA1 Layers',
                 as_checkbox: true,
                 title: '',
                 layers: [ta1_layer],

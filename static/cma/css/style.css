@@ -1267,7 +1267,7 @@ span.highlight.notRelevant {
     font-weight: 600;
 }
 .model_select_div {
-/*     display: none; */
+    display: none;
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1320,8 +1320,15 @@ table.model_parameters_table {
     margin-bottom: 0px;
 }
 .model_parameters_table input[type="number"] {
-    width: 40px;
+    width: 30px;
+    text-align: right;
 }
+.model_parameters_table input[type="number"]::-webkit-outer-spin-button,
+.model_parameters_table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .model_parameters_table select {
     width: auto;
     color: #ccffcc;
@@ -1548,7 +1555,7 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 }
 
 .range_value {
-    padding-left: 10px;
+/*     padding-left: 10px; */
 /*     display: inline; */
     text-align: right;
     float: right;
@@ -1569,6 +1576,10 @@ td.range_td {
     font-weight: bold;
     font-family: 'Open Sans Condensed';
     color: #8cd9d9;
+}
+.emri_keyword:hover {
+    color: white;
+    
 }
 
 .emri_keyword_break {

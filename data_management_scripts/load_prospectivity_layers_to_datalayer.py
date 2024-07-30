@@ -17,6 +17,9 @@ for r in res:
     if r['data_source']['format'] == 'tif':
         ds = r['data_source']
 
+        #print(r)
+        #blerg
+
         name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
 
         dl, created = dm_util.models.DataLayer.objects.get_or_create(
