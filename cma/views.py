@@ -8,6 +8,10 @@ from cdr import cdr_utils
 from . import util
 from . import models
 from osgeo import gdal, ogr
+from shapely import wkt
+from shapely.geometry import mapping
+from geojson_pydantic import MultiPolygon
+import json
 
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
@@ -217,15 +221,23 @@ def initiate_cma(request):
         'extent': None,
         'crs': None,
     }
-    params = util.process_params(request, params)
-    
-    print(params)
+    params = util.process_params(request, params, post=True)
+    params['resolution'] = [float(x) for x in request.POST.getlist('resolution[]')]
+    params['extent'] = util.validate_wkt_geom(params['extent'])
+
+    # convert wkt to geojson_pydantic.MultiPolygon via intermediate geoJSON
+    shape = wkt.loads(params["extent"])
+    geojson = mapping(shape)
+    geojson['type'] = 'MultiPolygon'
+    geojson['coordinates'] = [geojson['coordinates']]
+    geojson_dict = json.loads(json.dumps(geojson))
+    params["extent"] = MultiPolygon(**geojson_dict)
     
     # TODO: code to initiate CMA to CDR, returning cma_id
     cdr = cdr_utils.CDR()
-    # response = cdr.run_query("prospectivity/cma", POST=params)
+    response = cdr.run_query("prospectivity/cma", POST=params)
     
-    # return response
+    return response
 
 
 def run_model(request):
