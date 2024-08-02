@@ -276,6 +276,8 @@ class CDR():
             f'prospectivity/input/layers'
         )
 
+
+
     ####################################
     # Tiles
     def get_tiles_sources(self):
@@ -289,7 +291,10 @@ class CDR():
 
 #
 ### Testing code...
-#cdr = CDR()
+cdr = CDR()
+res = cdr.run_query('prospectivity/cmas')
+print(res)
+
 
 post_data = {
   "cog_ids": [],

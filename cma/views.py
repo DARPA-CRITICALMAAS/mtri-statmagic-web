@@ -10,7 +10,8 @@ from . import models
 from osgeo import gdal, ogr
 
 # Import cdr_schemas
-sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
+if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
+    sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
 from cdr_schemas import prospectivity_models
 
 # Functions for handling requests
@@ -218,6 +219,7 @@ def initiate_cma(request):
     params = util.process_params(request, params, post=True)
     
     # TODO: code to initiate CMA to CDR, returning cma_id
+    
     
     
     # Returns JSON w/ cma_id
