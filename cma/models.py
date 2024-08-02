@@ -55,6 +55,7 @@ class CRS(models.Model):
     default_resolution = models.FloatField()
     srid = models.IntegerField(null=True, unique=True)
     
+    
 class ProcessingStep(models.Model):
     def __str__(self):
         return self.name
@@ -65,13 +66,13 @@ class ProcessingStep(models.Model):
     name_pretty = models.CharField(max_length=100,null=True)
     description = models.CharField(max_length=1000,null=True)
     
+    
 class Model(models.Model):
     def __str__(self):
         return self.name
     
     class Meta:
         db_table = 'model'
-
         
     name = models.CharField(max_length=100,unique=True)
     name_pretty = models.CharField(max_length=200,null=True)
@@ -96,6 +97,7 @@ class ProcessParameter(models.Model):
             ('number','number'),
             ('text','text'),
             ('range','range'),
+            ('range_double', 'range_double'),
             ('checkbox','checkbox'),
             ('select','select'),
         ),

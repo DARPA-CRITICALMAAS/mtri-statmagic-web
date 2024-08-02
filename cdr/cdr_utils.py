@@ -43,7 +43,7 @@ class CDR():
         self.timeout_seconds = 60000
 
 
-    def run_query(self,query,csv=False):
+    def run_query(self,query,csv=False,POST=False):
         '''
         Queries a CDR API endpoint
 
@@ -53,6 +53,10 @@ class CDR():
             URL representing API endpoint including args, not including API
             server host name/version, e.g.
                 'knowledge/csv/mineral_site_grade_and_tonnage/copper'
+
+        POST : dict
+            For POST requests, the variable is a dict representing the 'data'
+            arg input to the httpx.post() function
 
         csv : bool
             Indicates whether or not response is a CSV; if not, assumed to be
@@ -64,11 +68,21 @@ class CDR():
             API response which is either dict representing JSON or if csv=True,
             a pandas data frame representing CSV response
         '''
-        resp = self.client.get(
-            f'{self.cdr_host}/{self.cdr_version}/{query}',
-            headers=self.headers,
-            timeout=self.timeout_seconds
-        )
+        if POST:
+            headers = self.headers
+            headers['Content-Type'] = 'application/json'
+            resp = self.client.post(
+                f'{self.cdr_host}/{self.cdr_version}/{query}',
+                data = POST,
+                headers=headers,
+                timeout=self.timeout_seconds
+            )
+        else:
+            resp = self.client.get(
+                f'{self.cdr_host}/{self.cdr_version}/{query}',
+                headers=self.headers,
+                timeout=self.timeout_seconds
+            )
 
         # Raises error if not success
         # Alternatively, could check for success and log, e.g.:
@@ -267,11 +281,40 @@ class CDR():
     def get_tiles_sources(self):
         return self.run_query(f'tiles/sources')
 
+    def intersect_sources(self,post_data):
+        return self.run_query(
+            'tiles/intersect_sources',
+            POST=post_data
+        )
+
 #
 ### Testing code...
-cdr = CDR()
+#cdr = CDR()
 
-print(cdr.get_mineral_inventories('gold'))
+post_data = {
+  "cog_ids": [],
+  "feature_type": "polygon",
+  "search_text": "",
+  "validated": None,
+  "legend_ids": [],
+  "intersect_polygon": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-88.392,36.217],
+                [-88.392,38.685],
+                [-86.594,38.685],
+                [-86.594,36.217],
+                [-88.392,36.217]
+            ]
+        ]
+    }
+}
+#
+# res = cdr.intersect_sources(json.dumps(post_data))
+# print(res)
+# print(len(res))
+#print(cdr.get_mineral_inventories('copper'))
 
 #res = cdr.get_mineral_sites_search('copper')
 #print(res)
