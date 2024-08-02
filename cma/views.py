@@ -207,6 +207,7 @@ def create_datacube(request):
     
 
 # Function for handling CMA initiation
+@csrf_exempt
 def initiate_cma(request): 
     # Expected URL parameters w/ default values (if applicable)
     params = {
@@ -217,6 +218,8 @@ def initiate_cma(request):
         'crs': None,
     }
     params = util.process_params(request, params, post=True)
+    
+    print(params)
     
     # TODO: code to initiate CMA to CDR, returning cma_id
     
