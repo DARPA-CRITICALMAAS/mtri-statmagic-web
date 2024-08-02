@@ -1712,15 +1712,38 @@ function saveParametersForm() {
 function initiateCMA() {
     console.log('initiating CMA eventually...');
     
+    
+    data = {};
+    $.each(['resolution','mineral','description','crs'], function(i,p) {
+        data[p] = $(`#cma_${p}`).val();
+    });
+    data.resolution = Number(data.resolution);
+    data.resolution = [data.resolution,data.resolution];
+    data['extent'] = getWKT();
+
+    console.log(data);
+        
+    $.ajax(`/initiate_cma`, {
+        data: data,
+        success: function(response) {
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+    
     var cma_description = $('#cma_description').val();
     
     $('#cma_loaded').html(cma_description);
     $('#cma_loaded').removeClass('notactive');
     showCMAstart();
     
+
+    
     $('#modeling_initial_message').hide();
     $('.model_select_div').show();
 }
+    
 
 
 

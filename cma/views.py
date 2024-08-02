@@ -158,6 +158,7 @@ def get_vectorfile_as_geojson(request):
     ## Now use ogr to convert to geojson
     return util.convertVectorToGeoJSONresponse(shp,params)
 
+
 @csrf_exempt
 def get_geojson_from_file(request):
     '''
@@ -212,7 +213,7 @@ def initiate_cma(request):
         'description': None,
         'resolution': None,
         'extent': None, 
-        
+        'crs': None,
     }
     params = util.process_params(request, params, post=True)
     
