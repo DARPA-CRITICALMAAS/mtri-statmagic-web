@@ -1711,6 +1711,7 @@ function saveParametersForm() {
 
 function initiateCMA() {
 //     console.log('initiating CMA eventually...');
+    
     data = {};
     $.each(['resolution','mineral','description','crs'], function(i,p) {
         data[p] = $(`#cma_${p}`).val();
@@ -1722,6 +1723,9 @@ function initiateCMA() {
     console.log(data);
         
     $.ajax(`/initiate_cma`, {
+//         processData: false,
+//         contentType: false,
+        type: 'POST',
         data: data,
         success: function(response) {
             console.log(response);
