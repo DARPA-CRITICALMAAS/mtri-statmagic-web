@@ -213,22 +213,16 @@ def initiate_cma(request):
         'mineral': None,
         'description': None,
         'resolution': None,
-        'extent': None, 
+        'extent': None,
         'crs': None,
     }
-    params = util.process_params(request, params, post=True)
+    params = util.process_params(request, params)
     
     # TODO: code to initiate CMA to CDR, returning cma_id
+    cdr = cdr_utils.CDR()
+    # response = cdr.run_query("prospectivity/cma", POST=params)
     
-    
-    
-    # Returns JSON w/ cma_id
-    response = HttpResponse(json.dumps({
-        'cma_id': cma_id,
-    }))
-    response['Content-Type'] = 'application/json'
-    
-    return response
+    # return response
 
 
 def run_model(request):
