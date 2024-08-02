@@ -3,3 +3,5 @@ httpx==0.27.0
 numpy==1.24.4
 pandas==2.0.3
 psycopg2==2.9.9
+django-vite
+requests
