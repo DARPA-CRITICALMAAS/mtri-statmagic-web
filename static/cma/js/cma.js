@@ -243,7 +243,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
     console.log(mobj);
-    
+    var range_double_params = {};
     $.each(['required','optional'], function(r,reqopt) {
         var obj = mobj.parameters[reqopt];
         
@@ -261,6 +261,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
         }
         
         var group_current;
+
         $.each(Object.keys(obj).sort(), function(g,group_name) {
             if (group_name != '_') {
                 ptable_html += `
@@ -311,6 +312,10 @@ function buildParametersTable(mobj, table_selector, dobj) {
                         input_td_attrs = ' class="range_td"';
                         
                     }
+                    if (p.input_type == 'range_double') {
+                        range_double_params[p.name] = p;
+                        input_html = `<input type='number' id='${pid}__min' /><div id='range_double__${p.name}' class='range_double'></div><input type='number' id='${pid}__max' />`;
+                    }
                 } else {
                     var opts = '';
                     if (p.options) {
@@ -358,6 +363,65 @@ function buildParametersTable(mobj, table_selector, dobj) {
                 $(`#${p}_tr`).toggle(checked);
             });
         });
+    });
+    
+    // Insert double sliders as needed
+    console.log(range_double_params);
+    $('.range_double').each(function(i,cmp) {
+        var pname = cmp.id.split('__')[1];
+        var p = range_double_params[pname];
+        noUiSlider.create(cmp, {
+            range: {
+                'min': 0,//p.html_attributes.min,
+                'max': 100,//p.html_attributes.max,
+            },
+            step: 1,//p.html_attributes.step,
+            start: [0,50],
+//             margin: 300,
+//             limit: 600,
+            connect: true,
+            direction: 'ltr',
+            orientation: 'horizontal',
+            behavior: 'drag',
+//             pips: {
+//                 mode: 'step',
+//                 density: 4,
+//                 
+//             }
+        });
+        // When the slider value changes, update the input and span
+        cmp.noUiSlider.on('update', function (values, handle) {
+            $(handle).html(values[handle]);
+            $('#range_diff-1').html(values[1] - values[0]);
+            
+            var prec = 0; // TODO: determine precision from scale
+//             console.log(values[0]);
+            $(cmp).next('input').val(Number(values[1]).toFixed(prec));
+            $(cmp).prev('input').val(Number(values[0]).toFixed(prec));
+            
+//             valuesDivs[handle].innerHTML = values[handle];
+//             diffDivs[0].innerHTML = values[1] - values[0];
+//             diffDivs[1].innerHTML = values[2] - values[1];
+//             diffDivs[2].innerHTML = values[3] - values[2];
+        });
+        
+//         var reqopt = cmp.id.split('__')[1];
+//         var grp = cmp.id.split('__')[2];
+       
+//         console.log(pname,p);
+// //         var p = mobj.parameters[reqopt][grp][pname];
+//         $(cmp).slider({
+//             range: true,
+//             min: p.html_attributes.min,
+//             max: p.html_attributes.max,
+//             step: p.html_attributes.step,
+//             values: [p.value,p.value+0.5],
+//             slide: function(e, ui) {
+//                 console.log(ui.values);
+//             }
+//         });
+        
+//         console.log(cmp.id);
     });
     
     // Add listeners for type='range' to update the adjacent labels
@@ -514,7 +578,7 @@ function createLayerControl() {
     });
     
     var ta1_layer = L.vectorGrid.protobuf(
-        'https://api.cdr.land/v1/tiles/system/umn-usc-inferlink/system_version/0.0.5/tile/{z}/{x}/{y}', {
+        'https://api.cdr.land/v1/tiles/polygon/system/umn-usc-inferlink/system_version/0.0.5/tile/{z}/{x}/{y}', {
         fetchOptions: {
             headers: {
                 Authorization: `Bearer ${CDR_BEARER}`
@@ -1657,6 +1721,8 @@ function initiateCMA() {
     $('#modeling_initial_message').hide();
     $('.model_select_div').show();
 }
+
+
 
 
 $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {

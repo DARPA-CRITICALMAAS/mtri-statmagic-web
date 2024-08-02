@@ -1267,7 +1267,7 @@ span.highlight.notRelevant {
     font-weight: 600;
 }
 .model_select_div {
-    display: none;
+/*     display: none; */
     color: #999;
     font-size: 1.0rem;
     text-align: center;
@@ -1546,7 +1546,7 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 }
 
 .button.selected_model_config {
-    display: none;
+/*     display: none; */
 }
 
 .model_parameters_table input[type='range'] {
@@ -1584,6 +1584,47 @@ td.range_td {
 
 .emri_keyword_break {
     color: #777;
+    
+}
+.noUi-target {
+    border: none;
+    box-shadow: none;
+}
+.noUi-horizontal {
+    height: 8px;
+    
+    
+}
+.noUi-connect {
+    background: #0080ff;
+    border: 1px solid #0080ff;
+    
+}
+.noUi-base {
+    cursor: pointer;
+}
+.noUi-handle:after, .noUi-handle:before {
+    display: none;
+}
+.noUi-horizontal .noUi-handle {
+    width: 18px;
+    height: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #0080ff;
+    box-shadow: none;
+    border: none;
+}
+.noUi-horizontal .noUi-handle:hover,
+.noUi-connect:hover 
+{
+    background-color: #0066cc;
+    border-color: #0066cc;
+}
+.range_double {
+    display:inline-block;
+    width: 120px;
+    margin: auto 4px;
     
 }
 

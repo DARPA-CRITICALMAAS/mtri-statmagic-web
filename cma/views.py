@@ -1,4 +1,4 @@
-import json, os
+import json, os, sys
 from django.shortcuts import render
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +8,10 @@ from cdr import cdr_utils
 from . import util
 from . import models
 from osgeo import gdal, ogr
+
+# Import cdr_schemas
+sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
+from cdr_schemas import prospectivity_models
 
 # Functions for handling requests
 
@@ -35,13 +39,6 @@ def home(request):
     
     # Get CRS options
     crs_opts = {c.name: model_to_dict(c) for c in models.CRS.objects.all()}
-    
-    ## Get commodity list
-    #cdr = cdr_utils.CDR()
-    #commodities = sorted([
-        #x['geokb_commodity']
-        #for x in cdr.get_commodity_list() if x['geokb_commodity']
-    #])
     
     # Get processing step options
     processing_steps = {
@@ -108,6 +105,10 @@ def home(request):
 
 
 def get_metadata(request):
+    '''
+    This is called by the front-end after page load so that CDR calls don't
+    interupt the initial load (b/c CDR is often down). 
+    '''
     
     # Get commodity list
     cdr = cdr_utils.CDR()
@@ -203,21 +204,51 @@ def create_datacube(request):
     return response
     
 
-# Function for handling CMA model run submissions
-def run_cma_model(request): 
+# Function for handling CMA initiation
+def initiate_cma(request): 
+    # Expected URL parameters w/ default values (if applicable)
     params = {
-        'datacube_id': '', # ID indicating a datacube
-        'model': 'beak_ann', # One of Beak or SRI's models
+        'mineral': None,
+        'description': None,
+        'resolution': None,
+        'extent': None, 
+        
     }
     params = util.process_params(request, params, post=True)
     
-    # TODO: some code to send this off to the CDR's SRI/Beak worker
+    # TODO: code to initiate CMA to CDR, returning cma_id
+    
+    
+    # Returns JSON w/ cma_id
+    response = HttpResponse(json.dumps({
+        'cma_id': cma_id,
+    }))
+    response['Content-Type'] = 'application/json'
+    
+    return response
+
+
+def run_model(request):
+    # Expected URL parameters w/ default values (if applicable)
+    params = {}
+    params = util.process_params(request, params, post=True)
+    
+    # TODO: some code to send this off to the SRI/Beak servers
     
     # TODO: some code to either:
     #   (a) if staying attached, process the response
     #   (b) if detaching, send a job ID that the browser client can check
     #       status of and request outputs for once completed
-
+    
+    # (if staying attached) Returns JSON w/ ID indicating model run
+    response = HttpResponse(json.dumps({
+        'model_run_id': model_run_id,
+    }))
+    response['Content-Type'] = 'application/json'
+    
+    return response
+    
+    
 
 # Function for retrieving and returning a list of mineral sites to frontend
 def get_mineral_sites(request):
