@@ -242,6 +242,9 @@ function clearMineralSites() {
     // Clear query results
     $('#mineral_sites_n_results').html('--');
     
+    // Add 'disabled' class back to clear button
+    $('#clear_sites_button').addClass('disabled');
+    
 }
 
 function addLoadingSpinnerControl(div_class,message) {
@@ -1011,6 +1014,9 @@ function loadMineralSites() {
             // Add points to map
             loadMineralSitesToMap();
             
+            // Remove 'clear sites' button disabled class
+            $('#clear_sites_button').removeClass('disabled');
+            
             // Update query results n
             $('#mineral_sites_n_results').html(response.mineral_sites.length);
             $('.loading_sites').hide();
@@ -1163,16 +1169,18 @@ function loadMineralSitesToMap() {
     // Create/add legend
     html = `
         <div class='layer_legend' id='legendcontent_sites'>
-            Known deposit sites
-            <table>
-                <tr>
-                    <td class='label'>Display by:</td>
-                    <td><select id='sites_display_select' onchange='onMineralSitesDisplayByChange();'>
-                        ${opts}
-                    </select></td>
-                </tr>
-            </table>
-            <div id='sites_legend'></div>
+            <div class='legend_header' onclick='toggleHeader(this);'><span class='collapse'>-</span> Known deposit sites</div>
+            <div class='legend_body'>
+                <table>
+                    <tr>
+                        <td class='label'>Display by:</td>
+                        <td><select id='sites_display_select' onchange='onMineralSitesDisplayByChange();'>
+                            ${opts}
+                        </select></td>
+                    </tr>
+                </table>
+                <div id='sites_legend'></div>
+            </div>
         </div>
     `;
     $('#legend_content_sites').html(html);
