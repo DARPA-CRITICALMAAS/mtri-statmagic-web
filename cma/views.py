@@ -115,16 +115,21 @@ def get_metadata(request):
     interupt the initial load (b/c CDR is often down). 
     '''
     
-    # Get commodity list
+    # Initialize CDR client
     cdr = cdr_utils.CDR()
-    commodities = sorted([
+    
+    # Get commodity list
+    commodities = sorted(cdr.get_mineral_dedupsite_commodities())
+    
+    # Get deposit type list
+    deposit_types = sorted([
         x['name']
         for x in cdr.get_list_deposit_types() if x['name']
     ])
-
     response = HttpResponse(
         json.dumps({
-            'commodities': commodities,
+            'commodity': commodities,
+            'deposit_type': deposit_types,
         })
     )
     response['Content-Type'] = 'application/json'
@@ -265,21 +270,39 @@ def run_model(request):
 # Function for retrieving and returning a list of mineral sites to frontend
 def get_mineral_sites(request):
     params = {
+        'deposit_type': '',
         'commodity': 'copper', # Commodity to search for
         'wkt': '' # WKT polygon indicating AOI
         # [...] insert other query params
     }
     params = util.process_params(request, params)
     
-    # TODO: construct and fire off query to the Knowledge graph, then filter
-    #       the results by geometry (if provided)
-    sites = None
+    params['wkt'] = util.validate_wkt_geom(params['wkt'])
+    gj = util.convert_wkt_to_geojson(params['wkt'])
+    #print(gj)
     
-    #print(params)
+    # Query sites from CDR
+    cdr = cdr_utils.CDR()
+    sites = cdr.get_mineral_sites_search(
+        commodity=params['commodity'],
+        candidate=params['deposit_type'],
+        bbox_polygon=json.dumps(gj),
+        limit=-1
+    )
     
+    # Convert to geoJSON
+    sites_gj = []
+    for site in sites:
+        gj_point = util.convert_wkt_to_geojson(site['location']['geom'])
+        sites_gj.append({
+            'type': 'Feature',
+            'properties': site,
+            'geometry': gj_point
+        })
+
     # Return response as JSON to client
     response = HttpResponse(json.dumps({
-        'mineral_sites': sites,
+        'mineral_sites': sites_gj,
         'params': params
     }))
     response['Content-Type'] = 'application/json'

@@ -11,6 +11,8 @@ from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.http import HttpResponse
 from django.db import connection
+from shapely import wkt
+from shapely.geometry import mapping
 
 
 
@@ -105,6 +107,10 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     return response
     
 
+def convert_wkt_to_geojson(wkt_string):
+    shape = wkt.loads(wkt_string)
+    return mapping(shape)
+    
 def reduce_geojson_precision(data, remove_zeroes=False):
     '''
     The gdal_polygonize process used to vectorize the rasters to geojson 

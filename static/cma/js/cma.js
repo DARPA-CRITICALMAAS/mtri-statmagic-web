@@ -8,6 +8,8 @@ var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
 var DATACUBE_CONFIG = [];
+var GET_MINERAL_SITES_RESPONSE_MOST_RECENT;
+var MINERAL_SITES_LAYER;
 var FISHNET_LAYER = new L.FeatureGroup();
 const DRAW_STYLE = {
     color: 'orange',
@@ -491,11 +493,6 @@ function onModelSelect() {
 //     $('.collapse_training').show();
     $('.collapse_model_run').show();
     
-    
-  
-    
-    
-    
 }
 
 function onModelParameterCheckboxChange(cmp) {
@@ -506,14 +503,16 @@ function getMetadata() {
     $.ajax(`/get_metadata`, {
         data: {},
         success: function(response) {
-            COMMODITIES = response.commodities;
+            //COMMODITIES = response.commodities;
             
-            // Now load these to the dropdown
-            var opts = `<option disabled selected hidden>Select...</option>`;
-            $.each(COMMODITIES, function(i,c) {
-                opts += `<option value='${c}'>${c}</option>`;
+            // Now load these to the dropdowns
+            $.each(['commodity','deposit_type'], function(i,v) {
+                var opts = `<option value='' selected>[any]</option>`;
+                $.each(response[v], function(i,c) {
+                    opts += `<option value='${c}'>${c}</option>`;
+                });
+                $(`#${v}`).html(opts);
             });
-            $('#commodity').html(opts);
         },
         error: function(response) {
             console.log(response);
@@ -961,6 +960,7 @@ function finishDraw(layer) {
     validateCMAinitializeForm();
 }
 
+
 function loadMineralSites() {
     // Request the selected sites
     
@@ -970,10 +970,17 @@ function loadMineralSites() {
     }
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: {
+            deposit_site: $('#deposit_type').val(),
             commodity: $('#commodity').val(),
             wkt: getWKT()
         },
         success: function(response) {
+            console.log(response);
+            GET_MINERAL_SITES_RESPONSE_MOST_RECENT = response;
+            
+            // Add points to map
+            loadMineralSitesToMap();
+            
         },
         error: function(response) {
             console.log(response);
@@ -982,7 +989,101 @@ function loadMineralSites() {
     
 }
 
+function loadMineralSitesToMap() {
+    // Map of site_type to style 
+    // color map used: https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=6
+    site_types = {
+        Occurrence: {
+            color: '#33a02c',
+        },
+        Prospect: {
+            color: '#b2df8a',
+        },
+        Plant: {
+            color: '#e31a1c',
+        },
+        Producer: {
+            color: '#1f78b4',
+        },
+        'Past Producer': {
+            color: '#a6cee3',
+        },
+        Unknown: {
+            color: '#fb9a99'
+        }                
+    };
+    
+    if (MAP.hasLayer(MINERAL_SITES_LAYER)) {
+        MAP.removeLayer(MINERAL_SITES_LAYER);
+    }
+    
+    MINERAL_SITES_LAYER = L.geoJSON(
+        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites,{
 
+        pointToLayer: function(feature,latlng) {
+            var fillColor = '#888';
+            if (site_types[feature.properties.site_type]) {
+                fillColor = site_types[feature.properties.site_type].color;
+            }
+            return L.circleMarker(latlng,{
+                radius: 6,
+                fillColor: fillColor,
+                fillOpacity: 0.9,
+                opacity: 1,
+                color: '#000',
+                weight: 0.5
+            });
+        }
+    });
+    
+    // Create a popup to use in the macrostrat layer
+    var popup = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
+    MINERAL_SITES_LAYER.bindPopup(popup);
+    MINERAL_SITES_LAYER.on('click', function(e) {
+        var prop = e.layer.feature.properties;
+//         console.log(prop);
+        var minerals = [];
+        $.each(prop.mineral_inventory, function(i,m) {
+            if (minerals.indexOf(m.commodity) == -1) {
+                minerals.push(m.commodity);
+            }
+        });
+        var dtcs = [];
+        $.each(prop.deposit_type_candidate, function(i,m) {
+            if (dtcs.indexOf(m.observed_name) == -1) {
+                dtcs.push(m.observed_name);
+            }
+        });
+        if (dtcs.length == 0) {
+            dtcs = ['--'];
+        }
+        popup.setContent(`
+            <b>${prop.name}</b>
+            <br><br>
+            Site type: <b>${prop.site_type}</b>
+            <br>
+            Source: <b>${prop.source_id}</b>
+            <br>
+            Record ID: <b>${prop.record_id}</b>
+            <br>
+            System: <b>${prop.system}</b> v<b>${prop.system_version}</b>
+            <br><br>
+            Minerals: <span class='emri_keyword'>${minerals.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <br>
+            Deposit type candidates: <span class='emri_keyword'>${dtcs.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+
+            
+        `);
+//         console.log(
+        //e.layer.feature.geometry.coordinates
+        MINERAL_SITES_LAYER.openPopup();
+    });
+    MINERAL_SITES_LAYER.addTo(MAP);
+    
+}
 
 function createMineralSitesControl() {
     

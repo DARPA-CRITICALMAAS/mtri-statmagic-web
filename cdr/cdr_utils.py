@@ -123,9 +123,18 @@ class CDR():
     def get_list_deposit_types(self):
         return self.run_query('minerals/deposit-types')
 
-    def get_mineral_sites_search(self, commodity='', candidate='NYF pegmatite', limit=10):
+    def get_mineral_sites_search(self, commodity='', candidate='', bbox_polygon='', limit=10):
+        '''
+
+        :param commodity: (optional) should be capitalized, e.g. Iron, Zinc
+        :param candidate:  (optional)
+        :param bbox_polygon:
+        :param limit:
+        :return:
+        '''
         return self.run_query(
-            f'minerals/sites/search?candidate={candidate}&commodity={commodity}&limit={limit}'
+            f'minerals/sites/search?candidate={candidate}&commodity={commodity}&limit={limit}',
+            POST=bbox_polygon
         )
 
     def get_mineral_systems(self):
@@ -134,96 +143,12 @@ class CDR():
     def get_mineral_inventories(self, commodity):
         return self.run_query(f'minerals/inventories/{commodity}')
 
-    #
-    # def get_deposit_types(self):
-    #     return self.run_query('knowledge/deposit_types')
-    #
-    #
-    # def get_commodity_list(self):
-    #     return self.run_query('knowledge/commodities')
-    #
-    #
-    # def get_mineral_site_grade_and_tonnage(self,commodity):
-    #     '''
-    #
-    #     Parameters
-    #     ----------
-    #     commodity : str
-    #         name of commodity, e.g. 'copper'
-    #
-    #     Returns
-    #     -------
-    #     response : pandas dataframe
-    #         represents CSV response from API
-    #     '''
-    #
-    #     return self.run_query(
-    #         f'knowledge/csv/mineral_site_grade_and_tonnage/{commodity}',
-    #         csv=True
-    #     )
-    #
-    #
-    # def get_mineral_site_deposit_type_classification_results(self,commodity):
-    #    return self.run_query(
-    #        f'knowledge/csv/mineral_site_deposit_type_classificiation_results/{commodity}',
-    #        csv=True
-    #    )
-    #
-    #
-    # def get_hyper_site_results(self,commodity):
-    #     return self.run_query(
-    #         f'knowledge/csv/hyper_site_results/{commodity}',
-    #         csv=True
-    #     )
-    #
-    #
-    # def get_mineral_site_inventories(self,commodity):
-    #     return self.run_query(
-    #         f'knowledge/csv/mineral_site_inventories/{commodity}',
-    #         csv=True
-    #     )
-    #
-    #
-    # def get_mineral_site_deposit_type_candidates(self,deposit_type_name):
-    #     '''
-    #
-    #     Parameters
-    #     ----------
-    #     deposit_type_name : str
-    #         deposit type name (see list of opts from get_deposit_types()), e.g.:
-    #         "Epithermal mercury"
-    #
-    #     Returns
-    #     -------
-    #     response : pandas dataframe
-    #         represents CSV results from API
-    #     '''
-    #     return self.run_query(
-    #         f'knowledge/mineral_site_deposit_type_candidates/{deposit_type_name}'
-    #     )
-    #
-    #
-    # def get_mineral_site_deposit_type_candidates_csv(self, deposit_type_name):
-    #     '''
-    #     Parameters
-    #     ----------
-    #     deposit_type_name : str
-    #         deposit type name (see list of opts from get_deposit_types()), e.g.:
-    #         "Epithermal mercury"
-    #
-    #     Returns
-    #     -------
-    #     response : dict
-    #         dict representing JSON response from API
-    #     '''
-    #     return self.run_query(
-    #         f'knowledge/csv/mineral_site_deposit_type_candidates/{deposit_type_name}',
-    #         csv=True
-    #     )
+
+    def get_mineral_dedupsite_commodities(self):
+        return self.run_query('minerals/dedup-site/commodities')
 
     ####################################
     # TA1 "maps" endpoint convenience functions
-
 
     def get_cog_count(self):
         return self.run_query(f'maps/cog/count')
@@ -277,7 +202,6 @@ class CDR():
         )
 
 
-
     ####################################
     # Tiles
     def get_tiles_sources(self):
@@ -289,78 +213,4 @@ class CDR():
             POST=post_data
         )
 
-#
-### Testing code...
-cdr = CDR()
-res = cdr.run_query('prospectivity/cmas')
-print(res)
-
-
-post_data = {
-  "cog_ids": [],
-  "feature_type": "polygon",
-  "search_text": "",
-  "validated": None,
-  "legend_ids": [],
-  "intersect_polygon": {
-        "type": "Polygon",
-        "coordinates": [
-            [
-                [-88.392,36.217],
-                [-88.392,38.685],
-                [-86.594,38.685],
-                [-86.594,36.217],
-                [-88.392,36.217]
-            ]
-        ]
-    }
-}
-#
-# res = cdr.intersect_sources(json.dumps(post_data))
-# print(res)
-# print(len(res))
-#print(cdr.get_mineral_inventories('copper'))
-
-#res = cdr.get_mineral_sites_search('copper')
-#print(res)
-
-# res = cdr.get_tiles_sources()
-#
-# for r in res:
-#     print()
-#     #for cog in r:
-#     #    print(cog)
-#     print(r)
-# print(len(res))
-
-
-# res = cdr.get_prospectivity_input_layers()
-# for r in res:
-#     if 'LAB' in r['data_source']['description']:# == 'tif':
-#         print(r)
-
-
-#print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))
-#print(cdr.get_cog_count()) # <- returns "0" for some reason
-#print(cdr.get_random_cog())
-#print(cdr.get_cog_meta('224f073f05ff28f50cb72d774d37282f1b5f34df70e338c738e738f738e718a3'))
-#print(cdr.get_cog_results('224f073f05ff28f50cb72d774d37282f1b5f34df70e338c738e738f738e718a3'))
-#print(cdr.get_cog_info('224f073f05ff28f50cb72d774d37282f1b5f34df70e338c738e738f738e718a3'))
-
-#resp = cdr.get_maps_list()
-#for map in resp['maps']:
-#    print()
-#    print(map)
-
-#print(cdr.get_deposit_types())
-#print(cdr.get_commodity_list())
-#print(cdr.get_mineral_site_grade_and_tonnage('copper'))
-#print(cdr.get_mineral_site_deposit_type_classification_results('copper'))
-
-#print(cdr.get_hyper_site_results('copper'))
-#cdr.get_mineral_site_inventories('zinc').to_csv('/home/mgbillmi/PROCESSING/zinc_from_cdr.csv') # <- this one typically returns a huge file (>20 MB) and often times out
-
-
-#print(cdr.get_mineral_site_deposit_type_candidates('Epithermal mercury'))
-#print(cdr.get_mineral_site_deposit_type_candidates_csv('Epithermal mercury'))
 

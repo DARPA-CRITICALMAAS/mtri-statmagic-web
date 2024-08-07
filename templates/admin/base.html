@@ -25,6 +25,11 @@
 {% vite_hmr_client %}
 {% vite_react_refresh %}
 {% vite_asset 'js/info_component.tsx' %}
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static "admin/img/apple-touch-icon.png" %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static "admin/img/favicon-32x32.png" %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static "admin/img/favicon-16x16.png" %}">
+    <link rel="manifest" href="/site.webmanifest">
 </head>
 
 <body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}"

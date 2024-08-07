@@ -1628,6 +1628,11 @@ td.range_td {
     
 }
 
+.datalayer_table td.label {
+    vertical-align: middle;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

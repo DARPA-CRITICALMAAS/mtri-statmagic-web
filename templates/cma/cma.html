@@ -41,9 +41,19 @@ f
                         <div class='content'>
                             <table class='datalayer_table'>
                                 <tr>
-                                    <td class='label'>Deposit type:</td>
+                                    <td class='label'>Commodity filter:</td>
                                     <td align='right'>
                                         <select id='commodity' onChange="validateLoadSitesButton();">
+                                            <option value="" disabled selected hidden>Select...</option>
+                                            <!--{% for commodity in commodities %}
+                                                <option value="{{commodity}}">{{commodity}}</option>
+                                            {% endfor %}-->
+                                        </select>
+                                    </td>
+                                </tr><tr>
+                                    <td class='label'>Deposit type filter:</td>
+                                    <td align='right'>
+                                        <select id='deposit_type' onChange="validateLoadSitesButton();">
                                             <option value="" disabled selected hidden>Select...</option>
                                             <!--{% for commodity in commodities %}
                                                 <option value="{{commodity}}">{{commodity}}</option>
