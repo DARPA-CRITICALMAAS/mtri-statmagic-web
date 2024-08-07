@@ -272,6 +272,7 @@ def get_mineral_sites(request):
     params = {
         'deposit_type': '',
         'commodity': 'copper', # Commodity to search for
+        'limit': 100,
         'wkt': '' # WKT polygon indicating AOI
         # [...] insert other query params
     }
@@ -287,7 +288,7 @@ def get_mineral_sites(request):
         commodity=params['commodity'],
         candidate=params['deposit_type'],
         bbox_polygon=json.dumps(gj),
-        limit=-1
+        limit=int(params['limit'])
     )
     
     # Convert to geoJSON

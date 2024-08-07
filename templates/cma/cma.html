@@ -50,7 +50,8 @@ f
                                             {% endfor %}-->
                                         </select>
                                     </td>
-                                </tr><tr>
+                                </tr>
+                                <tr>
                                     <td class='label'>Deposit type filter:</td>
                                     <td align='right'>
                                         <select id='deposit_type' onChange="validateLoadSitesButton();">
@@ -61,6 +62,19 @@ f
                                         </select>
                                     </td>
                                 </tr>
+                                <tr title='Limits the number of results returned for the query; lower values will load faster. For no limit, use -1.'>
+                                    <td class='label'>Results limit:</td>
+                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-1' value="100" /></td>
+                                </tr>
+                                <tr id='mineral_sites_extent_tr'> 
+                                    
+                                </tr>
+                               <!-- <tr id='mineral_sites_display_by' title='Choose how sites are displayed'>
+                                    <td class='label'>Display by:</td>
+                                    <td align='right'><select id='sites_display_select'>
+                                        <option title='Color sites by whether they are a producer, past producer, prospect, etc.' value='site_type' selected>Site type</option>
+                                    </select></td>
+                                </tr>-->
                              <!--   <tr>
                                     <td class='label'>AOI:</td>
                                     <td align='right'><div id='query_instructions'><span class="highlight">
@@ -75,8 +89,13 @@ f
                                     </div></td>
                                 </tr>-->
                                 <tr>
-                                    <td colspan=2>
-                                        <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load sites</div>
+                                    <td colspan=2 align='center'>
+                                        <div class='mineral_sites_results_message'>
+                                        # query results: <span id='mineral_sites_n_results'>--</span>
+                                        </div>
+                                        <div id="clear_sites_button" class='button load_sites sites cancel' onClick='clearMineralSites();'>Clear</div>
+                                        <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load sites</div>
+                                        
                                     </td>
                                 </tr>
                             </table>

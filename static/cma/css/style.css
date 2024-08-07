@@ -387,11 +387,18 @@ tr.m-basemap-selector.divider {
 }
 .leaflet-popup-content-wrapper {
     border-radius: 2px;
-    background: #444;
+    background: rgba(68,68,68,0.95);
     color: #fff;
+    box-shadow: -8px 8px 8px rgba(40,40,40,0.5);
 }
 .leaflet-popup-content {
     margin: 4px 6px;
+    font-size: 0.85rem;
+}
+.leaflet-popup-content span.label {
+    font-size: 0.76rem;
+    color: #bfbfbf;
+    
 }
 
 
@@ -472,10 +479,11 @@ select {
 
 .button.load_sites {
     font-size: 1.1rem;
-    line-height: 1.5rem;
+/*     line-height: 1.5rem; */
     background-color: #6aaf7a;
-    width: 80%;
+    width: 260px;
     margin: 10px auto;
+    
 }
 .button.load_sites:hover {
     background-color: #24422b;
@@ -684,7 +692,6 @@ tr.subcategory_label td.colname,
 
 .datalayer_table input {
     cursor: pointer;
-
 }
 .datalayer_table input[type="checkbox"] {
     width: 16px;
@@ -693,7 +700,13 @@ tr.subcategory_label td.colname,
     background-color: #999;
     
 }
-
+.datalayer_table input[type="number"] {
+    max-width: 60px;
+    background-color: #333;
+    border: none;
+    color: #f2f2f2;
+    
+}
 select {
     color: white;
     background-color: #333;
@@ -1488,7 +1501,8 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
-.loading_fishnet {
+.loading_fishnet,
+.loading_sites {
     color: #666;
     display: none;
 }
@@ -1533,7 +1547,7 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 }
 .button.selected_model_config {
     margin: 10px auto;
-    width: 300px;
+    width: 260px;
     font-size: 1.1rem;
     background-color: #5c8a5c;
 }
@@ -1630,6 +1644,75 @@ td.range_td {
 
 .datalayer_table td.label {
     vertical-align: middle;
+    
+}
+
+#mineral_sites_display_by {
+    display: none;
+    
+}
+
+.button.load_sites.cma {
+    width: auto;    
+}
+
+.mineral_sites_results_message {
+    margin: 6px auto 10px auto;
+    text-align: center;
+    color: #ababed;
+}
+#mineral_sites_n_results {
+    font-weight: bold;
+    color: #f2f2f2;
+    font-size: 0.85rem;
+}
+.mineral_site_marker {
+    transition: 0.2s;
+    -o-transition: 0.2s;
+    -webkit-transition: 0.2s;
+}
+.legend.leaflet-control #legendcontent_sites td.label {
+    vertical-align: middle;
+    font-family: 'Open Sans Condensed';
+}
+
+.dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  display: inline-block;
+/*   margin: 2px 2px 0px 2px; */
+}
+#sites_legend {
+    margin: 10px 12px;
+    
+}
+
+.legend_entry {
+    margin-top: 2px;
+    vertical-align: middle;
+    font-weight: normal;
+    line-height: 0.95rem;
+    font-size: 0.85rem;
+    font-family: var(--font-family-primary); 
+}
+
+div.emri_keyword {
+    margin-left: 10px;
+    
+}
+.confidence {
+    color: #b2df8a;
+    font-weight: normal;
+    font-size: 0.7rem;
+    font-family: var(--font-family-primary); 
+    
+}
+
+.button.load_sites.sites {
+    margin: 0px 10px 10px 10px;
+    display: inline-block;
+    width: 25%;
     
 }
 

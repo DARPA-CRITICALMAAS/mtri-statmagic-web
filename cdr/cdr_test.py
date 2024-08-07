@@ -34,9 +34,9 @@ post_data_intersect_sources = {
     }
 }
 #
-# res = cdr.intersect_sources(json.dumps(post_data))
-# print(res)
-# print(len(res))
+res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
+print(res)
+print(len(res))
 #print(cdr.get_mineral_inventories('copper'))
 
 bbox_polygon_site_search = {
@@ -58,31 +58,31 @@ bbox_polygon_site_search = {
     ]
 }
 
-res = cdr.get_mineral_sites_search(
-    commodity='Zinc',
-    candidate='',
-    bbox_polygon=json.dumps(bbox_polygon_site_search),
-    limit=-1
-)
-commodities = {}
-for r in res:
-    c = r['mineral_inventory'][0]['commodity']
-    if c not in commodities:
-        commodities[c] = 0
-    commodities[c] += 1
-    cs = [x['commodity'] for x in r['mineral_inventory']]
-    dts = [x['observed_name'] for x in r['deposit_type_candidate']]
-    #print(r['deposit_type_candidate'])
-    #print(len(r['mineral_inventory']),len(r['deposit_type_candidate']))
-    #print(cs, dts)
-    print(r['site_type'])
-    #commodities.append()
-    #rint()
-print(len(res))
-for c in sorted(commodities):
-    print(c,commodities[c])
-
-print(r)
+# res = cdr.get_mineral_sites_search(
+#     commodity='Zinc',
+#     candidate='',
+#     bbox_polygon=json.dumps(bbox_polygon_site_search),
+#     limit=-1
+# )
+# commodities = {}
+# for r in res:
+#     c = r['mineral_inventory'][0]['commodity']
+#     if c not in commodities:
+#         commodities[c] = 0
+#     commodities[c] += 1
+#     cs = [x['commodity'] for x in r['mineral_inventory']]
+#     dts = [x['observed_name'] for x in r['deposit_type_candidate']]
+#     #print(r['deposit_type_candidate'])
+#     #print(len(r['mineral_inventory']),len(r['deposit_type_candidate']))
+#     #print(cs, dts)
+#     print(r['site_type'])
+#     #commodities.append()
+#     #rint()
+# print(len(res))
+# for c in sorted(commodities):
+#     print(c,commodities[c])
+#
+# print(r)
 
 # res = cdr.get_tiles_sources()
 #

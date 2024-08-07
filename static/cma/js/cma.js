@@ -22,6 +22,20 @@ const DRAW_STYLE = {
 var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
 
+const SPECIFY_EXTENT_TR = `
+    <td class='label'>Extent:</td>
+    <td align='right'>
+        <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
+        <img src="/static/cma/img/draw-polygon-icon.png" 
+            height="17"
+            id="draw_polygon_icon" /></a>
+        <a onClick=drawStart("rectangle")>
+        <img src="/static/cma/img/draw-rectangle-icon.png"
+            height="17"
+            id="draw_rectangle_icon" ></a>
+    </td>
+`;
+
 // Stuff to do when the page loads
 function onLoad() {
     
@@ -34,11 +48,14 @@ function onLoad() {
     // Build map layer control
     createLayerControl();
     
-    // Add loading spinner control
-    addLoadingSpinnerControl();
-    
+        
     // Add top CMA choose control
     addCMAControl();
+    
+    // Add loading spinner controls
+    addLoadingSpinnerControl('loading_fishnet','...loading grid preview');
+    addLoadingSpinnerControl('loading_sites','...querying mineral sites');
+
     
     // Load CRS options
     var opts = ``;
@@ -71,8 +88,11 @@ function onLoad() {
     // Populate ProcessinStep options
     populateAddProcessingStep();
     
-    // Create legend control
-    createLegendControl();
+    // Create legend control for mineral sites
+    createLegendControl('legend_content_sites');
+    
+    // Create legend control for standard layers
+    createLegendControl('legend_content');
     
     // Have the leaflet map update it's size after the control_panel show/hide
     // transition completes
@@ -117,6 +137,9 @@ function onLoad() {
     
     toggleHeader($('.header.modeling'));
     toggleHeader($('.header.datacube'));
+    
+    // Load extent specification tools to KNOWN DEPOSIT SITES
+    $('#mineral_sites_extent_tr').html(SPECIFY_EXTENT_TR);
     
     // Get metadata
     getMetadata();
@@ -171,19 +194,7 @@ function addCMAControl() {
                             <td class='label'>Spatial res. (<span id='cma_crs_units'></span>):</td>
                             <td><input type='number' id='cma_resolution' /></td>
                         </tr>
-                        <tr>
-                            <td class='label'>Extent:</td>
-                            <td>
-                                <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
-                                <img src="/static/cma/img/draw-polygon-icon.png" 
-                                    height="17"
-                                    id="draw_polygon_icon" /></a>
-                                <a onClick=drawStart("rectangle")>
-                                <img src="/static/cma/img/draw-rectangle-icon.png"
-                                    height="17"
-                                    id="draw_rectangle_icon" ></a>
-                            </td>
-                        </tr>
+                        <tr>${SPECIFY_EXTENT_TR}</tr>
                     </table>
                     <div class='cma_button_container'>
                         
@@ -219,16 +230,30 @@ function addCMAControl() {
     
 }
 
-function addLoadingSpinnerControl() {
+function clearMineralSites() {
+    // Remove map legend
+    $('#legend_content_sites').html('');
+    
+    // Remove map layer
+    if (MAP.hasLayer(MINERAL_SITES_LAYER)) {
+        MAP.removeLayer(MINERAL_SITES_LAYER);
+    }
+    
+    // Clear query results
+    $('#mineral_sites_n_results').html('--');
+    
+}
+
+function addLoadingSpinnerControl(div_class,message) {
     var Title = L.Control.extend({
         options: {
-            position: 'bottomright'
+            position: 'topright'
         },
 
         onAdd: function () {
-            var c = L.DomUtil.create('div', 'loading_fishnet');
+            var c = L.DomUtil.create('div', div_class);
             
-            c.innerHTML = `...loading grid preview <div class='loading_spinner'></div>`;
+            c.innerHTML = `${message} <div class='loading_spinner'></div>`;
 
             return c;
         }
@@ -954,7 +979,7 @@ function finishDraw(layer) {
     validateLoadSitesButton();
     
     // TODO: If this drawing comes from CMA:
-    getFishnet();
+//     getFishnet();
     
     // Validate CMA initialization form
     validateCMAinitializeForm();
@@ -968,70 +993,83 @@ function loadMineralSites() {
     if (AJAX_GET_MINERAL_SITES) {
         AJAX_GET_MINERAL_SITES.abort();
     }
+    
+    // Show loading spinner
+    $('.loading_sites').show();
+    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: {
             deposit_site: $('#deposit_type').val(),
             commodity: $('#commodity').val(),
+            limit: $('#mineral_sites_limit').val(),
             wkt: getWKT()
         },
         success: function(response) {
-            console.log(response);
+//             console.log(response);
             GET_MINERAL_SITES_RESPONSE_MOST_RECENT = response;
             
             // Add points to map
             loadMineralSitesToMap();
             
+            // Update query results n
+            $('#mineral_sites_n_results').html(response.mineral_sites.length);
+            $('.loading_sites').hide();
+            
         },
         error: function(response) {
             console.log(response);
+            $('.loading_sites').hide();
         }
     });
     
 }
 
-function loadMineralSitesToMap() {
-    // Map of site_type to style 
-    // color map used: https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=6
-    site_types = {
-        Occurrence: {
-            color: '#33a02c',
-        },
-        Prospect: {
-            color: '#b2df8a',
-        },
-        Plant: {
-            color: '#e31a1c',
-        },
-        Producer: {
-            color: '#1f78b4',
-        },
-        'Past Producer': {
-            color: '#a6cee3',
-        },
-        Unknown: {
-            color: '#fb9a99'
-        }                
-    };
+ function getCommodityAndDTsFromSite(site_prop) {
+    var commodities = [];
+    $.each(site_prop.mineral_inventory, function(i,m) {
+        if (commodities.indexOf(m.commodity) == -1) {
+            commodities.push(m.commodity);
+        }
+    });
+    var dtcs = [];
+    var dtcs_w_conf = [];
+    $.each(site_prop.deposit_type_candidate, function(i,m) {
+        if (dtcs.indexOf(m.observed_name) == -1) {
+            dtcs.push(m.observed_name);
+            dtcs_w_conf.push({name: m.observed_name, conf: m.confidence});
+        }
+    });
+    if (dtcs_w_conf.length == 0) {
+        dtcs_w_conf = [{name: '--', conf: ''}];
+    }
     
+    return {
+        commodities: commodities,
+        dtcs: dtcs,
+        dtcs_w_conf: dtcs_w_conf,
+    };
+}
+    
+
+function loadMineralSitesToMap() {
+    
+    // Remove current layer if it exists
     if (MAP.hasLayer(MINERAL_SITES_LAYER)) {
         MAP.removeLayer(MINERAL_SITES_LAYER);
     }
     
+    // Create new layer
     MINERAL_SITES_LAYER = L.geoJSON(
         GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites,{
 
         pointToLayer: function(feature,latlng) {
-            var fillColor = '#888';
-            if (site_types[feature.properties.site_type]) {
-                fillColor = site_types[feature.properties.site_type].color;
-            }
             return L.circleMarker(latlng,{
                 radius: 6,
-                fillColor: fillColor,
                 fillOpacity: 0.9,
                 opacity: 1,
                 color: '#000',
-                weight: 0.5
+                weight: 0.5,
+                className: 'mineral_site_marker',
             });
         }
     });
@@ -1041,47 +1079,205 @@ function loadMineralSitesToMap() {
         minWidth: 260,
         autoPan: false,
     });
-    MINERAL_SITES_LAYER.bindPopup(popup);
+//     MINERAL_SITES_LAYER.bindPopup(popup);
+    MINERAL_SITES_LAYER.on('mouseover', function(e) {
+        e.layer.setStyle({radius: 10});
+    });
+    MINERAL_SITES_LAYER.on('mouseout', function(e) {
+        e.layer.setStyle({radius: 6});
+        
+        // vvv commenting this out for now b/c this is erasing the clicked-on
+        //     popup which we don't want
+//         e.layer.bindPopup(popup);
+//         popup.setContent(`${e.layer.feature.properties.name}`);
+//         e.layer.openPopup();
+    });
     MINERAL_SITES_LAYER.on('click', function(e) {
-        var prop = e.layer.feature.properties;
-//         console.log(prop);
-        var minerals = [];
-        $.each(prop.mineral_inventory, function(i,m) {
-            if (minerals.indexOf(m.commodity) == -1) {
-                minerals.push(m.commodity);
-            }
-        });
-        var dtcs = [];
-        $.each(prop.deposit_type_candidate, function(i,m) {
-            if (dtcs.indexOf(m.observed_name) == -1) {
-                dtcs.push(m.observed_name);
-            }
-        });
-        if (dtcs.length == 0) {
-            dtcs = ['--'];
+        var prop = e.layer.feature.properties;      
+        var src = '';
+
+        e.layer.bindPopup(popup);
+        
+        if (prop.source_id.indexOf('mrdata') > -1) {
+            src = `${prop.source_id}/show-mrds.php?dep_id=${prop.record_id}`;
         }
+    
+        var commdts = getCommodityAndDTsFromSite(prop);
+        
+        var dtcs_html = '';
+        $.each(commdts.dtcs_w_conf, function(i,d) {
+            var conf = d.conf ? `<span class='confidence'> conf: ${d.conf.toFixed(2)}</span>` : ''
+            dtcs_html += `<div class='emri_keyword'>${d.name} ${conf}</div>`;
+        });
+        
         popup.setContent(`
             <b>${prop.name}</b>
             <br><br>
-            Site type: <b>${prop.site_type}</b>
+            <span class='label'>Site type:</span> <b>${prop.site_type}</b>
             <br>
-            Source: <b>${prop.source_id}</b>
+            <span class='label'>Source:</span> <b><a href='${src}' target='_blank'>${prop.source_id}</a></b>
             <br>
-            Record ID: <b>${prop.record_id}</b>
+            <span class='label'>Record ID:</span> <b>${prop.record_id}</b>
             <br>
-            System: <b>${prop.system}</b> v<b>${prop.system_version}</b>
+            <span class='label'>System:</span> <b>${prop.system}</b> v<b>${prop.system_version}</b>
             <br><br>
-            Minerals: <span class='emri_keyword'>${minerals.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-            <br>
-            Deposit type candidates: <span class='emri_keyword'>${dtcs.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <span class='label'>Minerals:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <br><br>
+            <span class='label'>Deposit type candidates:</span> ${dtcs_html}
 
             
         `);
-//         console.log(
-        //e.layer.feature.geometry.coordinates
-        MINERAL_SITES_LAYER.openPopup();
+        
+        e.layer.openPopup();
+//         popup.setLatLng(e.layer.feature.geometry.coordinates);
     });
     MINERAL_SITES_LAYER.addTo(MAP);
+    
+    // Update the "display by" selector to include commodity/deposit type
+    // candidate filters customized to results
+    
+    var all_opts = {commodities: [], dtcs: []};
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,site) {
+        var commdts = getCommodityAndDTsFromSite(site.properties);
+        $.each(all_opts, function(k) {
+            $.each(commdts[k], function(c,commdt) {
+                if (all_opts[k].indexOf(commdt) == -1) {
+                    all_opts[k].push(commdt);
+                }
+            });
+        });
+    });
+    
+    var opts = '<option value="site_type" selected>Site type</option>';
+    
+    $.each(all_opts.commodities, function(i,m) {
+        opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
+    });
+    $.each(all_opts.dtcs, function(i,d) {
+        opts += `<option value='deposit_type__${d}'>dep. type cand.: ${d}</option>`;
+    });
+    
+    // Show the "display by" selector <- only needed if 'display by' dropdown is moved under the KNOWN DEPOSIT SITES filter form
+//     $('#mineral_sites_display_by').show();
+    
+    // Create/add legend
+    html = `
+        <div class='layer_legend' id='legendcontent_sites'>
+            Known deposit sites
+            <table>
+                <tr>
+                    <td class='label'>Display by:</td>
+                    <td><select id='sites_display_select' onchange='onMineralSitesDisplayByChange();'>
+                        ${opts}
+                    </select></td>
+                </tr>
+            </table>
+            <div id='sites_legend'></div>
+        </div>
+    `;
+    $('#legend_content_sites').html(html);
+    
+    // Trigger display by change to style the markers
+    onMineralSitesDisplayByChange();
+    
+}
+
+function onMineralSitesDisplayByChange() {
+    var display_by = $('#sites_display_select').val();
+    var display_by_text = $('#sites_display_select option:selected').text();
+    
+    var fillColor_default = '#999';
+    var fillOpacity_default = 0.3;
+    
+    var fillColor_filterYes = 'orange';
+    var fillOpacity_filterYes = 1.0;
+    
+    var strokeWeight_default = 0.5;
+    
+    // Map of site_type to style 
+    // color map used: https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=6
+    site_types = {
+        Occurrence: {
+            color: '#33a02c',
+        },
+        Prospect: {
+            color: '#b2df8a',
+        },
+        'Past Producer': {
+            color: '#a6cee3',
+        },
+        Producer: {
+            color: '#1f78b4',
+        },
+        Plant: {
+            color: '#e31a1c',
+        },
+        Unknown: {
+            color: '#fb9a99'
+        }                
+    };
+    
+
+    MINERAL_SITES_LAYER.eachLayer(function(flayer) {
+        prop = flayer.feature.properties;
+        var fillColor = fillColor_default;
+        var fillOpacity = fillOpacity_default;
+        if (display_by == 'site_type') {
+            
+            // Update marker style
+            if (site_types[prop.site_type]) {
+                fillColor = site_types[prop.site_type].color;
+            }
+            flayer.setStyle({
+                fillColor: fillColor,
+                fillOpacity: 0.9,
+                weight: strokeWeight_default,
+            });
+        } else {
+            var strokeWeight = 0.2;
+            var display_cat = display_by.split('__')[0];
+            var display_filter = display_by.split('__')[1];
+            var commdts = getCommodityAndDTsFromSite(prop);
+            
+            if (display_cat == 'commodity') {
+                if (commdts.commodities.indexOf(display_filter) > -1) {
+                    fillColor = fillColor_filterYes;
+                    fillOpacity = fillOpacity_filterYes;
+                    strokeWeight = 0.5;
+                }
+            }
+            
+            if (display_cat == 'deposit_type') {
+                if (commdts.dtcs.indexOf(display_filter) > -1) {
+                    fillColor = fillColor_filterYes;
+                    fillOpacity = fillOpacity_filterYes;
+                    strokeWeight = 0.5;
+                }
+            }
+            
+            flayer.setStyle({
+                weight: strokeWeight,
+                fillColor: fillColor,
+                fillOpacity: fillOpacity
+            });
+            
+          
+        }
+    });
+    
+    // Create legend
+    var lhtml = '';
+    if (display_by == 'site_type') {
+        $.each(site_types, function(label,obj) {
+            lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${label}</div>`;
+        });
+    } else {
+        lhtml = `
+            <div class='legend_entry'><div class='dot' style='background-color:${fillColor_filterYes};'></div> ${display_by_text}</div>
+            <div class='legend_entry'><div class='dot' style='background-color:${fillColor_default};'></div> other</div>
+        `;
+    }
+    $('#sites_legend').html(lhtml);
     
 }
 
@@ -1143,10 +1339,9 @@ function createMineralSitesControl() {
     MAP.addControl(new controlPanel());
 }
 
-function createLegendControl() {
+function createLegendControl(element_id) {
     
     // Create legend control
-
     var legendControl = L.Control.extend({
         options: {
             position: 'topleft'
@@ -1154,7 +1349,7 @@ function createLegendControl() {
         onAdd: function () {
             var c = L.DomUtil.create('div', 'legend');
             
-            c.innerHTML = `<div id='legend_content'></div>`;
+            c.innerHTML = `<div id='${element_id}'></div>`;
 
             return c;
         }
@@ -1166,7 +1361,7 @@ function createLegendControl() {
 
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
-    if (v && drawnLayer) {
+    if (v != undefined && drawnLayer) {
         $('#load_sites_button').removeClass('disabled');
     } else {
         $('#load_sites_button').addClass('disabled');
@@ -1222,30 +1417,8 @@ function showDataLayerInfo(layer_name) {
 
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
-    
-//     // ID the associated checkbox
-//     if (target.prop('nodeName') == 'INPUT') {
-//         chk = $(target);
-//     } else if (['SPAN','DIV','TD','TR'].indexOf(target.prop('nodeName')) > -1) {
-//         chk = $(target.find('input')[0]);//$('#' + id + '-checkbox');
-//         is_label = true;
-//     }
-//     
-//     // Handle a click on the label 
-//     if (chk.prop('type') == 'radio') {
-//         if (is_label) {
-//             chk.prop('checked',true);
-//         }
-//     } else {
-//         if (is_label && !chk.prop('checked')) {
-//             chk.prop('checked', true);
-//         } else if (is_label && chk.prop('checked')) {
-//             chk.prop('checked', false);
-//         }
-//     }
-    
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
-    var layer = datalayer.maplayer;//bm ? map_obj.basemaps[layer_id] : CROSSINGS[crossing_id].layers[layer_id].layers[0];
+    var layer = datalayer.maplayer;
     
     // Remove all layers in group
     if (chk.prop('checked')) {
