@@ -631,6 +631,16 @@ span.collapse {
     text-align: center;
     cursor: pointer;
 }
+.datalayer_table td.download {
+    text-align: center;
+    cursor: pointer;
+}
+.datalayer_table td.download img {
+    display: block;
+    margin: 0px auto;
+    
+}
+
 
 #datalayer_container .content.main {
     max-height: 500px;
@@ -1073,7 +1083,7 @@ table.editprocessingsteps_table td {
     font-size: 0.81rem;
 }
 a:link {
-    color: #5b80b2;
+    color: #86a1c6;
 }
 a:hover {
     color: #4da6ff;
@@ -1490,7 +1500,8 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     fill: white;
 }
 
-.loading_spinner {
+.loading_spinner,
+.button.load_sites.sites .loading_spinner {
 /*     display: none; */
     width: 10px;
     height: 10px;
@@ -1505,6 +1516,10 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 .loading_sites {
     color: #666;
     display: none;
+}
+.button.load_sites.sites .loading_spinner {
+    position: relative;
+    top: 9px;
 }
 #cma_fishnet_message {
     color: #d5d590;
@@ -1546,6 +1561,7 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     vertical-align: middle;
 }
 .button.selected_model_config {
+    display: none;
     margin: 10px auto;
     width: 260px;
     font-size: 1.1rem;
@@ -1673,7 +1689,10 @@ td.range_td {
 }
 .legend.leaflet-control #legendcontent_sites td.label {
     vertical-align: middle;
-    font-family: 'Open Sans Condensed';
+    padding: 2px 7px 0px 7px;
+    color: #bfbfbf;
+    font-size: 0.73rem;
+    font-family: var(--font-family-primary);
 }
 
 .dot {
@@ -1702,9 +1721,13 @@ div.emri_keyword {
     
 }
 .confidence {
-    color: #b2df8a;
+    color: #f0f07a;
     font-weight: normal;
     font-size: 0.7rem;
+    font-family: monospace, ui-monospace, Arial; 
+}
+.confidence .lab {
+    color: #bfbfbf;
     font-family: var(--font-family-primary); 
     
 }
@@ -1724,7 +1747,7 @@ div.emri_keyword {
 }
 .legend_body {
     background-color: rgba(40,40,40,0.6);
-    padding: 0px 10px 10px 10px;
+    padding: 4px 10px 10px 10px;
 }
 
 #legendcontent_sites {
@@ -1733,9 +1756,30 @@ div.emri_keyword {
 
 select#sites_display_select {
     background-color: #222;
+}
+
+#mineral_sites_extent_tr td {
+    padding: 4px 4px;
+}
+
+.macrostrat_source {
+    font-size: 0.75rem;
+    line-height: 0.77rem;
+}
+.macrostrat_source a {
+    
     
 }
 
+.message_modal_content {
+    margin-top: 20px;
+    color: white;
+}
+.message_modal_header {
+    font-size: 1.2rem;
+    color: #bfbfbf;
+    
+}
 
 @keyframes spin {
     0% { transform: rotate(0deg); }

@@ -192,12 +192,14 @@ function addCMAControl() {
                         </tr>
                         <tr>
                             <td class='label'>Spatial res. (<span id='cma_crs_units'></span>):</td>
-                            <td><input type='number' id='cma_resolution' /></td>
+                            <td>
+                                <input type='number' id='cma_resolution' /><br>
+                                <span class='link' onclick='loadCMAresolutionFromLayers();'>load min. from input layers</span>
+                            </td>
                         </tr>
                         <tr>${SPECIFY_EXTENT_TR}</tr>
                     </table>
                     <div class='cma_button_container'>
-                        
                         <div id="btn_cma_initialize_cancel" class='button load_sites cmainit cancel' onClick='showCMAstart();'>Cancel</div>
                         <div id="btn_cma_initialize_submit" class='button load_sites cmainit' onClick='initiateCMA();'>Submit</div>
                     </div>
@@ -227,6 +229,19 @@ function addCMAControl() {
     $('.cma_header input').on('click', function(e) {
         $(e.target).focus();
     });
+    
+}
+
+function loadCMAresolutionFromLayers() {
+    var minres = 100000000;
+    $.each(DATALAYERS_LOOKUP, function(l,obj) {
+        console.log(l,obj.spatial_resolution_m);
+        if (obj.spatial_resolution_m != null) {
+            minres = Math.min(minres, obj.spatial_resolution_m);
+        }
+    });
+    
+    $('#cma_resolution').val(minres);
     
 }
 
@@ -531,7 +546,6 @@ function getMetadata() {
     $.ajax(`/get_metadata`, {
         data: {},
         success: function(response) {
-            //COMMODITIES = response.commodities;
             
             // Now load these to the dropdowns
             $.each(['commodity','deposit_type'], function(i,v) {
@@ -593,6 +607,15 @@ function createMapLayers() {
         
         });
     });
+    
+}
+
+function showMessage(title,content) {
+    $('#message_modal .message_modal_header').html(title);
+    $('#message_modal .message_modal_content').html(content);
+    
+    $('#message_modal').show();
+    
     
 }
 
@@ -667,7 +690,43 @@ function createLayerControl() {
     });
     macrostrat_layer_units.bindPopup(popup);
     macrostrat_layer_units.on('click', function(e) {
-        popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
+        var prop = e.layer.properties;
+        
+        // Special parsing of the 'lith' property b/c sometimes it's just a
+        // list and sometimes it's divided between Major/Minor/etc.
+        var lith = prop.lith;
+        if (lith.indexOf('Major') > -1) {
+            lith = lith.replaceAll('{',' ').replaceAll('},','}');
+            if (lith.slice(-1) == '}') {
+                lith = lith.slice(0,-1);
+            }
+            lith = lith.split('}');
+        } else {
+            lith = lith.split(',');
+        }
+    
+        var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
+    
+        popup.setContent(`
+            <b>${prop.name}</b>
+            <br><br>
+            <span class='label'>Age:</span> <b>${prop.age}</b><br>
+            <span class='label'>Best age (top):</span> <b>${prop.best_age_top.toFixed(1)}</b><br>
+            <span class='label'>Best age (bottom):</span> <b>${prop.best_age_bottom.toFixed(1)}</b><br>
+            ${desc}
+            <br><br>
+            <span class='label'>Lithology:</span><br><span class='emri_keyword'>${lith.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <br><br>
+            <span class='label'>Comments:</span>
+            <div class='macrostrat_source'>${prop.comments}</div>
+            <br><br>
+            <span class='label'>Source:</span><br>
+            <div class='macrostrat_source'><a href='${prop.ref_url}' target='_blank' >${prop.ref_authors} ${prop.ref_year}. ${prop.ref_title}. ${prop.ref_source}. ${prop.ref_isbn}</a>
+            </div>
+            <br>
+            
+            
+        `);
         console.log(e.layer.properties);
         macrostrat_layer_units.openPopup();
 
@@ -1000,6 +1059,10 @@ function loadMineralSites() {
     // Show loading spinner
     $('.loading_sites').show();
     
+    // Temporarily disable the "load sites" button
+    $('#load_sites_button').addClass('disabled');
+    $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
+    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: {
             deposit_site: $('#deposit_type').val(),
@@ -1021,10 +1084,15 @@ function loadMineralSites() {
             $('#mineral_sites_n_results').html(response.mineral_sites.length);
             $('.loading_sites').hide();
             
+            $('#load_sites_button').removeClass('disabled');
+            $('#load_sites_button').html('Load sites');
+            
         },
         error: function(response) {
             console.log(response);
             $('.loading_sites').hide();
+            $('#load_sites_button').removeClass('disabled');
+            $('#load_sites_button').html('Load sites');
         }
     });
     
@@ -1112,7 +1180,7 @@ function loadMineralSitesToMap() {
         
         var dtcs_html = '';
         $.each(commdts.dtcs_w_conf, function(i,d) {
-            var conf = d.conf ? `<span class='confidence'> conf: ${d.conf.toFixed(2)}</span>` : ''
+            var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
             dtcs_html += `<div class='emri_keyword'>${d.name} ${conf}</div>`;
         });
         
@@ -1141,7 +1209,6 @@ function loadMineralSitesToMap() {
     
     // Update the "display by" selector to include commodity/deposit type
     // candidate filters customized to results
-    
     var all_opts = {commodities: [], dtcs: []};
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,site) {
         var commdts = getCommodityAndDTsFromSite(site.properties);
@@ -1154,12 +1221,14 @@ function loadMineralSitesToMap() {
         });
     });
     
+    
     var opts = '<option value="site_type" selected>Site type</option>';
     
-    $.each(all_opts.commodities, function(i,m) {
+    $.each(all_opts.commodities.sort(), function(i,m) {
+        if (!m) {return;}
         opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
     });
-    $.each(all_opts.dtcs, function(i,d) {
+    $.each(all_opts.dtcs.sort(), function(i,d) {
         opts += `<option value='deposit_type__${d}'>dep. type cand.: ${d}</option>`;
     });
     
@@ -1174,6 +1243,7 @@ function loadMineralSitesToMap() {
                 <table>
                     <tr>
                         <td class='label'>Display by:</td>
+                    </tr><tr>
                         <td><select id='sites_display_select' onchange='onMineralSitesDisplayByChange();'>
                             ${opts}
                         </select></td>

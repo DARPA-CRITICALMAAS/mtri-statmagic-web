@@ -7,6 +7,9 @@ con1 = dm_util.con1
 cdr = cdr_utils.CDR()
 res = cdr.get_prospectivity_input_layers()
 
+print(res[0])
+blerg
+
 insert_start = '''
     INSERT INTO public.datalayer(
 	    name, name_alt, description, source, path, category, subcategory, data_format)'

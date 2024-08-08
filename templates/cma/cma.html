@@ -28,6 +28,18 @@ f
 {% include './overlay_datalayer_info.html' %}
 {% include './overlay_processingsteps.html' %}
 {% include './overlay_parametersform.html' %}
+<div id='message_modal' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#message_modal').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='message_modal_header'></div>
+        <div class='message_modal_content'></div>
+    </div>
+</div>
 
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
@@ -64,7 +76,7 @@ f
                                 </tr>
                                 <tr title='Limits the number of results returned for the query; lower values will load faster. For no limit, use -1.'>
                                     <td class='label'>Results limit:</td>
-                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-1' value="100" /></td>
+                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-100' value=100 step=100 /></td>
                                 </tr>
                                 <tr id='mineral_sites_extent_tr'> 
                                     
@@ -118,7 +130,9 @@ f
                                     <td>{{subcategory}}</td>
                                     <td class='colname'>Info</td>
                                     <td class='colname'>Show</td>
+                                    <td class='colname'>Download</td>
                                     <td class='colname radiocube'>Add to cube</td>
+
                                 </tr>
                                 {% for layer in layers %}
                                     <tr data-path="{{layer.name}}">
@@ -126,6 +140,9 @@ f
                                         <td class='name'>{{layer.name_pretty}}</td>
                                         <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
                                         <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
+                                        <td class='download'>
+                                            <a href='{{layer.path}}'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
+                                        </td>
                                         <td>
                                             <div class="radiocube" align="left">
                                                 <input type="radio" name="radiocube_{{layer.name}}" value="no" checked>
@@ -134,6 +151,7 @@ f
                                                 <label class='yes' for="radiocube_{{layer.name}}" onclick="onRadioCubeClick(this);">Y</label>
                                             </div>
                                         </td>
+                  
                                     </tr>
                                 {% endfor %}
                             {% endfor%}
