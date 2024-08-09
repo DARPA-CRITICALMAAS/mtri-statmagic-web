@@ -28,6 +28,7 @@ f
 {% include './overlay_datalayer_info.html' %}
 {% include './overlay_processingsteps.html' %}
 {% include './overlay_parametersform.html' %}
+{% include './overlay_load_cma.html' %}
 <div id='message_modal' class='overlay'>
     <div class="modal" >
         <div class="close-top" onclick="$('#message_modal').hide()">
@@ -165,7 +166,7 @@ f
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
                 <div class='content main'>
-                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='loadCMA();' class='start_cma_link'>load</span> an MPM to enable modeling tools.</div>
+                    <div id='modeling_initial_message'><span class='start_cma_link' onclick='showInitializeCMAform();'>Initiate</span> or <span onclick='showLoadCMAmodal();' class='start_cma_link'>load</span> an MPM to enable modeling tools.</div>
                     <div class='model_select_div'>
                         Select model: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>

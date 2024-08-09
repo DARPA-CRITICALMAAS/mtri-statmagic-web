@@ -56,7 +56,7 @@ def write_mapfile(
     datasets = DataLayer.objects.filter()
     #.values(
         #'name',
-        #'path',
+        #'download_url',
         #'stats_minimum',
         #'stats_maximum',
     #)
@@ -66,11 +66,11 @@ def write_mapfile(
         r = model_to_dict(dataset)
         
         # Ignore any non-rasters for now
-        if not r['path'] or not '.tif' in r['path']:
+        if not r['download_url'] or not '.tif' in r['download_url']:
             continue
 
         # Processing path to raster
-        tif_path = r['path']
+        tif_path = r['download_url']
         
         if 'http' in tif_path:
             if '.cdr.' in tif_path:
@@ -88,7 +88,7 @@ def write_mapfile(
         ext = bn.split('.')[-1]
         
         rasters[rkey] = r
-        rasters[rkey]['path'] = tif_path
+        rasters[rkey]['download_url'] = tif_path
         rasters[rkey]['wms_layername'] = rkey
         rasters[rkey]['layer_type'] = 'POLYGON' if ext in ('shp','SHP','js') else 'RASTER'
         rasters[rkey]['wms_title'] = rkey
@@ -227,7 +227,7 @@ def write_mapfile(
         print(raster)
 
         robj = rasters[raster]
-        raster_path = robj['path']
+        raster_path = robj['download_url']
 
         projection = '"init=epsg:4326"' if 'Geophysics_LAB_HGM_USCanada_cog.tif' in raster_path else 'AUTO'
 

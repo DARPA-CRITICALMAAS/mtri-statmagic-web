@@ -201,6 +201,15 @@ class CDR():
             f'prospectivity/input/layers'
         )
 
+    def get_prospectivity_data_sources(self,page=0,size=1000):
+        return self.run_query(
+            f'prospectivity/data_sources?page={page}&size={size}'
+        )
+
+    def get_cmas(self, page=0,size=10,search_text=''):
+        return self.run_query(
+            f'prospectivity/cmas?page={page}&size={size}&search_text={search_text}'
+        )
 
     ####################################
     # Tiles

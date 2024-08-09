@@ -10,6 +10,7 @@ var drawnLayer;
 var DATACUBE_CONFIG = [];
 var GET_MINERAL_SITES_RESPONSE_MOST_RECENT;
 var MINERAL_SITES_LAYER;
+var CMAS_EXISTING;
 var FISHNET_LAYER = new L.FeatureGroup();
 const DRAW_STYLE = {
     color: 'orange',
@@ -60,8 +61,10 @@ function onLoad() {
     // Load CRS options
     var opts = ``;
     $.each(CRS_OPTIONS, function(crs,cobj) {
-        var selected = crs == 'Conus Albers (EPSG:5070)' ? ' selected' : '';
-        opts += `<option value='${crs}'${selected}>${crs}</option>`;
+
+        var selected = crs == 'NA Albers (EPSG:102008)' ? ' selected' : '';
+//         console.log(crs,selected);
+        opts += `<option value='${cobj.srid}'${selected}>${cobj.name}</option>`;
     });
     $('#cma_crs').html(opts);
     
@@ -118,7 +121,7 @@ function onLoad() {
     });
     
     // Set default CRS to CONUS Albers
-    $('#cma_crs').val("Conus Albers (EPSG:5070)");
+    $('#cma_crs').val("102008");
     onCRSselect();
     
     // Load models to dropdown
@@ -156,19 +159,14 @@ function addCMAControl() {
             
             c.innerHTML = `
                 <div class='cma_start_div'>
-                    <table>
-                        <tr>
-                            <td>
-                                <div id="btn_cma_initialize" class='button load_sites cma' onClick='showInitializeCMAform();'>Initiate MPM</div>
-                            </td>
-                            <td>
-                                <div id="btn_cma_load" class='button load_sites cma' onClick='loadCMA();'>Load MPM</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan=2>MPM: <span id='cma_loaded' class='notactive'>[none active]</span></td>
-                        </tr>
-                    </table>
+                    <div class='mpm_top_options'>
+                        <span class='start_cma_link' onClick='showInitializeCMAform();'>initiate </span> | 
+                        <span id="btn_cma_load" class='start_cma_link' onClick='showLoadCMAmodal();'>load</span>
+                    </div>
+                    <div class='mpm_top_active' title='Active Mineral Processing Model (MPM)'>
+                        Active MPM:
+                        <div id='cma_loaded' class='notactive'>-- none active --</div>
+                    </div>
                 </div>
                 
                 <div id="cma_initialize_form">
@@ -194,7 +192,7 @@ function addCMAControl() {
                             <td class='label'>Spatial res. (<span id='cma_crs_units'></span>):</td>
                             <td>
                                 <input type='number' id='cma_resolution' /><br>
-                                <span class='link' onclick='loadCMAresolutionFromLayers();'>load min. from input layers</span>
+                                <span class='link' style='color:#ffb366' onclick='loadCMAresolutionFromLayers();'>load min. from input layers</span>
                             </td>
                         </tr>
                         <tr>${SPECIFY_EXTENT_TR}</tr>
@@ -542,10 +540,50 @@ function onModelParameterCheckboxChange(cmp) {
     console.log(cmp);
 }
 
+function loadCMA(cma_id) {
+    var cma = CMAS_EXISTING[cma_id];
+//     console.log(cma);
+    
+    // Populate the InitiateCMA form
+    $.each(['description','mineral','crs','resolution'], function(i,attr) {
+        var a = cma[attr];
+        if (attr == 'resolution') {a = a[0];}
+        if (attr == 'crs') {a = a.split(':')[1];}
+        $(`#cma_${attr}`).val(a);
+    });
+
+    // Load extent
+    // Remove existing drawings before starting new one
+    if (drawnLayer && MAP.hasLayer(drawnLayer)) {
+        MAP.removeLayer(drawnLayer);
+    }
+     drawnLayer = processGetAOIResponse({geometry:cma.extent});
+     finishDraw(drawnLayer);
+    
+    // Make UI changes (show model opts, etc.)
+     onStartedCMA(cma.description);
+    
+}
+
 function getMetadata() {
     $.ajax(`/get_metadata`, {
         data: {},
         success: function(response) {
+            CMAS_EXISTING = response.cmas;
+            
+            // Load CMAs to load CMA table
+            trs = '';
+            $.each(CMAS_EXISTING, function(cma_id,cma) {
+                trs += `
+                    <tr onclick="loadCMA('${cma_id}');">
+                        <td class='description'>${cma.description}</td>
+                        <td>${cma.mineral}</td>
+                        <td>${cma.resolution[0]}m</td>
+                        <td>${cma.crs}</td>
+                    </tr>
+                `;
+            });
+            $('#choose_cma_table tbody').html(trs);
             
             // Now load these to the dropdowns
             $.each(['commodity','deposit_type'], function(i,v) {
@@ -813,13 +851,13 @@ function createLayerControl() {
         popup.setContent(`
             <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
             <br><br>
-            Year started: <b>${prop.yearstart}</b>
+            <span class='label'>Year started:</span> <b>${prop.yearstart}</b>
             <br><br>
-            Contact name: <b>${contact.cname}</b><br>
-            Contact email: <b>${contact.cmail}</b><br>
+            <span class='label'>Contact name:</span> <b>${contact.cname}</b><br>
+            <span class='label'>Contact email:</span> <b>${contact.cmail}</b><br>
             <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
             <br><br>
-            Keywords:<br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
             
         `);
         ta1_layer.openPopup();
@@ -1658,6 +1696,7 @@ function onRemoveDataCubeLayerClick(cmp) {
 function onCRSselect() {
     var crs_name = $('#cma_crs').val();
     var crs = CRS_OPTIONS[crs_name];
+    console.log(crs_name);
     $('#cma_crs_units').html(crs.units);
     $('#cma_resolution').val(crs.default_resolution);
     getFishnet();
@@ -1883,7 +1922,7 @@ $("#file_shp").change(function() {
 // });
 
 
-function processGetAOIResponse(response,onEachFeature) {
+function processGetAOIResponse(geojson,onEachFeature) {
 //     clearDrawnLayers();
     
     var ds = JSON.parse(JSON.stringify(DRAW_STYLE));
@@ -1891,7 +1930,7 @@ function processGetAOIResponse(response,onEachFeature) {
         ds.pointerEvents = 'all';
     }
     var DRAWNLAYER;
-    $.each(response.geojson, function(i,geojson) {
+    $.each(geojson, function(i,geojson) {
         DRAWNLAYER = L.geoJson(geojson,{
             style: ds,
             onEachFeature: onEachFeature,
@@ -2019,13 +2058,12 @@ function zeroPad(num, places) {
 function getDateAsYYYYMMDD(dt) {
     dt = dt || new Date();
     return dt.getFullYear() + '-' + 
-           zeroPad(dt.getMonth()+1,2) + '-' + 
-           zeroPad(dt.getDate(),2);
+        zeroPad(dt.getMonth()+1,2) + '-' + 
+        zeroPad(dt.getDate(),2);
 }
 
-function loadCMA() {
-    // TODO: load it
-    console.log('loading CMA eventually...');
+function showLoadCMAmodal() {   
+    $('#load_cma_modal').show();
 }
 
 function saveParametersForm() {
@@ -2088,19 +2126,21 @@ function initiateCMA() {
     });
     
     var cma_description = $('#cma_description').val();
+    onStartedCMA(cma_description);
+   
+}
     
-    $('#cma_loaded').html(cma_description);
+function onStartedCMA(desc) {
+    $('#cma_loaded').html(desc);
     $('#cma_loaded').removeClass('notactive');
     showCMAstart();
     
-
-    
     $('#modeling_initial_message').hide();
     $('.model_select_div').show();
-}
     
-
-
+    // Hide "Choose existing MPM" modal
+    $('#load_cma_modal').hide();
+}
 
 
 $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {
@@ -2139,7 +2179,7 @@ $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('clic
             }
             
             // Process new drawn layer
-            drawnLayer = processGetAOIResponse(response);
+            drawnLayer = processGetAOIResponse(response.geojson);
 //             drawnItems.addLayer(drawnLayer); // <<< this already gets added in processGetAOIResponse
             finishDraw(drawnLayer);
             
@@ -2194,7 +2234,7 @@ $('#file_geojson').on('change', function() {
             }
             
             // Process new drawn layer
-            drawnLayer = processGetAOIResponse(response);
+            drawnLayer = processGetAOIResponse(response.geojson);
 //             drawnItems.addLayer(drawnLayer); // <<< this already gets added in processGetAOIResponse
             finishDraw(drawnLayer);
             

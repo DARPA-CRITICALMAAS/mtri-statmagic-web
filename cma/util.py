@@ -72,21 +72,23 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     s_srs = srs.GetAuthorityCode(None)
         
     # Transform to EPSG:4326 and simplify
-    sql = f'''
-        SELECT ST_AsGeoJSON(
-            ST_Simplify(
-                ST_Transform(
-                    ST_SetSRID(
-                        ST_GeomFromGeoJSON('{str(gj['geometry']).replace("'",'"')}'),
-                        {s_srs}
-                    ),
-                    4326
-                ),
-                0.002 -- simplify to ~200m 
-            )
-        );
-    '''
-    gj = json.loads(reduce_geojson_precision(runSQL(sql)[0]))
+    gj = simplify_and_transform_geojson(gj['geometry'],s_srs)
+    
+    #sql = f'''
+        #SELECT ST_AsGeoJSON(
+            #ST_Simplify(
+                #ST_Transform(
+                    #ST_SetSRID(
+                        #ST_GeomFromGeoJSON('{str(gj['geometry']).replace("'",'"')}'),
+                        #{s_srs}
+                    #),
+                    #4326
+                #),
+                #0.002 -- simplify to ~200m 
+            #)
+        #);
+    #'''
+    #gj = json.loads(reduce_geojson_precision(runSQL(sql)[0]))
     
     # Convert multi to single-part polygon
     if gj['type'] == 'MultiPolygon':
@@ -105,6 +107,24 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     response['Content-Type'] = 'application/json'
         
     return response
+    
+
+def simplify_and_transform_geojson(geometry,s_srs):
+    sql = f'''
+        SELECT ST_AsGeoJSON(
+            ST_Simplify(
+                ST_Transform(
+                    ST_SetSRID(
+                        ST_GeomFromGeoJSON('{str(geometry).replace("'",'"')}'),
+                        {s_srs}
+                    ),
+                    4326
+                ),
+                0.002 -- simplify to ~200m 
+            )
+        );
+    '''
+    return json.loads(reduce_geojson_precision(runSQL(sql)[0]))
     
 
 def convert_wkt_to_geojson(wkt_string):

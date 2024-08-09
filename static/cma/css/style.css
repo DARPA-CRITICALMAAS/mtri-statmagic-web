@@ -674,7 +674,8 @@ tr.subcategory_label td {
     text-align: left;
 }
 tr.subcategory_label td.colname,
-.content.datacube #datacube_layers thead td {
+.content.datacube #datacube_layers thead td,
+#choose_cma_table thead td {
     font-size: 0.7rem;
     color: #999;
     text-align: center;
@@ -1449,14 +1450,16 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     margin: 0px auto;
 }
 #cma_loaded {
+    margin-top: 0px;
     color: #90d5c4;
     font-weight: bold;
     font-size: 1.0rem;
 }
 #cma_loaded.notactive {
     color: #999;
+    font-size: 0.95rem;;
     font-weight: normal;
-    
+    font-style: italic;
 }
 
 .leaflet-top.leaflet-left {
@@ -1669,7 +1672,8 @@ td.range_td {
 }
 
 .button.load_sites.cma {
-    width: auto;    
+    width: auto;
+    display: inline-block;
 }
 
 .mineral_sites_results_message {
@@ -1778,8 +1782,60 @@ select#sites_display_select {
 .message_modal_header {
     font-size: 1.2rem;
     color: #bfbfbf;
-    
 }
+
+#choose_cma_table {
+    margin-top: 10px;
+    width: 100%;
+}
+
+#choose_cma_table td {
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 0.9rem;
+}
+
+#choose_cma_table td.description {
+    color:#ababed;
+}
+
+#load_cma_modal .modal {
+    height: auto;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#choose_cma_table tbody tr {
+    cursor: pointer;
+}
+
+.cma_start_div {
+    padding: 0px 6px;
+}
+
+.mpm_top_options {
+    padding: 4px 4px 0px 4px;
+    color: #777;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.mpm_top_active {
+    margin-top: -12px;
+    text-align: left;
+    color: #bfbfbf;
+    font-size: 0.8rem;
+    padding: 0px 8px;
+}
+
+/*.mpm_title {
+    float: left;
+    font-family: 'Open Sans Condensed';
+    font-size: 0.9rem;
+    margin-right: 10px;
+    color: #f2f2f2;
+    
+}*/
 
 @keyframes spin {
     0% { transform: rotate(0deg); }

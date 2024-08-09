@@ -1,3 +1,4 @@
+import json
 import dm_util
 from cdr import cdr_utils
 
@@ -5,37 +6,42 @@ con1 = dm_util.con1
 
 ### Pull layers from CDR
 cdr = cdr_utils.CDR()
-res = cdr.get_prospectivity_input_layers()
+res = cdr.get_prospectivity_data_sources()
 
-print(res[0])
-blerg
+#print(json.dumps(res[0],indent=4))
+#blerg
 
-insert_start = '''
-    INSERT INTO public.datalayer(
-	    name, name_alt, description, source, path, category, subcategory, data_format)'
-    VALUES('''
 
-sql = ''
-for r in res:
-    if r['data_source']['format'] == 'tif':
-        ds = r['data_source']
+for ds in res:
+    if ds['format'] == 'tif':
+        #ds = r#['data_source']
 
         #print(r)
         #blerg
 
-        name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
+        #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
+        name = ds['data_source_id']
 
         dl, created = dm_util.models.DataLayer.objects.get_or_create(
-            name = name,
+            data_source_id = ds['data_source_id'],
             defaults = {
+                'name' : ds['evidence_layer_raster_prefix'],
                 'name_alt': ds['description'],
                 'description': ds['description'],
-                'source': f"{','.join(ds['authors'])}. {ds['publication_date'].split('-')[0]}. {ds['description']}",
+                'authors': ds['authors'],
+                'publication_date': ds['publication_date'],
+                'doi': ds['DOI'],
+                'datatype': ds['type'],
                 'category': ds['category'].capitalize(),
                 'subcategory': ds['subcategory'].capitalize().rstrip('s'),
-                'path': r['file'],
+                'spatial_resolution_m': ds['resolution'][0],
+                'download_url': ds['download_url'],
+                'reference_url': ds['reference_url'],
+                'derivative_ops': ds['derivative_ops']
             },
         )
+    else:
+        print('NONTIF:',ds)
         #dl.save()
 
 

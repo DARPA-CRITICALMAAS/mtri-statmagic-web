@@ -7,28 +7,29 @@ class DataLayer(models.Model):
     class Meta:
         db_table = 'datalayer'
         
-    name = models.CharField(max_length=200, unique=True)
-    name_alt = models.CharField(max_length=300)
+    name = models.CharField(
+        max_length=200,
+        unique=True,
+        help_text='Equivalent to evidence_layer_raster_prefix in CDR schema'
+    )
+    name_alt = models.CharField(max_length=300,help_text='Display name (prettified)')
+    publication_date = models.DateTimeField(null=True,blank=True)
+    authors = ArrayField(
+        models.CharField(max_length=60),
+        null=True,
+        blank=True
+    )
+    data_source_id = models.CharField(max_length=300,unique=True)
+    doi = models.CharField(max_length=200,null=True,blank=True)
     description = models.CharField(max_length=2000)
-    source = models.CharField(max_length=400)
+    #source = models.CharField(max_length=400)
     #external_link = models.CharField(max_length=1000, unique=True)
-    path = models.CharField(max_length=1000, unique=True)
-    category = models.CharField(
-        max_length=20,
-        #choices = (
-            #('geophysics','Geophysics'),
-            #('geology', 'Geology'),
-            #('geochemistry','Geochemistry'),
-        #)
-    )
-    subcategory = models.CharField(
-        max_length=30,
-        #choices = (
-            #('seismic','Sei'),
-            #('geology', 'Geology'),
-            #('geochemistry','Geochemistry'),
-        #)
-    )
+    download_url = models.CharField(max_length=1000, unique=True)
+    reference_url = models.CharField(max_length=1000,null=True,blank=True)
+    category = models.CharField(max_length=40)
+    subcategory = models.CharField(max_length=40)
+    datatype = models.CharField(max_length=60,null=True,blank=True)
+    derivative_ops = models.CharField(max_length=200,null=True,blank=True)
     #subcategory_type = models.CharField(max_length=20)
     #notes = models.CharField(max_length=200, default=True, blank=True)
     data_format = models.CharField(

@@ -16,6 +16,7 @@ import json
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
     sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
+#sys.path.append('/usr/local/project/cdr_schemas/')
 from cdr_schemas import prospectivity_models
 
 # Functions for handling requests
@@ -43,7 +44,7 @@ def home(request):
 
     
     # Get CRS options
-    crs_opts = {c.name: model_to_dict(c) for c in models.CRS.objects.all()}
+    crs_opts = {str(c.srid): model_to_dict(c) for c in models.CRS.objects.all()}
     
     # Get processing step options
     processing_steps = {
@@ -84,12 +85,14 @@ def home(request):
         if d.subcategory not in datalayers[d.category]:
             datalayers[d.category][d.subcategory] = []
         data = model_to_dict(d)
+        data['publication_date'] = str(data['publication_date'])[:-9]
         name_pretty = d.name
         if d.name_alt:
             name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
         data['name_pretty'] = name_pretty
         datalayers[d.category][d.subcategory].append(data)
         datalayers_lookup[d.name] = data
+        
 
     
     # Put any data/info you want available on front-end in this dict
@@ -126,10 +129,26 @@ def get_metadata(request):
         x['name']
         for x in cdr.get_list_deposit_types() if x['name']
     ])
+    
+    # Get CMA list
+    cmas = {}
+    for cma in cdr.get_cmas():
+        if cma['mineral'] == 'test_mineral':
+            continue
+        
+        cmas[cma['cma_id']] = cma
+        
+        # Reproject to WGS84
+        cmas[cma['cma_id']]['extent'] = util.simplify_and_transform_geojson(
+            cma['extent'],
+            cma['crs'].split(':')[1],
+        )
+    
     response = HttpResponse(
         json.dumps({
             'commodity': commodities,
             'deposit_type': deposit_types,
+            'cmas': cmas
         })
     )
     response['Content-Type'] = 'application/json'

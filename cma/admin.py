@@ -18,7 +18,7 @@ class CRSAdmin(admin.ModelAdmin):
     list_display = ('name','units','default_resolution')
 
 class DataLayerAdmin(admin.ModelAdmin):
-    list_display = ('name','spatial_resolution_m','path','category','disabled')
+    list_display = ('name','spatial_resolution_m','download_url','category','disabled')
 
 admin.site.register(models.Model, ModelAdmin)
 admin.site.register(models.ModelParameter, ModelParameterAdmin)
