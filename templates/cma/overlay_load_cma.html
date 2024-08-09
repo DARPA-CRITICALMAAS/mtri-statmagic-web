@@ -1,0 +1,28 @@
+{% load static %}
+<div id='load_cma_modal' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#load_cma_modal').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='message_modal_header'>Choose existing MPM:</div>
+        <div class='message_modal_content'>
+            <table class='model_parameters_table' id='choose_cma_table'>
+                <thead>
+                    <tr>
+                        <td>Description</td>
+                        <td>Mineral</td>
+                        <td>Resolution</td>
+                        <td>CRS</td>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        
+        </div>
+
+    </div>
+</div>
