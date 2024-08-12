@@ -1,4 +1,5 @@
 import json, os, sys
+from datetime import datetime as dt
 from django.shortcuts import render
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
@@ -18,6 +19,7 @@ if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
     sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
 #sys.path.append('/usr/local/project/cdr_schemas/')
 from cdr_schemas import prospectivity_models
+from cdr_schemas import prospectivity_input
 
 # Functions for handling requests
 
@@ -91,7 +93,7 @@ def home(request):
             name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
         data['name_pretty'] = name_pretty
         datalayers[d.category][d.subcategory].append(data)
-        datalayers_lookup[d.name] = data
+        datalayers_lookup[d.data_source_id] = data
         
 
     
@@ -263,7 +265,7 @@ def initiate_cma(request):
     
     return response
 
-
+@csrf_exempt
 def submit_model_run(request):
     # Expected URL parameters w/ default values (if applicable)
     params = {
@@ -277,26 +279,93 @@ def submit_model_run(request):
         'train_config': {},
         'evidence_layers': []
     }
-    params = util.process_params(request, params, post=True)
-    
-    # Derive additional params
-    params['date'] = str(dt.now().date())
+    params = util.process_params(request, params, post_json=True)
     
     # TODO: should this model meta info should come from the CDR database 
     #       entries? For now, it's coming from the GUI db
     #       GUI database entries
     
-    model = models.ProspectivityModelOption
     
-    params['organization'] = params['model'].split('_')[0]
-    params['model_type'] = params['model'].split('_')[1]
-    
+    model = models.ProspectivityModelType.objects.filter(name=params['model']).first()
+   
     # TODO: some code to send this off to the SRI/Beak servers
+    if model.name == 'beak_som':
+        train_config = params['train_config']
+        
+        train_config['size'] = train_config['dimensions_x']
+        
+        print(params['evidence_layers'])
+        
+        evidence_layers = []
+        for el in params['evidence_layers']:
+            dl = models.DataLayer.objects.filter(
+                data_source_id=el['data_source_id']
+            ).first()
+            
+            # TODO: this is all hard coded for now.......
+            #       Before fixing, schema limitations need to be addressed:
+            #           * enforced order (transform -> scaling -> impute)
+            #           * all steps REQUIRED
+            tms = el['transform_methods']
+            tms = [
+                'log',
+                'minmax',
+                prospectivity_input.Impute(
+                    impute_method='mean',
+                    window_size=[3,3]
+                )
+            ]
+            #for tm in tms:
+                # Get defaults if none are 
+            
+            l = prospectivity_input.DefineProcessDataLayer(
+                cma_id = params['cma_id'],
+                data_source_id = el["data_source_id"],
+                title = dl.name,
+                transform_methods = tms#[
+                    #"log",
+                    #"minmax",
+                    #Impute(impute_method="mean", window_size=[3,3])
+                #]
+            )
+            evidence_layers.append(l)
+
+        
+        beak_model_run = prospectivity_input.CreateProspectModelMetaData(
+            cma_id=params['cma_id'],
+            system="",
+            system_version="",
+            author=model.author,
+            date=str(dt.now().date()),
+            organization=model.organization,
+            model_type=model.model_type,
+            train_config=prospectivity_input.SOMTrainConfig(
+                **train_config
+                #size=20,
+                #dimensions_x=20,
+                #dimensions_y=20,
+                #num_initializations=5,
+                #num_epochs=10,
+                #grid_type=SOMGrid.RECTANGULAR,
+                #som_type=SOMType.TOROID,
+                #som_initialization=SOMInitialization.RANDOM,
+                #initial_neighborhood_size=0.0,
+                #final_neighborhood_size=1.0,
+                #neighborhood_function=NeighborhoodFunction.GAUSSIAN,
+                #gaussian_neighborhood_coefficient=0.5,
+                #learning_rate_decay=LearningRateDecay.LINEAR,
+                #neighborhood_decay=NeighborhoodDecay.LINEAR,
+                #initial_learning_rate=0.1,
+                #final_learning_rate=0.01
+            ),
+            evidence_layers=evidence_layers
+        )
     
-    # TODO: some code to either:
-    #   (a) if staying attached, process the response
-    #   (b) if detaching, send a job ID that the browser client can check
+    # TODO: some code to:
+    #   (a) Send to CDR, return a job ID that the browser client can check
     #       status of and request outputs for once completed
+    
+    model_run_id = 1
     
     # (if staying attached) Returns JSON w/ ID indicating model run
     response = HttpResponse(json.dumps({

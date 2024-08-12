@@ -137,20 +137,20 @@ f
 
                                 </tr>
                                 {% for layer in layers %}
-                                    <tr data-path="{{layer.name}}">
+                                    <tr data-path="{{layer.data_source_id}}">
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
-                                        <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
-                                        <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
+                                        <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
+                                        <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.data_source_id}}");' /></td>
                                         <td class='download'>
                                             <a href='{{layer.download_url}}' target='_blank'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
                                         </td>
                                         <td>
                                             <div class="radiocube" align="left">
-                                                <input type="radio" name="radiocube_{{layer.name}}" value="no" checked>
-                                                <label class='no' for="radiocube_{{layer.name}}" onclick="onRadioCubeClick(this);">N</label>
-                                                <input type="radio" name="radiocube_{{layer.name}}" value="yes" >
-                                                <label class='yes' for="radiocube_{{layer.name}}" onclick="onRadioCubeClick(this);">Y</label>
+                                                <input type="radio" name="radiocube_{{layer.data_source_id}}" value="no" checked>
+                                                <label class='no' for="radiocube_{{layer.data_source_id}}" onclick="onRadioCubeClick(this);">N</label>
+                                                <input type="radio" name="radiocube_{{layer.data_source_id}}" value="yes" >
+                                                <label class='yes' for="radiocube_{{layer.data_source_id}}" onclick="onRadioCubeClick(this);">Y</label>
                                             </div>
                                         </td>
                   
@@ -251,7 +251,7 @@ f
 
 <script type="text/javascript">
 //     const COMMODITIES = {{ COMMODITIES|safe }};
-    const MODELS = {{ MODELS|safe }};
+    var MODELS = {{ MODELS|safe }};
     const DATALAYERS_LOOKUP = {{ DATALAYERS_LOOKUP|safe }};
     const MAPSERVER_SERVER = '{{ MAPSERVER_SERVER }}';
     const CRS_OPTIONS = {{ CRS_OPTIONS|safe }};

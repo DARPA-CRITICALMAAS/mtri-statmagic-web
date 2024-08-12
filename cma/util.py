@@ -16,11 +16,14 @@ from shapely.geometry import mapping
 
 
 
-def process_params(req,params,post=False):
+def process_params(req,params,post=False,post_json=False):
     r = req.GET if not post else req.POST
+    if post_json:
+        r = json.loads(req.body.decode('utf-8'))
     for param in params:
         if param in r:#.has_key(param):
             params[param] = r[param]
+            print(param,r[param])
             
     return params
 

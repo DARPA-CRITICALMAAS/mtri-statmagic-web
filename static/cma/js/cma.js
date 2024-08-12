@@ -315,9 +315,9 @@ function buildParametersTable(mobj, table_selector, dobj) {
                 `;
             }
             $.each(obj[group_name], function(i,p) {
-                var pid = `${obj.name}__${p.name}`;
+                var pid = `${mobj.name}__${p.name}`;
                 if (p.only_show_with) {
-                    var pshow = `${obj.name}__${p.only_show_with}`;
+                    var pshow = `${mobj.name}__${p.only_show_with}`;
                     if (!showhide_groups[pshow]) {
                         showhide_groups[pshow] = [];
                     }
@@ -359,21 +359,28 @@ function buildParametersTable(mobj, table_selector, dobj) {
                         range_double_params[p.name] = p;
                         input_html = `<input type='number' id='${pid}__min' /><div id='range_double__${p.name}' class='range_double'></div><input type='number' id='${pid}__max' />`;
                     }
-                } else {
+                } else { // for 'select' elements
                     var opts = '';
                     if (p.options) {
                         $.each(p.options, function(j,opt) {
                             var selected = '';
                             
-                            // If default has been modified, use that value
-                            if (dobj && opt == dobj[p.name]) {
+                           
+                            if (
+                                 // If default has been modified, use that value
+                                (dobj && opt == dobj[p.name]) ||
+                                
+                                // ...OR... if html_attributes has a default val 
+                                (p.html_attributes && p.html_attributes.value == opt)
+                                
+                            ) {
                                 selected = ' selected';
                             }
                             opts += `<option value="${opt}"${selected}>${opt}</option>`;
                         });
                     }
                     input_html = `
-                        <select id="${obj.name}__${p.name}">
+                        <select id="${pid}">
                             ${opts}
                         </select>
                     `;
@@ -519,10 +526,12 @@ function onModelSelect() {
     // Build buttons
     var button_html = '';
     $.each(model.buttons.buttons, function(i,button) {
-        console.log(i,button);
+//         console.log(i,button);
+        var onclick = button.onclick ? button.onclick : '';
+        
         button_html += `
             <td>
-                <div class='button ${button.label}'>
+                <div class='button ${button.label}' onclick='${onclick};'>
                     ${button.label}
                 </div>
             </td>`;
@@ -1552,17 +1561,35 @@ function submitModelRun() {
 //         AJAX_GET_FISHNET.abort();
 //     }
 //     $('.loading_fishnet').show();
-    FISHNET_LAYER.clearLayers();
+//     FISHNET_LAYER.clearLayers();
 //     AJAX_GET_FISHNET = 
-    $.ajax('submit_model_run', {
-        data: {
-            cma_id: $('#cma_loaded').attr('data-cma_id'),
-            model: $('#model_select').val(),
+    var model = $('#model_select').val();
+    var train_config = {};
+    $.each(MODELS[model].parameters, function(reqopt,groups) {
+        $.each(groups, function(group,parr) {
+            $.each(parr, function(i,p) {
+                train_config[p.name] = p.html_attributes.value;
+            });
+        });
+    });
+    
+     var data = {
+        cma_id: $('#cma_loaded').attr('data-cma_id'),
+        model: model,
+        train_config: train_config,
+        evidence_layers : DATACUBE_CONFIG,
 //             srid: CRS_OPTIONS[crs].srid,
 //             extent_wkt: getWKT()
-        },
+    };
+
+//     print(data);
+    
+    $.ajax('submit_model_run', {
+        data: JSON.stringify(data),
         type: 'POST',
-        processData: false,
+        dataType: 'json',
+//         processData: true,
+        contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
 //             $('.loading_fishnet').hide();
@@ -1653,7 +1680,8 @@ function onRadioCubeClick(cmp) {
     var radio = $(`input[name='${for_radio}']`);
     var valnew = el.prop('class');
 //     console.log(valnew);
-    var layername = for_radio.replace('radiocube_','');
+    var dsid = for_radio.replace('radiocube_','');
+    var datalayer = DATALAYERS_LOOKUP[dsid];
     
     // Update 'checked' property
     radio.prop('checked',false);
@@ -1665,17 +1693,17 @@ function onRadioCubeClick(cmp) {
     if (valnew == 'no') {
         // TODO: if/when multiple instances of single data layer are allowed, 
         // this will need to be updated b/c data-layername might not be unique
-        var dcid = $(`#datacube_layers tr[data-layername='${layername}']`).attr('data-datacubeindex');
+        var dcid = $(`#datacube_layers tr[data-layername='${dsid}']`).attr('data-datacubeindex');
         DATACUBE_CONFIG.splice(dcid,1);
-        $(`#datacube_layers tr[data-layername='${layername}']`).remove();
+        $(`#datacube_layers tr[data-layername='${dsid}']`).remove();
         
         // If there are no rows left, show instructions again
         if ($('#datacube_layers tbody tr').length == 1) {
             $('#datacube_layers tr.instructions').show();
         }
     } else { // Add layer to cube
-        var datalayer = DATALAYERS_LOOKUP[layername];
-        DATACUBE_CONFIG.push({layername: layername, processingsteps: []});
+//         var datalayer = DATALAYERS_LOOKUP[dsid];
+        DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
         
         // Hide instructions 
         $('#datacube_layers tr.instructions').hide();
@@ -1683,7 +1711,7 @@ function onRadioCubeClick(cmp) {
         // Add row 
         var icon_height = 13;
         $('#datacube_layers tr.cube_layer:last').after(`
-            <tr class='cube_layer' data-layername='${layername}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
+            <tr class='cube_layer' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
                 <td class='name'>${datalayer.name_pretty}</td>
                 <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
                 <td class='remove'>
@@ -1714,16 +1742,22 @@ function onRadioCubeClick(cmp) {
 
 function editProcessingSteps(cmp) {
     var tr = $(cmp).closest('tr');
+    var dsid = tr.attr('data-layername');
     
     // Update layername 
     $('#processingsteps_layername').html(
-        tr.attr('data-layername')
+        DATALAYERS_LOOKUP[dsid].name_pretty
     );
     
     // Update datacube layer index 
     $('#processingsteps_layername').attr(
         'data-datacubeindex',
         tr.attr('data-datacubeindex')
+    );
+    
+    $('#processingsteps_layername').attr(
+        'data-data_source_id',
+        dsid,
     );
     
     // Empty current table
@@ -1828,15 +1862,15 @@ function onAddProcessingStep(v,lab) {
     // TODO: load any params!
     
     // Looks in DATACUBE_CONFIG to see if there are any
-    var layername = $('#processingsteps_layername').html();
+//     var layername = $('#processingsteps_layername').html();
     var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
     
     // Index of the processing step
     var psid = $('#processingsteps_listtable tr').length;
     
     var params = '';
-    if (DATACUBE_CONFIG[dcid].processingsteps[psid]) {
-        $.each(DATACUBE_CONFIG[dcid].processingsteps[psid].parameters, function(p,v) {
+    if (DATACUBE_CONFIG[dcid].transform_methods[psid]) {
+        $.each(DATACUBE_CONFIG[dcid].transform_methods[psid].parameters, function(p,v) {
                 params += ` data-param__${p}="${v}"`;
             }
         );
@@ -1881,11 +1915,11 @@ function getParametersFromHTMLattrs(el) {
 function onSaveProcessingSteps() {
     $('#datacube_processingsteps').hide();
     
-    var layername = $('#processingsteps_layername').html();
+    var dsid = $('#processingsteps_layername').attr('data-data_source_id');
     var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
     
     // Reset everything
-    DATACUBE_CONFIG[dcid].processingsteps = [];
+    DATACUBE_CONFIG[dcid].transform_methods = [];
     
     // Get list of steps from table
     var step_html = '<table>';
@@ -1895,11 +1929,11 @@ function onSaveProcessingSteps() {
         // Get parameters
         params = getParametersFromHTMLattrs(tr);
         
-        DATACUBE_CONFIG[dcid].processingsteps.push({name: step, parameters: params});
+        DATACUBE_CONFIG[dcid].transform_methods.push({name: step, parameters: params});
         step_html += `<tr><td data-value='${step}'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
     });
     step_html += '</table>';
-    $(`tr[data-layername='${layername}'] span.processingsteps_list`).html(step_html);
+    $(`tr[data-layername='${dsid}'] span.processingsteps_list`).html(step_html);
 }
 
 
@@ -2128,32 +2162,39 @@ function saveParametersForm() {
     
     var parent_type = $('.parameters_form_title').attr('data-parent_type');
     var parent_id = $('.parameters_form_title').attr('data-parent_id');
-    var parent_id = $('.parameters_form_title').attr('data-parent_id');
     
     if (parent_type == 'processingstep') {
         // TODO: get layer
-        var layer = $('#processingsteps_layername').html();
-        console.log(parent_id);
-        $.each(PROCESSING_STEPS[parent_id].parameters, function(i,group) {
-            $.each(group, function(j,p) {
-                var pname = `#${parent_id}__${p.name}`;
-                var v = $(pname).val();
-                $(`#processingsteps_listtable tr[data-value='${parent_id}']`).attr(
-                    `data-param__${p.name}`,
-                    $(pname).val()
-                );
+//         var layer = $('#processingsteps_layername').html();
+//         console.log(parent_id);
+        $.each(PROCESSING_STEPS[parent_id].parameters, function(reqopt,groups) {
+            $.each(groups, function(group,parr) {
+                $.each(parr, function(j,p) {
+                    var pname = `#${parent_id}__${p.name}`;
+                    var v = $(pname).val();
+                    $(`#processingsteps_listtable tr[data-value='${parent_id}']`).attr(
+                        `data-param__${p.name}`,
+                        $(pname).val()
+                    );
+                });
             });
         });
     }
     
     if (parent_type == 'model') {
-        // TODO
-
-        
+        // Save any values to the model metadata var
+        var mobj = MODELS[parent_id];
+        $.each(mobj.parameters, function(reqopt,groups) {
+            $.each(groups, function(g,parr) {
+                $.each(parr, function(i,p) {
+                    var v = $(`#${mobj.name}__${p.name}`).val();
+                    p.html_attributes.value = v;
+                });
+            });
+        });
     }
     
     $('.parameters_form').hide();
-    
     
 }
 
@@ -2167,8 +2208,6 @@ function initiateCMA() {
     data.resolution = Number(data.resolution);
     data.resolution = [data.resolution,data.resolution];
     data['extent'] = getWKT();
-
-    console.log(data);
         
     $.ajax(`/initiate_cma`, {
 //         processData: false,
