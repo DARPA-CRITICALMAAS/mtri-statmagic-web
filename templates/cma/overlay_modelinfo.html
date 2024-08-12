@@ -1,0 +1,13 @@
+{% load static %}
+<div id='model_info' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#model_info').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='parameters_form_title'></div>
+        <div class='content'></div>
+    </div>
+</div>
