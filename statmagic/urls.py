@@ -25,7 +25,7 @@ urlpatterns = [
     path('get_metadata', cma_views.get_metadata),
     path('create_datacube', cma_views.create_datacube),
     path('initiate_cma', cma_views.initiate_cma),
-    path('run_model', cma_views.run_model),
+    path('submit_model_run', cma_views.submit_model_run),
     path('get_vectorfile_as_geojson', cma_views.get_vectorfile_as_geojson),
     path('get_geojson_from_file', cma_views.get_geojson_from_file),
     path('get_fishnet', cma_views.get_fishnet),

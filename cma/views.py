@@ -63,7 +63,7 @@ def home(request):
     
     # Get models and model parameters
     model_opts = {}
-    for mp in models.ModelParameter.objects.select_related('model').all().order_by('group_name','order'):
+    for mp in models.ProspectivityModelTypeParameter.objects.select_related('model').all().order_by('group_name','order'):
         modelname = mp.model.name
 
         # Add model if not included yet
@@ -264,10 +264,32 @@ def initiate_cma(request):
     return response
 
 
-def run_model(request):
+def submit_model_run(request):
     # Expected URL parameters w/ default values (if applicable)
-    params = {}
+    params = {
+        'cma_id': None,
+        'model': None,
+        #'system': '',
+        #'system_version': '',
+        #'author': '',
+        #'organization': None,
+        #'model_type': None,
+        'train_config': {},
+        'evidence_layers': []
+    }
     params = util.process_params(request, params, post=True)
+    
+    # Derive additional params
+    params['date'] = str(dt.now().date())
+    
+    # TODO: should this model meta info should come from the CDR database 
+    #       entries? For now, it's coming from the GUI db
+    #       GUI database entries
+    
+    model = models.ProspectivityModelOption
+    
+    params['organization'] = params['model'].split('_')[0]
+    params['model_type'] = params['model'].split('_')[1]
     
     # TODO: some code to send this off to the SRI/Beak servers
     
@@ -299,8 +321,13 @@ def get_mineral_sites(request):
     
     params['wkt'] = util.validate_wkt_geom(params['wkt'])
     gj = util.convert_wkt_to_geojson(params['wkt'])
-    #print(gj)
     
+    # Account for multipolygons by changing type to Polygon and grabbing 1st 
+    # polygon in multipolygon set
+    if gj['type'] == 'MultiPolygon':
+        gj['type'] = 'Polygon';
+        gj['coordinates'] = gj['coordinates'][0]
+
     # Query sites from CDR
     cdr = cdr_utils.CDR()
     sites = cdr.get_mineral_sites_search(

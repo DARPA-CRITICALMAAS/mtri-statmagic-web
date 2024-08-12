@@ -514,7 +514,8 @@ select {
     margin-bottom: 0px;
 }
 
-.collapse.sub .header.topbar {
+.collapse.sub .header.topbar,
+.button.selected_model_config {
     margin: 0px 10px;
     background-color: transparent;
     font-size: 1.0rem;
@@ -1046,8 +1047,10 @@ table.editprocessingsteps_table td {
     font-size: 0.81rem;
     padding: 12px 0px 0px 46px;
 }
-.collapse div.modeling_instructions {
-    padding: 4px 26px;
+.collapse div.modeling_instructions,
+.selected_model_description
+{
+    padding: 4px 10px 4px 34px;
     color: #d9d9d9;
     font-size: 0.75rem;
     width: calc(100% - 52px);
@@ -1097,6 +1100,7 @@ a:visited {
     font-size: 0.8rem;
 }
 #modeling_buttons_table {
+    display: none;
     width: calc(100% - 12px);
     margin: 10px 6px;
     
@@ -1112,13 +1116,14 @@ a:visited {
 #modeling_buttons_table div.button {
 /*     width: 24%; */
     width: auto;
+    max-width: 240px;
     margin: 0px auto;
     font-size: 1rem;
-    border-radius: 2px;
-    background-color: #666;
-    color: #cccccc; 
+    border-radius: 3px;
+    background-color: #6aaf7a;
+/*     color: #cccccc;  */
 /*     opacity: 0.5; */
-    border: 2px solid #cd7aad;
+/*     border: 2px solid #cd7aad; */
 }
 
 #modeling_buttons_table div.button.pretrain {
@@ -1140,7 +1145,7 @@ a:visited {
 #modeling_buttons_table div.button:hover {
     opacity: 1.0;
     color: white;
-    background-color: #333; 
+    background-color: #24422b; 
 /*     border-width: 4px; */
 }
 .content.datacube #datacube_layers .processingsteps_list table {
@@ -1305,10 +1310,10 @@ span.highlight.notRelevant {
     padding: 3px 6px;
     height: 2.0rem;
 }
-.selected_model_description {
-    margin: 4px 10px 10px 10px;
-    color: #c1c18b;
-}
+/*.selected_model_description {
+    margin: 8px 4px 10px 30px;
+    color: #c2c2a3;
+}*/
 
 
 .collapse_training,
@@ -1565,13 +1570,18 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 }
 .button.selected_model_config {
     display: none;
-    margin: 10px auto;
+    text-transform: uppercase;
+    font-family: monospace, ui-monospace, Arial; 
+    margin: 0px 0px 0px 20px;
+    text-align: left;
+/*    margin: 10px auto;
     width: 260px;
     font-size: 1.1rem;
-    background-color: #5c8a5c;
+    background-color: #8a8a5c;*/
 }
 .button.selected_model_config:hover {
-    background-color: #006600;
+/*     background-color: #006600; */
+    background-color: #333;
 }
 .parameters_form_header {
     color: #888;
@@ -1828,6 +1838,22 @@ select#sites_display_select {
     padding: 0px 8px;
 }
 
+.download_icon {
+    margin: auto 4px;
+    cursor: pointer;
+    
+}
+
+
+#model_info .parameters_form_title {
+    font-size: 1.1rem;
+    
+}
+#model_info .content {
+    color: #f2f2f2;
+    padding: 10px 20px;
+    
+}
 /*.mpm_title {
     float: left;
     font-family: 'Open Sans Condensed';

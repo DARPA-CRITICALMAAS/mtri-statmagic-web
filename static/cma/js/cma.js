@@ -165,7 +165,7 @@ function addCMAControl() {
                     </div>
                     <div class='mpm_top_active' title='Active Mineral Processing Model (MPM)'>
                         Active MPM:
-                        <div id='cma_loaded' class='notactive'>-- none active --</div>
+                        <div id='cma_loaded' data-cma_id='' class='notactive'>-- none active --</div>
                     </div>
                 </div>
                 
@@ -285,7 +285,7 @@ function capitalizeFirstLetter(string) {
 function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
-    console.log(mobj);
+//     console.log(mobj);
     var range_double_params = {};
     $.each(['required','optional'], function(r,reqopt) {
         var obj = mobj.parameters[reqopt];
@@ -297,7 +297,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
         if (reqopt == 'optional') {
             ptable_html += `
                 <tr class='subcategory_label optional' onclick='toggleHeader(this);'>
-                    <td><span class='collapse'>-</span> Advanced</td>
+                    <td><span class='collapse'>+</span> Advanced</td>
                     <td></td>
                 </tr>
             `;
@@ -396,7 +396,8 @@ function buildParametersTable(mobj, table_selector, dobj) {
     $(table_selector).html(ptable_html);
     
      // Toggle to hide advanced options
-    toggleHeader($('.model_parameters_table tr.subcategory_label.optional')[0]);
+//     toggleHeader($('.model_parameters_table tr.subcategory_label.optional')[0],0);
+    $('tr[data-reqopt="optional"]').hide();
     
     // Create listeners for show/hide checkboxes
     $.each(showhide_groups, function(chk,ps) {
@@ -409,17 +410,17 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
     
     // Insert double sliders as needed
-    console.log(range_double_params);
+//     console.log(range_double_params);
     $('.range_double').each(function(i,cmp) {
         var pname = cmp.id.split('__')[1];
         var p = range_double_params[pname];
         noUiSlider.create(cmp, {
             range: {
-                'min': 0,//p.html_attributes.min,
-                'max': 100,//p.html_attributes.max,
+                'min': p.html_attributes.min,
+                'max': p.html_attributes.max,
             },
-            step: 1,//p.html_attributes.step,
-            start: [0,50],
+            step: p.html_attributes.step,
+            start: [0,1],
 //             margin: 300,
 //             limit: 600,
             connect: true,
@@ -437,7 +438,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
             $(handle).html(values[handle]);
             $('#range_diff-1').html(values[1] - values[0]);
             
-            var prec = 0; // TODO: determine precision from scale
+            var prec = 1; // TODO: determine precision from scale
 //             console.log(values[0]);
             $(cmp).next('input').val(Number(values[1]).toFixed(prec));
             $(cmp).prev('input').val(Number(values[0]).toFixed(prec));
@@ -482,7 +483,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
 
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
-    console.log(model, $('#model_select').val(), model.uses_training);
+//     console.log(model, $('#model_select').val(), model.uses_training);
     // First hide everything
     $('.collapse_datacube').hide();
     $('.collapse_training').hide();
@@ -491,7 +492,8 @@ function onModelSelect() {
 //     $('.collapse_model_run').hide();
     
     // Then build everything back up
-    $('.selected_model_description').html(model.description);
+//     $('.selected_model_description').html(model.description);
+    $('#model_info .content').html(model.description);
     
     // Show CONFIG button
     $('.button.selected_model_config').show();
@@ -502,7 +504,7 @@ function onModelSelect() {
     }
     
     if (model.uses_training == true) {
-        console.log("YES");
+//         console.log("YES");
         $('.collapse_training').show();
     }
     
@@ -512,27 +514,27 @@ function onModelSelect() {
     // Build parameters table 
     buildParametersTable(model,'.content.model');
     
-    
-
     // Now trigger change to set initial display
-    
-    
+
     // Build buttons
     var button_html = '';
     $.each(model.buttons.buttons, function(i,button) {
         console.log(i,button);
         button_html += `
             <td>
-                <div class='button ${button.label}'>${button.label}</div>
+                <div class='button ${button.label}'>
+                    ${button.label}
+                </div>
             </td>`;
     });
     $('#modeling_buttons_table tr').html(button_html);
-    
     
     // Show all sections
     $('.collapse_parameters').show();
 //     $('.collapse_training').show();
     $('.collapse_model_run').show();
+    $('#modeling_buttons_table').show();
+//     toggleHeader($('.header.datacube'));
     
 }
 
@@ -552,6 +554,9 @@ function loadCMA(cma_id) {
         $(`#cma_${attr}`).val(a);
     });
 
+    // Populate KNOWN DEPOSIT SITES mineral
+    $('#commodity').val(capitalizeFirstLetter(cma.mineral));
+    
     // Load extent
     // Remove existing drawings before starting new one
     if (drawnLayer && MAP.hasLayer(drawnLayer)) {
@@ -561,7 +566,10 @@ function loadCMA(cma_id) {
      finishDraw(drawnLayer);
     
     // Make UI changes (show model opts, etc.)
-     onStartedCMA(cma.description);
+     onStartedCMA(cma);
+     
+     // Load known deposit sites
+     loadMineralSites();
     
 }
 
@@ -1333,7 +1341,6 @@ function onMineralSitesDisplayByChange() {
         }                
     };
     
-
     MINERAL_SITES_LAYER.eachLayer(function(flayer) {
         prop = flayer.feature.properties;
         var fillColor = fillColor_default;
@@ -1343,6 +1350,11 @@ function onMineralSitesDisplayByChange() {
             // Update marker style
             if (site_types[prop.site_type]) {
                 fillColor = site_types[prop.site_type].color;
+            } else {
+                if (prop.site_type) {
+                    console.log('***new site type!',prop.site_type);
+                }
+                fillColor = '#fb9a99';
             }
             flayer.setStyle({
                 fillColor: fillColor,
@@ -1497,11 +1509,18 @@ function getWKT() {
     // case we need to unwrap to find the first feature
     var gj = gj.geometry ? gj : gj.features[0];
     
-    var new_coords = gj.geometry.coordinates[0].map(function(val) {
-        return val.map(x => Number(x.toFixed(6)));
+    // Also have to account for potential MultiPolygons; if multi, just grab 
+    // the first one
+    var coords = gj.geometry.type == 'MultiPolygon' ? 
+        gj.geometry.coordinates[0] : 
+        gj.geometry.coordinates;
+    
+    var new_coords = coords[0].map(function(val) {
+        return val.map(x => Number(x.toFixed(5)));
     });
 
-    gj.geometry.coordinates = [new_coords];
+    coords = [new_coords];
+//     gj.geometry.coordinates = [new_coords];
     var wkt = new Wkt.Wkt();
     wkt.read(JSON.stringify(gj));
     
@@ -1517,6 +1536,45 @@ function addCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+function showModelInfo(layer_name) {
+    var selmod = $('#model_select').val();
+    var model = MODELS[$('#model_select').val()];
+    
+    $('#model_info .parameters_form_title').html(model.name_pretty);
+    $('#model_info .content').html(model.description);
+    $('#model_info').show();
+    
+}
+
+function submitModelRun() {
+
+//     if (AJAX_GET_FISHNET) {
+//         AJAX_GET_FISHNET.abort();
+//     }
+//     $('.loading_fishnet').show();
+    FISHNET_LAYER.clearLayers();
+//     AJAX_GET_FISHNET = 
+    $.ajax('submit_model_run', {
+        data: {
+            cma_id: $('#cma_loaded').attr('data-cma_id'),
+            model: $('#model_select').val(),
+//             srid: CRS_OPTIONS[crs].srid,
+//             extent_wkt: getWKT()
+        },
+        type: 'POST',
+        processData: false,
+        success: function(response) {
+            console.log(this.url,response);
+//             $('.loading_fishnet').hide();
+        },
+        error: function(response) {
+            console.log(response);
+            alert(response.responseText);
+//             $('.loading_fishnet').hide()
+        },
+    });
+}
+
 function showDataLayerInfo(layer_name) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
@@ -1525,8 +1583,8 @@ function showDataLayerInfo(layer_name) {
     $('#dl_title').html(dl.name_pretty);
     $('#dl_description').html(`<span class='label'>Description:</span><br>${dl.description}`);
     $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr} m`);
-    $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.path}' target='_blank'>${dl.path}</a>`);
-    $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.source}`);
+    $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.download_url}' target='_blank'>${dl.download_url}</a>`);
+    $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`);
     
     $('#datalayer_info').show();
 }
@@ -2119,19 +2177,25 @@ function initiateCMA() {
         data: data,
         success: function(response) {
             console.log(response);
+
+            onStartedCMA(response.cma);
+            
+            // If CMA ID not already in the local CMA data store, add
+            if (!CMAS_EXISTING[response.cma_id]) {
+                CMAS_EXISTING[response.cma_id] = response.cma;
+            }
         },
         error: function(response) {
             console.log(response);
         }
     });
-    
-    var cma_description = $('#cma_description').val();
-    onStartedCMA(cma_description);
-   
 }
     
-function onStartedCMA(desc) {
-    $('#cma_loaded').html(desc);
+function onStartedCMA(cma) {
+//     var cma_description = $('#cma_description').val();
+    $('#cma_loaded').attr('data-cma_id',cma.cma_id);
+    $('#cma_loaded').html(cma.description);
+    $('#cma_loaded').attr('data-cma_id', );
     $('#cma_loaded').removeClass('notactive');
     showCMAstart();
     

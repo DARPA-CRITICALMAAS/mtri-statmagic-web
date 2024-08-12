@@ -201,7 +201,8 @@ function toggleHeader(hdr) {
     $(hdr).nextUntil('tr.divider', filter).slideToggle(100, function(){});    
 };
 
-function toggleLayerHeader(hdr) {
+function toggleLayerHeader(hdr,transition) {
+    transition = transition || 10;
 //     var do_hide = false;
     $(hdr).find('td.collapse').text(function(_, value){
 //         do_hide = value == '-';
@@ -217,14 +218,11 @@ function toggleLayerHeader(hdr) {
 //         console.log(c);
 //     }
 //     if ($(hdr).attr('id').indexOf('Background') > -1) {
-    $(hdr).nextUntil('tr.divider').slideToggle(10, function(){});
+    $(hdr).nextUntil('tr.divider').slideToggle(transition, function(){});
 //     } else {
 //         $(hdr).next('tr.m-basemap-selector-group').find('.group-div').slideToggle(200);
 //     }
 //     $(hdr).next('tr.m-basemap-selector-group').find('div.group-div').slideToggle(200, function(){});
-
-
-    
 };
 
 function toggleYear(hdr) {

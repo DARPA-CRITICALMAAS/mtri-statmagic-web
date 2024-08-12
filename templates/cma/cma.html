@@ -26,6 +26,7 @@ f
 {% include './overlay_uploadshp.html' %}
 {% include './overlay_uploadgeojson.html' %} 
 {% include './overlay_datalayer_info.html' %}
+{% include './overlay_modelinfo.html' %}
 {% include './overlay_processingsteps.html' %}
 {% include './overlay_parametersform.html' %}
 {% include './overlay_load_cma.html' %}
@@ -142,7 +143,7 @@ f
                                         <td class='info' onclick='showDataLayerInfo("{{layer.name}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
                                         <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.name}}");' /></td>
                                         <td class='download'>
-                                            <a href='{{layer.path}}'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
+                                            <a href='{{layer.download_url}}' target='_blank'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
                                         </td>
                                         <td>
                                             <div class="radiocube" align="left">
@@ -171,13 +172,13 @@ f
                         Select model: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
                             
-                        </select>
+                        </select> <img src="/static/cma/img/information.png" height="18px" class="download_icon" onclick='showModelInfo();'>
                        
                     </div>
                     <div class='selected_model_description'></div>
-                    <div class='button selected_model_config' onclick='showModelParameters();'>Configure model parameters</div>
+                    <div class='button selected_model_config' onclick='showModelParameters();'> Configure model parameters <img src="{% static 'cma/img/form_white.png' %}" height=12 width=12 /></div>
                     <div class='collapse sub collapse_datacube'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Data Cube <span class='header_info datacube warning'>[0 layers added]</span></div>
+                        <div class='header topbar sub datacube'><span class="collapse">+ </span> Input layers <span class='header_info datacube warning'>[0 layers added]</span></div>
                         <div class='content datacube'>
                         
                             <!--<div class='collapse sub sub2'>
@@ -188,7 +189,8 @@ f
                             <div class='header topbar sub'><span class="collapse">+ </span> Build</div>-->
                       <!--      <div class='content datacube'>-->
                             <div class='modeling_instructions'>
-                            Load an existing <span class='goto' onclick='$("#datacube_id").trigger("focus");'>data cube ID</span>, or use the <b>DATA LAYERS</b> selector to add layers to build a new data cube
+                            Use the <b>DATA LAYERS</b> 'Add to cube' column to add layers to the input data cube
+                           <!-- Load an existing <span class='goto' onclick='$("#datacube_id").trigger("focus");'>data cube ID</span>, or use the <b>DATA LAYERS</b> selector to add layers to build a new data cube-->
                             </div>
           <!--                  <table class='modeling_params'>
                                 <tr>
@@ -225,9 +227,9 @@ f
                         <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
                         <div class='content training'></div> <!--content training-->
                     </div> <!--collapse sub (training)-->
-                    <div class='collapse sub collapse_model_run'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Run</div>
-                        <div class='content model_run'>
+                 <!--   <div class='collapse sub collapse_model_run'>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Run</div>-->
+<!--                         <div class='content model_run'> -->
                             <table id='modeling_buttons_table'>
                             <tr>
                                 <td><div class='button pretrain'>Pretrain</div></td>
@@ -236,8 +238,8 @@ f
                                 <td><div class='button predict'>Predict</div></td>
                             </tr>
                             </table>
-                        </div> <!--content model_run-->
-                    </div> <!--collapse sub (model_run)-->
+<!--                         </div> <!--content model_run--> -->
+                  <!--  </div> <!--collapse sub (model_run)-->-->
                 </div> <!--content main-->
             </div> <!--collapse (Modeling)-->
         </div><!--control_panel-->

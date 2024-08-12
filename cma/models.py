@@ -68,16 +68,19 @@ class ProcessingStep(models.Model):
     description = models.CharField(max_length=1000,null=True)
     
     
-class Model(models.Model):
+class ProspectivityModelType(models.Model):
     def __str__(self):
         return self.name
     
     class Meta:
-        db_table = 'model'
+        db_table = 'prospectivity_model_type'
         
     name = models.CharField(max_length=100,unique=True)
     name_pretty = models.CharField(max_length=200,null=True)
     description = models.CharField(max_length=1000,null=True)
+    author = models.CharField(max_length=60,null=True,blank=True)
+    organization = models.CharField(max_length=60,null=True,blank=True)
+    model_type = models.CharField(max_length=60,null=True,blank=True)
     uses_datacube = models.BooleanField(default=True)
     uses_training = models.BooleanField(default=False)
     buttons = models.JSONField(null=True,blank=True) # <- define model run buttons
@@ -115,15 +118,15 @@ class ProcessParameter(models.Model):
     optional = models.BooleanField(default=False)
     
     
-class ModelParameter(ProcessParameter):
+class ProspectivityModelTypeParameter(ProcessParameter):
     def __str__(self):
         return f'{self.model}__{self.name}'
     
     class Meta:
-        db_table = 'model_parameter'
+        db_table = 'prospectivity_model_type_parameter'
         unique_together = ('model','name')
         
-    model = models.ForeignKey(Model,on_delete=models.CASCADE)
+    model = models.ForeignKey(ProspectivityModelType,on_delete=models.CASCADE)
     
     
 class ProcessingStepParameter(ProcessParameter):

@@ -2,10 +2,10 @@ from django.contrib import admin
 from . import models
 
 # Register your models here.
-class ModelAdmin(admin.ModelAdmin):
+class ProspectivityModelTypeAdmin(admin.ModelAdmin):
     list_display = ('name','name_pretty','description')
     
-class ModelParameterAdmin(admin.ModelAdmin):
+class ProspectivityModelTypeParameterAdmin(admin.ModelAdmin):
     list_display = ('__str__','group_name','name_pretty','order','optional')
 
 class ProcessingStepAdmin(admin.ModelAdmin):
@@ -20,8 +20,8 @@ class CRSAdmin(admin.ModelAdmin):
 class DataLayerAdmin(admin.ModelAdmin):
     list_display = ('name','spatial_resolution_m','download_url','category','disabled')
 
-admin.site.register(models.Model, ModelAdmin)
-admin.site.register(models.ModelParameter, ModelParameterAdmin)
+admin.site.register(models.ProspectivityModelType, ProspectivityModelTypeAdmin)
+admin.site.register(models.ProspectivityModelTypeParameter, ProspectivityModelTypeParameterAdmin)
 admin.site.register(models.ProcessingStep, ProcessingStepAdmin)
 admin.site.register(models.ProcessingStepParameter, ProcessingStepParameterAdmin)
 admin.site.register(models.CRS, CRSAdmin)

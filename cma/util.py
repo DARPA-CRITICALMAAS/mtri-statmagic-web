@@ -329,8 +329,12 @@ def validate_wkt_geom(wkt):
 
     wkt_string = wkt.replace('+', ' ')
     
-    if re.compile(r'^POLYGON\(([\-\.\d\(\) \+,]*)\)$').match(wkt) == None:
-        raise BadRequest('WKT Polygon format is invalid: {0}'.format(wkt))
+    if 'MULTIPOLYGON' in wkt:
+        if re.compile(r'^MULTIPOLYGON\(\(([\-\.\d\(\) \+,]*)\)\)$').match(wkt) == None:
+            raise BadRequest('WKT Polygon format is invalid: {0}'.format(wkt))
+    else:
+        if re.compile(r'^POLYGON\(([\-\.\d\(\) \+,]*)\)$').match(wkt) == None:
+            raise BadRequest('WKT Polygon format is invalid: {0}'.format(wkt))
     
     #wkt_string = fix_wkt_coords(wkt_string)
 
