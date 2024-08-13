@@ -34,8 +34,8 @@ post_data_intersect_sources = {
     }
 }
 #
-#res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
-res = cdr.get_cmas()
+res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
+#res = cdr.get_cmas()
 print(res)
 print(len(res))
 print(res[0].keys())

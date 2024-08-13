@@ -8,9 +8,11 @@ from datetime import datetime as dt
 from osgeo import gdal, ogr, osr
 import numpy as np
 from django.conf import settings
+from django.forms.models import model_to_dict
 from django.core.exceptions import BadRequest
 from django.http import HttpResponse
 from django.db import connection
+from . import models
 from shapely import wkt
 from shapely.geometry import mapping
 
@@ -343,6 +345,47 @@ def validate_wkt_geom(wkt):
 
     return wkt_string
 
+
+def load_parameters(outdict, dobj):
+    # Separate b/t optional/advanced and required
+    reqopt = 'optional' if dobj.optional else 'required'
+    if reqopt not in outdict:
+        outdict[reqopt] = {}
+    
+    # Add group if not included yet
+    group = dobj.group_name
+    if not group:
+        group = '_'
+    if group not in outdict[reqopt]:
+        outdict[reqopt][group] = [];
+        
+    pdict = model_to_dict(dobj)
+    if dobj.only_show_with is not None:
+        pdict['only_show_with'] = dobj.only_show_with.name
+    outdict[reqopt][group].append(pdict)
+
+
+def get_processing_steps():
+    processing_steps = {
+        c.name: model_to_dict(c) for c in models.ProcessingStep.objects.all()
+    }
+
+    # Get processing step parameters
+    for pp in models.ProcessingStepParameter.objects.select_related('processingstep').all():
+        psname = pp.processingstep.name
+
+        # Add step if not included yet
+        if 'parameters' not in processing_steps[psname]:
+            processing_steps[psname]['parameters'] = {}
+            processing_steps[psname]['parameter_defaults'] = {}
+            
+        load_parameters(processing_steps[psname]['parameters'],pp)
+        
+        # Add convenience var w/ default vals for each parameter
+        processing_steps[psname]['parameter_defaults'][pp.name] = pp.html_attributes['value']
+        
+    
+    return processing_steps
 
 def create_fishnet(
         resolution,

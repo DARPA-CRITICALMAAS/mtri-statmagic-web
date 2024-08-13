@@ -421,13 +421,17 @@ function buildParametersTable(mobj, table_selector, dobj) {
     $('.range_double').each(function(i,cmp) {
         var pname = cmp.id.split('__')[1];
         var p = range_double_params[pname];
+        var start_vals = p.html_attributes.value;
+        if (!start_vals) {
+            start_vals = [p.html_attributes.min,p.html_attributes.max];
+        }
         noUiSlider.create(cmp, {
             range: {
                 'min': p.html_attributes.min,
                 'max': p.html_attributes.max,
             },
             step: p.html_attributes.step,
-            start: [0,1],
+            start: start_vals,
 //             margin: 300,
 //             limit: 600,
             connect: true,
@@ -445,7 +449,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
             $(handle).html(values[handle]);
             $('#range_diff-1').html(values[1] - values[0]);
             
-            var prec = 1; // TODO: determine precision from scale
+            var prec = 2; // TODO: determine precision from scale
 //             console.log(values[0]);
             $(cmp).next('input').val(Number(values[1]).toFixed(prec));
             $(cmp).prev('input').val(Number(values[0]).toFixed(prec));
@@ -1569,11 +1573,17 @@ function submitModelRun() {
         $.each(groups, function(group,parr) {
             $.each(parr, function(i,p) {
                 train_config[p.name] = p.html_attributes.value;
+                
+                // range_double types require a different way of getting the val
+                if (p.input_type == 'range_double') {
+//                     var vmin = $(`${model}__`).val()
+                    
+                }
             });
         });
     });
-    
-     var data = {
+//     console.log(train_config);
+    var data = {
         cma_id: $('#cma_loaded').attr('data-cma_id'),
         model: model,
         train_config: train_config,
@@ -1581,8 +1591,6 @@ function submitModelRun() {
 //             srid: CRS_OPTIONS[crs].srid,
 //             extent_wkt: getWKT()
     };
-
-//     print(data);
     
     $.ajax('submit_model_run', {
         data: JSON.stringify(data),
@@ -1795,7 +1803,18 @@ function onCRSselect() {
 }
 
 function deleteTableRow(cmp) {
-    $(cmp).closest('tr').remove();
+    var tr = $(cmp).closest('tr')
+    var pstep = tr.attr('data-value');
+    var psid = tr.attr('data-index');
+    var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
+  
+    var psobj = PROCESSING_STEPS[pstep];
+    
+    // Remove entry from DATACUBE_CONFIG
+    DATACUBE_CONFIG[dcid].transform_methods.slice(psid,1);
+    
+    // Remove table row
+    tr.remove();
 }
 
 function showProcessingStepParameters(el) {
@@ -1922,8 +1941,13 @@ function onSaveProcessingSteps() {
     DATACUBE_CONFIG[dcid].transform_methods = [];
     
     // Get list of steps from table
-    var step_html = '<table>';
-    $('#processingsteps_listtable tr').each(function(i,tr) {
+    
+    var trs = $('#processingsteps_listtable tr');
+    var step_html = '[none]'
+    if (trs.length > 0) {
+        step_html = '<table>';
+    }
+    trs.each(function(i,tr) {
         var step = $(tr).attr('data-value');
         
         // Get parameters
@@ -1932,7 +1956,9 @@ function onSaveProcessingSteps() {
         DATACUBE_CONFIG[dcid].transform_methods.push({name: step, parameters: params});
         step_html += `<tr><td data-value='${step}'>${PROCESSING_STEPS[step].name_pretty}</td></tr>`;
     });
-    step_html += '</table>';
+    if (trs.length > 0) {
+        step_html += '</table>';
+    }
     $(`tr[data-layername='${dsid}'] span.processingsteps_list`).html(step_html);
 }
 
@@ -2189,6 +2215,13 @@ function saveParametersForm() {
                 $.each(parr, function(i,p) {
                     var v = $(`#${mobj.name}__${p.name}`).val();
                     p.html_attributes.value = v;
+                    
+                    if (p.input_type == 'range_double') {
+                        var vmin = $(`#${mobj.name}__${p.name}__min`).val();
+                        var vmax = $(`#${mobj.name}__${p.name}__max`).val();
+                        p.html_attributes.value = [vmin,vmax];
+                        
+                    }
                 });
             });
         });

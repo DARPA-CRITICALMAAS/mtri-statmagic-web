@@ -89,7 +89,7 @@ def write_mapfile(
         
         rasters[rkey] = r
         rasters[rkey]['download_url'] = tif_path
-        rasters[rkey]['wms_layername'] = rkey
+        rasters[rkey]['wms_layername'] = r['data_source_id']
         rasters[rkey]['layer_type'] = 'POLYGON' if ext in ('shp','SHP','js') else 'RASTER'
         rasters[rkey]['wms_title'] = rkey
         

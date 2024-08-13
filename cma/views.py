@@ -26,42 +26,12 @@ from cdr_schemas import prospectivity_input
 # Default home page
 def home(request):
     
-    def load_parameters(outdict, dobj):
-        # Separate b/t optional/advanced and required
-        reqopt = 'optional' if dobj.optional else 'required'
-        if reqopt not in outdict:
-            outdict[reqopt] = {}
-        
-        # Add group if not included yet
-        group = dobj.group_name
-        if not group:
-            group = '_'
-        if group not in outdict[reqopt]:
-            outdict[reqopt][group] = [];
-            
-        pdict = model_to_dict(dobj)
-        if dobj.only_show_with is not None:
-            pdict['only_show_with'] = dobj.only_show_with.name
-        outdict[reqopt][group].append(pdict)
-
     
     # Get CRS options
     crs_opts = {str(c.srid): model_to_dict(c) for c in models.CRS.objects.all()}
     
     # Get processing step options
-    processing_steps = {
-        c.name: model_to_dict(c) for c in models.ProcessingStep.objects.all()
-    }
-    
-    # Get models and model parameters
-    for pp in models.ProcessingStepParameter.objects.select_related('processingstep').all():
-        psname = pp.processingstep.name
-
-        # Add model if not included yet
-        if 'parameters' not in processing_steps[psname]:
-            processing_steps[psname]['parameters'] = {}
-            
-        load_parameters(processing_steps[psname]['parameters'],pp)
+    processing_steps = util.get_processing_steps()
     
     # Get models and model parameters
     model_opts = {}
@@ -73,7 +43,7 @@ def home(request):
             model_opts[modelname] = model_to_dict(mp.model)
             model_opts[modelname]['parameters'] = {}
         
-        load_parameters(model_opts[modelname]['parameters'],mp)
+        util.load_parameters(model_opts[modelname]['parameters'],mp)
 
     
     # Get data layers
@@ -259,7 +229,7 @@ def initiate_cma(request):
     geojson_dict = json.loads(json.dumps(geojson))
     params["extent"] = MultiPolygon(**geojson_dict)
     
-    # TODO: code to initiate CMA to CDR, returning cma_id
+    # Initiate CMA to CDR, returning cma_id
     cdr = cdr_utils.CDR()
     response = cdr.run_query("prospectivity/cma", POST=params)
     
@@ -271,95 +241,131 @@ def submit_model_run(request):
     params = {
         'cma_id': None,
         'model': None,
-        #'system': '',
-        #'system_version': '',
-        #'author': '',
-        #'organization': None,
-        #'model_type': None,
         'train_config': {},
         'evidence_layers': []
     }
     params = util.process_params(request, params, post_json=True)
     
+    processing_steps = util.get_processing_steps()
+    
     # TODO: should this model meta info should come from the CDR database 
     #       entries? For now, it's coming from the GUI db
     #       GUI database entries
-    
-    
     model = models.ProspectivityModelType.objects.filter(name=params['model']).first()
    
-    # TODO: some code to send this off to the SRI/Beak servers
-    if model.name == 'beak_som':
-        train_config = params['train_config']
+   
+    # Build evidence layer model instances
+    evidence_layers = []
+    for el in params['evidence_layers']:
+        dl = models.DataLayer.objects.filter(
+            data_source_id=el['data_source_id']
+        ).first()
         
-        train_config['size'] = train_config['dimensions_x']
+        #  This list can be:
+        #    * any length
+        #    * any combination/order of processing types in:
+        #       https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/main/cdr_schemas/prospectivity_input.py#L95
+        #
+        #  But, FWIW wouldn't work if multiple transform methods have a 
+        #  identical specifications (e.g. if both transform and scaling had
+        #  'mean' option, that would confuse things)
         
-        print(params['evidence_layers'])
-        
-        evidence_layers = []
-        for el in params['evidence_layers']:
-            dl = models.DataLayer.objects.filter(
-                data_source_id=el['data_source_id']
-            ).first()
+        tms = []
+        for tm in el['transform_methods']:
             
-            # TODO: this is all hard coded for now.......
-            #       Before fixing, schema limitations need to be addressed:
-            #           * enforced order (transform -> scaling -> impute)
-            #           * all steps REQUIRED
-            tms = el['transform_methods']
-            tms = [
-                'log',
-                'minmax',
-                prospectivity_input.Impute(
-                    impute_method='mean',
-                    window_size=[3,3]
+            # For transform/scale, the only param is 'method'; if not set, 
+            # get the default value
+            if tm['name'] in ('transform','scale'):
+                if 'method' in tm['parameters']:
+                    v = tm['method']
+                else:
+                    v = processing_steps[tm['name']]['parameter_defaults']['method']
+                
+            if tm['name'] == 'impute':
+                dfs = processing_steps[tm['name']]['parameter_defaults']
+                vs = {}
+                for p,default_v in dfs.items():
+                    v = default_v
+                    if p in tm['parameters']:
+                        v = tm['parameters'][p]
+                    vs[p] = v
+                    
+                v = prospectivity_input.Impute(
+                    impute_method=vs['method'],
+                    window_size=[vs['window_size']]*2
                 )
-            ]
-            #for tm in tms:
-                # Get defaults if none are 
-            
-            l = prospectivity_input.DefineProcessDataLayer(
-                cma_id = params['cma_id'],
-                data_source_id = el["data_source_id"],
-                title = dl.name,
-                transform_methods = tms#[
-                    #"log",
-                    #"minmax",
-                    #Impute(impute_method="mean", window_size=[3,3])
-                #]
-            )
-            evidence_layers.append(l)
 
-        
-        beak_model_run = prospectivity_input.CreateProspectModelMetaData(
-            cma_id=params['cma_id'],
-            system="",
-            system_version="",
-            author=model.author,
-            date=str(dt.now().date()),
-            organization=model.organization,
-            model_type=model.model_type,
-            train_config=prospectivity_input.SOMTrainConfig(
-                **train_config
-                #size=20,
-                #dimensions_x=20,
-                #dimensions_y=20,
-                #num_initializations=5,
-                #num_epochs=10,
-                #grid_type=SOMGrid.RECTANGULAR,
-                #som_type=SOMType.TOROID,
-                #som_initialization=SOMInitialization.RANDOM,
-                #initial_neighborhood_size=0.0,
-                #final_neighborhood_size=1.0,
-                #neighborhood_function=NeighborhoodFunction.GAUSSIAN,
-                #gaussian_neighborhood_coefficient=0.5,
-                #learning_rate_decay=LearningRateDecay.LINEAR,
-                #neighborhood_decay=NeighborhoodDecay.LINEAR,
-                #initial_learning_rate=0.1,
-                #final_learning_rate=0.01
-            ),
-            evidence_layers=evidence_layers
+            tms.append(v)
+
+
+        l = prospectivity_input.DefineProcessDataLayer(
+            cma_id = params['cma_id'],
+            data_source_id = el["data_source_id"],
+            title = dl.name,
+            transform_methods = tms#[
+                #"log",
+                #"minmax",
+                #Impute(impute_method="mean", window_size=[3,3])
+            #]
         )
+        evidence_layers.append(l)
+   
+    train_config = params['train_config']
+   
+    # Mapping of model name to model config schema
+    model_map = {
+        'sri_NN': prospectivity_input.NeuralNetUserOptions,
+        'beak_som': prospectivity_input.SOMTrainConfig,
+    }
+   
+    # Build TA3 models
+    #if model.name == 'sri_NN':
+    
+    model_run = prospectivity_input.CreateProspectModelMetaData(
+        cma_id=params['cma_id'],
+        system="",
+        system_version="",
+        author=model.author,
+        date=str(dt.now().date()),
+        organization=model.organization,
+        model_type=model.model_type,
+        train_config=model_map[model.name](**train_config),
+        evidence_layers=evidence_layers
+    )
+        
+        
+    #if model.name == 'beak_som':
+        #train_config['size'] = train_config['dimensions_x']
+        
+        #beak_model_run = prospectivity_input.CreateProspectModelMetaData(
+            #cma_id=params['cma_id'],
+            #system="",
+            #system_version="",
+            #author=model.author,
+            #date=str(dt.now().date()),
+            #organization=model.organization,
+            #model_type=model.model_type,
+            #train_config=prospectivity_input.SOMTrainConfig(
+                #**train_config
+                ##size=20,
+                ##dimensions_x=20,
+                ##dimensions_y=20,
+                ##num_initializations=5,
+                ##num_epochs=10,
+                ##grid_type=SOMGrid.RECTANGULAR,
+                ##som_type=SOMType.TOROID,
+                ##som_initialization=SOMInitialization.RANDOM,
+                ##initial_neighborhood_size=0.0,
+                ##final_neighborhood_size=1.0,
+                ##neighborhood_function=NeighborhoodFunction.GAUSSIAN,
+                ##gaussian_neighborhood_coefficient=0.5,
+                ##learning_rate_decay=LearningRateDecay.LINEAR,
+                ##neighborhood_decay=NeighborhoodDecay.LINEAR,
+                ##initial_learning_rate=0.1,
+                ##final_learning_rate=0.01
+            #),
+            #evidence_layers=evidence_layers
+        #)
     
     # TODO: some code to:
     #   (a) Send to CDR, return a job ID that the browser client can check
