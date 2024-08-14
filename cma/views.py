@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from cdr import cdr_utils
 from . import util
 from . import models
+from . import mapfile
 from osgeo import gdal, ogr
 from shapely import wkt
 from shapely.geometry import mapping
@@ -47,33 +48,15 @@ def home(request):
 
     
     # Get data layers
-    datalayers = {} # this object sorts by category/subcategory
-    datalayers_lookup = {} # this object just stores a lookup by 'name'
-    for d in models.DataLayer.objects.filter(disabled=False).order_by(
-        'category','subcategory','name'
-        ):
-        if d.category not in datalayers:
-            datalayers[d.category] = {}
-        if d.subcategory not in datalayers[d.category]:
-            datalayers[d.category][d.subcategory] = []
-        data = model_to_dict(d)
-        data['publication_date'] = str(data['publication_date'])[:-9]
-        name_pretty = d.name
-        if d.name_alt:
-            name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
-        data['name_pretty'] = name_pretty
-        datalayers[d.category][d.subcategory].append(data)
-        datalayers_lookup[d.data_source_id] = data
-        
-
+    dls = util.get_datalayers_for_gui()
     
     # Put any data/info you want available on front-end in this dict
     context = {
         #'COMMODITIES': json.dumps(commodities),
         #'commodities': commodities,
         'MODELS': json.dumps(model_opts),
-        'DATALAYERS_LOOKUP': json.dumps(datalayers_lookup),
-        'datalayers': datalayers,
+        'DATALAYERS_LOOKUP': json.dumps(dls['datalayers_lookup']),
+        'datalayers': dls['datalayers'],
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
         'crs_options': crs_opts,
         'CRS_OPTIONS': json.dumps(crs_opts),
@@ -129,6 +112,82 @@ def get_metadata(request):
 
 
 @csrf_exempt
+def upload_datalayer(request):
+    '''
+    Handles a POST request w/ shapefile OR gpkg files. Returns the vector geometry in
+    geojson format.
+    '''
+    params = {
+        'author': '',
+        'description': '',
+        'reference_url': '',
+        'category': 'geophysics',
+        'type': 'continuous',
+    }
+    params = util.process_params(request,params,post=True)
+    f = request.FILES.getlist('file')[0]
+    fread = f.read()
+    
+    # Extract spatial resolution from file
+    sid = util.getUniqueID()
+    memtif = f'/vsimem/{sid}.tif'
+    gdal.FileFromMemBuffer(memtif, fread)
+    res = int(util.get_tif_resolution(memtif))
+    gdal.Unlink(memtif)
+    
+    # Get date
+    date = dt.now().strftime('%Y-%m-%d')
+
+    # Create CDR metadata object
+    ds = prospectivity_input.CreateDataSource(
+        DOI = '',
+        authors = params['author'].split(','),
+        publication_date = date,
+        category = params['category'],
+        subcategory = 'User uploads',
+        description = params['description'],
+        derivative_ops = '',
+        type = params['type'],
+        resolution = [res,res],
+        format = 'tif',
+        reference_url = params['reference_url'],
+        evidence_layer_raster_prefix = params['description'],
+    )
+
+    print(ds.model_dump_json(exclude_none=True))
+    #blerg
+
+    # Post to CDR
+    cdr = cdr_utils.CDR()
+    res = cdr.post_prospectivity_data_source(
+        input_file=fread,#f.read(),
+        metadata=ds.model_dump_json(exclude_none=True)
+    )
+
+    dsid = res['data_source_id']
+    
+    # Sync to GUI db:
+    util.sync_cdr_prospectivity_datasources_to_datalayer(
+        data_source_id = dsid
+    )
+    
+    # Rewrite mapfile so it shows up in tile server 
+    mapfile.write_mapfile()
+    
+    # Send layer entry to GUI 
+    dl = util.get_datalayers_for_gui(data_source_id=dsid)['datalayers_lookup']
+    
+    response = HttpResponse(
+        json.dumps({
+            'datalayer': dl[list(dl.keys())[0]],
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+ 
+
+@csrf_exempt
 def get_vectorfile_as_geojson(request):
     '''
     Handles a POST request w/ shapefile OR gpkg files. Returns the vector geometry in
@@ -181,29 +240,29 @@ def get_geojson_from_file(request):
 
     return response
 
-# Function for handling datacube creation requests
-def create_datacube(request): 
-    params = {
-        'layers': [], # list of layers to include in the data cube
-        'wkt': '' # WKT representing polygon geometry indicating AOI
-    }
-    params = util.process_params(request, params, post=True)
+## Function for handling datacube creation requests
+#def create_datacube(request): 
+    #params = {
+        #'layers': [], # list of layers to include in the data cube
+        #'wkt': '' # WKT representing polygon geometry indicating AOI
+    #}
+    #params = util.process_params(request, params, post=True)
     
-    # TODO: some code to send this off to the CDR's MTRI datacube worker 
+    ## TODO: some code to send this off to the CDR's MTRI datacube worker 
     
-    # TODO: some code to either:
-    #   (a) if staying attached, process the response
-    #   (b) if detaching, send a job ID that the browser client can check
-    #       status of and request outputs once completed
+    ## TODO: some code to either:
+    ##   (a) if staying attached, process the response
+    ##   (b) if detaching, send a job ID that the browser client can check
+    ##       status of and request outputs once completed
     
     
-    # (if staying attached) Returns JSON w/ datacube_id
-    response = HttpResponse(json.dumps({
-        'datacube_id': datacube_id,
-    }))
-    response['Content-Type'] = 'application/json'
+    ## (if staying attached) Returns JSON w/ datacube_id
+    #response = HttpResponse(json.dumps({
+        #'datacube_id': datacube_id,
+    #}))
+    #response['Content-Type'] = 'application/json'
     
-    return response
+    #return response
     
 
 # Function for handling CMA initiation
@@ -234,6 +293,7 @@ def initiate_cma(request):
     response = cdr.run_query("prospectivity/cma", POST=params)
     
     return response
+
 
 @csrf_exempt
 def submit_model_run(request):
@@ -333,7 +393,12 @@ def submit_model_run(request):
         evidence_layers=evidence_layers
     )
         
+    cdr = cdr_utils.CDR()
+    res = cdr.post_model_run(
+        POST=model_run.model_dump_json(exclude_none=True)
+    )
         
+    print(res)
     #if model.name == 'beak_som':
         #train_config['size'] = train_config['dimensions_x']
         
@@ -411,6 +476,8 @@ def get_mineral_sites(request):
         bbox_polygon=json.dumps(gj),
         limit=int(params['limit'])
     )
+    
+    print(json.dumps(gj))
     
     # Convert to geoJSON
     sites_gj = []

@@ -2,9 +2,8 @@ import codecs, copy, os, sys
 from django.conf import settings
 from django.forms.models import model_to_dict
 from osgeo import gdal, osr
+from . import util
 import numpy as np
-
-
 
 
 def getCLASS(cmap,attribute='pixel'):
@@ -50,10 +49,29 @@ def write_mapfile(
         ''
     )
 
+    # Colors retrieved from here:
+    # https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=12
+    #
+    # (skipping the paler colors b/c they don't show enough contrast)
+    colors = [
+        #[166, 206, 227],
+        [31, 120, 180],
+        #[178, 223, 138],
+        [51, 160, 44],
+    # [251, 154, 153],
+        [227, 26, 28],
+        #[253, 191, 111],
+        [255, 127, 0],
+    # [202, 178, 214],
+        [106, 61, 154],
+    # [255, 255, 153],
+        [177, 89, 40],
+    ]
+
     #########
     # Build rasters dict from database
 
-    datasets = DataLayer.objects.filter()
+    datasets = DataLayer.objects.filter().order_by('category','subcategory','name')
     #.values(
         #'name',
         #'download_url',
@@ -62,11 +80,11 @@ def write_mapfile(
     #)
 
     rasters = {}
-    for dataset in datasets:
+    for i,dataset in enumerate(datasets):
         r = model_to_dict(dataset)
         
         # Ignore any non-rasters for now
-        if not r['download_url'] or not '.tif' in r['download_url']:
+        if not r['download_url'] or r['data_format'] != 'tif':
             continue
 
         # Processing path to raster
@@ -106,7 +124,7 @@ def write_mapfile(
 
         # Retrieve data range if not already loaded
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
-            print(tif_path)
+            print('extracting stats for:',tif_path)
             ds = gdal.Open(tif_path)
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds
@@ -121,28 +139,21 @@ def write_mapfile(
         # Retrieve spatial resolution if not already loaded
         # This just needs to be an approximation for setting templates
         if r['spatial_resolution_m'] is None:
-    
-            
-
             tif_path2 = tif_path
             if 'cdr' not in tif_path and 'vm-apps2' not in tif_path:
                 tif_path2 = f'/net/vm-apps2/{tif_path}'
-            ds = gdal.Open(tif_path2)
-            _, xres, _, _, _, yres  = ds.GetGeoTransform()
-            prj = ds.GetProjection()
-            srs = osr.SpatialReference(prj.title())
-            units = srs.GetLinearUnitsName()
-            print(tif_path, units, xres)
-            # If units are in degrees, do a rough approximation of
-            # resolution in meters w/ assumption that 1 degree ~= 100km
-            # Some projections appear incorrectly set too, so if resolution is
-            # less than 1, we assume degrees
-            if (units in ('degrees','Degrees','degree','Degree')) or xres < 1:
-                xres *= 100000
+
+            xres = util.get_tif_resolution(tif_path2)
             
-            del ds
             dataset.spatial_resolution_m = int(xres)
             dataset.save()
+    
+        # Add color is not already set 
+        if not dataset.color:
+            color = colors[i % len(colors)]
+            dataset.color = ','.join([str(c) for c in color])
+            dataset.save()
+
 
         # Set custom color
         color = dataset.color.replace(',',' ') 

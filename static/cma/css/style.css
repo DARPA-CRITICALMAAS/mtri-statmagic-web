@@ -1219,33 +1219,35 @@ a:visited {
     background-color: #111;
     font-weight: bold;
 }
-.modal_uploadshp .modal {
+.modal_upload .modal {
     height: auto;
     
 }
-.modal_uploadshp td {
+.modal_upload td {
     padding: 2px 8px;
 }
-.modal_uploadshp td.input {
+.modal_upload td.input {
     text-align: right;
 }
-.modal_uploadshp tr {
+.modal_upload tr {
     background-color: transparent;
     
 }
-.modal_uploadshp tr.instructions td {
+.modal_upload tr.instructions td {
 /*     padding-left: 40px; */
     font-size: 13px;
     color: #999;
     text-align: right;
 }
-.modal_uploadshp td.main_label {
+.modal_upload td.main_label {
     width: 100px;
     color: #f2f2f2;
 }
-.modal_uploadshp .footer_buttons td {
+.modal_upload .footer_buttons td {
     padding-top: 10px;    
 }
+
+
 .footer_buttons {
     text-align: center;
 }
@@ -1273,7 +1275,7 @@ a:visited {
     pointer-events: none;
     opacity: 0.3;
 }
-.modal_uploadshp .footer_buttons td {
+.modal_upload .footer_buttons td {
     padding-top: 10px;    
 }
 form {
@@ -1283,7 +1285,7 @@ form {
     margin-top: 6px;
 }
 
-.modal_uploadshp span.highlight {
+.modal_upload span.highlight {
     color: #ff8080;
 }
 span.highlight.allgood {
@@ -1292,7 +1294,7 @@ span.highlight.allgood {
 span.highlight.notRelevant {
     color: #666;
 }
-.modal_uploadshp .highlight {
+.modal_upload .highlight {
     font-weight: 600;
 }
 .model_select_div {
@@ -1862,6 +1864,43 @@ select#sites_display_select {
     color: #f2f2f2;
     
 }*/
+#uploadForm_datalayer table {
+    width: auto;
+    margin: 0px auto;
+    
+}
+
+#uploadForm_datalayer .model_parameters_table td {
+    padding: 6px 10px;
+    
+}
+.model_parameters_table td.buttons_td {
+    text-align: center;
+    background-color: #262626;
+}
+
+.modal_uploaddatalayer .modal {
+    width: auto;
+    overflow-x: hidden;
+    transform: translate(calc(-50% + 0.5px), calc(-50% + 0.5px));
+    top: 50%;
+    left: 50%;
+}
+
+.collapse div.topbar_button {
+/*     position: relative; */
+    float: right;
+    width: auto;
+    display: inline;
+    text-transform: none;
+    font-size: 0.8rem;
+    vertical-align: bottom;
+    padding: 0px auto;
+}
+.collapse div.topbar_button img {
+    margin: 4px 0px 0px 0px;
+    vertical-align: bottom;
+}
 
 @keyframes spin {
     0% { transform: rotate(0deg); }

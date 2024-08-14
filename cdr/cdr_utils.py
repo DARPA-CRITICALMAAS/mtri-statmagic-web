@@ -43,7 +43,7 @@ class CDR():
         self.timeout_seconds = 60000
 
 
-    def run_query(self,query,csv=False,POST=False):
+    def run_query(self,query,csv=False,POST=False,files=None):
         '''
         Queries a CDR API endpoint
 
@@ -70,10 +70,11 @@ class CDR():
         '''
         if POST:
             headers = self.headers
-            headers['Content-Type'] = 'application/json'
+            # headers['Content-Type'] = 'application/json'
             resp = self.client.post(
                 f'{self.cdr_host}/{self.cdr_version}/{query}',
                 data = POST,
+                files=files,
                 headers=headers,
                 timeout=self.timeout_seconds
             )
@@ -206,9 +207,27 @@ class CDR():
             f'prospectivity/data_sources?page={page}&size={size}'
         )
 
+    def post_prospectivity_data_source(self,input_file,metadata):
+        '''
+
+        :param input_file: (str) path to input file
+        :param metadata: (str) JSON model dump
+        :return:
+        '''
+        return self.run_query(
+            f'prospectivity/datasource',
+            POST={'metadata': metadata},
+            files={'input_file': input_file}
+        )
+
     def get_cmas(self, page=0,size=10,search_text=''):
         return self.run_query(
             f'prospectivity/cmas?page={page}&size={size}&search_text={search_text}'
+        )
+
+    def post_model_run(self,metadata):
+        return self.run_query(
+            'prospectivity/prospectivity_model_run',POST=metadata
         )
 
     ####################################

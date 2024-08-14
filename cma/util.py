@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime as dt
 from osgeo import gdal, ogr, osr
 import numpy as np
+from cdr import cdr_utils
 from django.conf import settings
 from django.forms.models import model_to_dict
 from django.core.exceptions import BadRequest
@@ -25,7 +26,7 @@ def process_params(req,params,post=False,post_json=False):
     for param in params:
         if param in r:#.has_key(param):
             params[param] = r[param]
-            print(param,r[param])
+            #print(param,r[param])
             
     return params
 
@@ -458,5 +459,102 @@ def runSQL(sql):
         
     return res
         
+def get_tif_resolution(tif_path):
+    ds = gdal.Open(tif_path)
+    _, xres, _, _, _, yres  = ds.GetGeoTransform()
+    prj = ds.GetProjection()
+    srs = osr.SpatialReference(prj.title())
+    units = srs.GetLinearUnitsName()
+    #print(tif_path, units, xres)
+    # If units are in degrees, do a rough approximation of
+    # resolution in meters w/ assumption that 1 degree ~= 100km
+    # Some projections appear incorrectly set too, so if resolution is
+    # less than 1, we assume degrees
+    if (units in ('degrees','Degrees','degree','Degree')) or xres < 1:
+        xres *= 100000
     
+    del ds
+    
+    return xres
+
+
+def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
+    '''
+    data_source_id: (optional) filter by data source ID if needed
+    '''
+    
+    ### Pull layers from CDR
+    cdr = cdr_utils.CDR()
+    res = cdr.get_prospectivity_data_sources()
+
+    #print(json.dumps(res[0],indent=4))
+    #blerg
+
+    for ds in res:
+        if data_source_id and ds['data_source_id'] != data_source_id:
+            continue
+        
+        if ds['format'] == 'tif':
+            #ds = r#['data_source']
+
+            #print(r)
+            #blerg
+
+            #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
+            name = ds['data_source_id']
+
+            dl, created = models.DataLayer.objects.get_or_create(
+                data_source_id = ds['data_source_id'],
+                defaults = {
+                    'name' : ds['evidence_layer_raster_prefix'],
+                    'name_alt': ds['description'],
+                    'description': ds['description'],
+                    'authors': ds['authors'],
+                    'data_format': ds['format'],
+                    'publication_date': ds['publication_date'],
+                    'doi': ds['DOI'],
+                    'datatype': ds['type'],
+                    'category': ds['category'].capitalize(),
+                    'subcategory': ds['subcategory'].capitalize().rstrip('s'),
+                    'spatial_resolution_m': ds['resolution'][0],
+                    'download_url': ds['download_url'],
+                    'reference_url': ds['reference_url'],
+                    'derivative_ops': ds['derivative_ops']
+                },
+            )
+        else:
+            print('NONTIF:',ds)
+    
+    
+def get_datalayers_for_gui(data_source_id=None):
+    datalayers = {'User uploads':{}} # this object sorts by category/subcategory
+    datalayers_lookup = {} # this object just stores a lookup by 'name'
+    filters = {'disabled': False}
+    if data_source_id:
+        filters['data_source_id'] = data_source_id
+    for d in models.DataLayer.objects.filter(**filters).order_by(
+        'category','subcategory','name'
+        ):
+        cat = d.category if d.subcategory != 'User upload' else 'User uploads'
+        subcat = d.subcategory if d.subcategory != 'User upload' else d.category
+        
+        if cat not in datalayers:
+            datalayers[cat] = {}
+        if subcat not in datalayers[cat]:
+            datalayers[cat][subcat] = []
+            
+        data = model_to_dict(d)
+        data['publication_date'] = str(data['publication_date'])[:-9]
+        name_pretty = d.name
+        if d.name_alt:
+            name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
+        data['name_pretty'] = name_pretty
+        datalayers[cat][subcat].append(data)
+        datalayers_lookup[d.data_source_id] = data
+        
+    return {
+        'datalayers': datalayers,
+        'datalayers_lookup': datalayers_lookup,
+    }
+
     

@@ -1,3 +1,9 @@
+'''
+Note: any layers with missing colors are now auto-colored in create_mapfile.py
+
+
+'''
+
 import dm_util
 
 

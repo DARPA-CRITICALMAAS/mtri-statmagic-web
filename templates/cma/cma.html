@@ -20,10 +20,11 @@
 
 
 {% endblock %}
-f
+
 {% block content %}
 
 {% include './overlay_uploadshp.html' %}
+{% include './overlay_uploaddatalayer.html' %}
 {% include './overlay_uploadgeojson.html' %} 
 {% include './overlay_datalayer_info.html' %}
 {% include './overlay_modelinfo.html' %}
@@ -48,8 +49,10 @@ f
         <div id='control_panel'>
             <div id='sidebar_collapse_button'>&#11207;</div>
             <div class='collapse' id='datalayer_container'>
-                <div class='header topbar toptop'><span class="collapse">+ </span> Data layers</div>
+                <div class='header topbar toptop'><span class="collapse">+ </span> Data layers
+                </div>
                 <div class='content main'>
+                    
                     <div class='collapse sub'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites</div>
                         <div class='content'>
@@ -115,18 +118,19 @@ f
                             </table>
                         </div> <!--content-->
                     </div> <!--collapse_sub-->
-                    <div class='collapse sub'>
+                   <!-- <div class='collapse sub'>
                         <div class='header topbar sub'><span class="collapse">+ </span> User layers</div>
                         <div class='content'>
-                             <div class='button selected_model_config'>Upload</div>
+                             <div class='button load_sites upload' title='Upload a data layer' onclick="$('.modal_uploaddatalayer').show();">Upload</div>
+                            
                         </div> <!--content-->
-                    </div> <!--collapse_sub-->
+                     <!--collapse_sub-->
  
                 {% for category,cobj in datalayers.items %}
                     <div class='collapse sub'>
-                        <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}</div>
+                        <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}{% if category == "User uploads" %}<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div>{% endif %}</div>
                         <div class='content'>
-                            <table class='datalayer_table'>
+                            <table class='datalayer_table'{% if category == "User uploads" %} id='user_upload_layers_table'{% endif %}>
                             {% for subcategory,layers in cobj.items %}
                                 <tr class='subcategory_label'>
                                     <td>{{subcategory}}</td>

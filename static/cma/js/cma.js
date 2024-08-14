@@ -144,8 +144,49 @@ function onLoad() {
     // Load extent specification tools to KNOWN DEPOSIT SITES
     $('#mineral_sites_extent_tr').html(SPECIFY_EXTENT_TR);
     
+    // Create listeners for the upload data layer form
+    $('#uploadForm_datalayer input').on('change', function() {
+        validateUploadDataLayerForm();
+    });
+    
     // Get metadata
     getMetadata();
+}
+
+function validateUploadDataLayerForm() {
+   var fileinput = $('#file_datalayer');
+   var filename = fileinput.val().split('\\').pop();
+   
+    updateSHPlabel(
+        filename,
+        'file_datalayer'
+    );
+    
+    if ($('#uploaddl__description').val() == '') {
+        $('#uploaddl__description').val(filename.split('.')[0]);
+    }
+    
+    $('#uploadForm_datalayer .button.submit').removeClass('disabled');
+    
+//     function updateSHPlabel(shp,el_id) {
+//     el_id = el_id || 'file_shp';
+//     var c = $(`label[for=${el_id}]`).find('span');
+//     c.removeClass('selected');
+//     if (shp) {
+//         c.html(shp);
+//         c.addClass('selected');
+//     } else {
+//         c.html('CHOOSE FILES');
+//     }
+
+    // Validate inputs
+//     var files_by_ext = {};
+//     $.each(this.files, function(i,file) {
+//         formData.append('file',file);
+//         var ext = file.name.split('.').pop();
+//         files_by_ext[ext] = file;
+//     });
+    
 }
 
 function addCMAControl() {
@@ -647,26 +688,29 @@ function populateAddProcessingStep() {
     
 }
 
-function createMapLayers() {
-    
-    $.each(DATALAYERS_LOOKUP, function(name,obj) {
-        obj.maplayer = L.tileLayer.wms(
-            WMS_URL, {
-                layers: name,
-                map: MAPFILE,
-                format: 'image/png',
-                crs: L.CRS.EPSG4269,
-                transparent: true,
-                width: 512,
-                height: 512,
-                opacity: 0.8,
-                maxZoom: 30,
-                zIndex: 200,
+function createMapLayer(name,obj) {
+    obj.maplayer = L.tileLayer.wms(
+        WMS_URL, {
+            layers: name,
+            map: MAPFILE,
+            format: 'image/png',
+            crs: L.CRS.EPSG4269,
+            transparent: true,
+            width: 512,
+            height: 512,
+            opacity: 0.8,
+            maxZoom: 30,
+            zIndex: 200,
 //                     data_id: wms_layer_name
-        
-        });
+    
     });
     
+}
+
+function createMapLayers() {
+    $.each(DATALAYERS_LOOKUP, function(name,obj) {
+        createMapLayer(name,obj);
+    });
 }
 
 function showMessage(title,content) {
@@ -716,8 +760,9 @@ function createLayerControl() {
     });
     ta1_layer.bindPopup(popup);
     ta1_layer.on('click', function(e) {
-        console.log(e.layer.properties);
-        popup.setContent(`${e.layer.properties.descrip}; ${e.layer.properties.pattern}`);
+        var prop = e.layer.properties;
+        console.log(prop);
+        popup.setContent(`${prop.system} v${prop.system_version}<br><b>${prop.descrip}</b>`);
         ta1_layer.openPopup();
     });
 //     ta1_layer.on('mouseover', function(e) {
@@ -881,7 +926,7 @@ function createLayerControl() {
             <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
             
         `);
-        ta1_layer.openPopup();
+        emri_layer.openPopup();
     });
     
     
@@ -1963,15 +2008,16 @@ function onSaveProcessingSteps() {
 }
 
 
-function updateSHPlabel(shp,el_id) {
+function updateSHPlabel(shp,el_id,msg) {
     el_id = el_id || 'file_shp';
+    msg = msg || 'CHOOSE FILES';
     var c = $(`label[for=${el_id}]`).find('span');
     c.removeClass('selected');
     if (shp) {
         c.html(shp);
         c.addClass('selected');
     } else {
-        c.html('CHOOSE FILES');
+        c.html(msg);
     }
 }
 
@@ -2260,6 +2306,104 @@ function initiateCMA() {
         error: function(response) {
             console.log(response);
         }
+    });
+}
+    
+function uploadDataLayer() {
+    var formData = new FormData();
+    $('#uploadForm_datalayer input').each(function(i,input) {
+        var id = input.id;
+        if (id.indexOf('uploaddl') > -1) {
+            id = id.split('__')[1];
+            formData.append(id, $(input).val());
+        }
+    });
+    formData.append('file',$('#file_datalayer')[0].files[0]);
+
+//     $('.modal_uploaddatalayer').hide();
+    if (AJAX_UPLOAD_SHAPEFILE) {
+        AJAX_UPLOAD_SHAPEFILE.abort();
+    }
+//     AUDIO.submit.play();
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_datalayer', {
+        processData: false,
+        contentType: false,
+        data: formData,
+        type: 'POST',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            var dl = response.datalayer;
+            
+            // Create WMS map layer so it can be loaded to map
+            createMapLayer(dl.data_source_id,dl)
+            
+            // Add layer lookup 
+            DATALAYERS_LOOKUP[dl.data_source_id] = dl;
+            
+            // Add the layer to the layer list
+            var table = $('#user_upload_layers_table');
+            
+            // Add columns headers if date-based subcategory is empty
+            if (table.find(`tr.subcategory_label td:contains("${dl.category}")`).length == 0) {
+                table.append(`
+                    <tr class='subcategory_label'>
+                        <td>${dl.category}</td>
+                        <td class='colname'>Info</td>
+                        <td class='colname'>Show</td>
+                        <td class='colname'>Download</td>
+                        <td class='colname radiocube'>Add to cube</td>
+                    </tr>
+                `);
+            }
+            // Add table row
+            table.append(`
+                <tr data-path="${dl.data_source_id}">
+                    <td class='name'>${dl.name_pretty}</td>
+                    <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}");'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
+                    <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"${dl.data_source_id}");' /></td>
+                    <td class='download'>
+                        <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
+                    </td>
+                    <td>
+                        <div class="radiocube" align="left">
+                            <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
+                            <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
+                            <input type="radio" name="radiocube_${dl.data_source_id}" value="yes" >
+                            <label class='yes' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">Y</label>
+                        </div>
+                    </td>
+
+                </tr>
+            `);
+            
+
+            
+            
+            // Reset upload form
+            updateSHPlabel(
+                null,
+                'file_datalayer',
+                'CHOOSE TIF'
+            );
+            $('.modal_uploaddatalayer').hide();
+// 
+            var e = $('#file_datalayer');
+            e.wrap('<form>').closest('form').get(0).reset();
+            e.unwrap();
+            
+        },
+        error: function(response) {
+            console.log(response);
+//             AUDIO.error.play();
+            alert(response.responseText);
+//             $('.submission_opts').show();
+//             $('#burn_id_filter').show();
+//             $('.modal_uploadshp').show();
+//             $('.loading_user_submission').hide();
+            
+//             updateSHPlabel();
+        },
     });
 }
     
