@@ -227,6 +227,18 @@ class CDR():
             f'prospectivity/prospectivity_output_layers?page={page}&size={size}&cma_id={cma_id}&model_run_id={model_run_id}'
         )
 
+    def post_cma(self, input_file, metadata):
+        return self.run_query(
+            f'prospectivity/cma',
+            POST={'metadata': metadata},
+            files={'input_file': input_file}
+        )
+
+    def get_cma(self, cma_id):
+        return self.run_query(
+            f'prospectivity/cma?cma_id={cma_id}'
+        )
+
     def get_cmas(self, page=0,size=10,search_text=''):
         return self.run_query(
             f'prospectivity/cmas?page={page}&size={size}&search_text={search_text}'
@@ -235,6 +247,11 @@ class CDR():
     def get_model_run(self, model_run_id):
         return self.run_query(
             f'prospectivity/model_run?model_run_id={model_run_id}'
+        )
+
+    def get_model_runs(self, cma_id, size=100):
+        return self.run_query(
+            f'prospectivity/model_runs?cma_id={cma_id}&size={size}'
         )
 
     def post_model_run(self,metadata):

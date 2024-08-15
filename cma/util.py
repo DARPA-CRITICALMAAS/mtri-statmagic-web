@@ -4,6 +4,8 @@ Backend utility code.
 
 import json, math, os, random, re, requests, string, tempfile
 from pathlib import Path
+from numbers import Number
+import geopandas as gpd
 from datetime import datetime as dt
 from osgeo import gdal, ogr, osr
 import numpy as np
@@ -14,10 +16,13 @@ from django.core.exceptions import BadRequest
 from django.http import HttpResponse
 from django.db import connection
 from . import models
-from shapely import wkt
+from shapely import geometry, wkt
 from shapely.geometry import mapping
 import rasterio as rio
+from rasterio.crs import CRS
 from rasterio.io import MemoryFile
+from rasterio.transform import from_origin
+from rasterio.features import rasterize
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 
@@ -668,3 +673,105 @@ def cogify_from_buffer(data):
         )
 
     return output_memfile.read()
+
+def process_cma(cma):
+    # Reproject to WGS84
+    cma['extent'] = simplify_and_transform_geojson(
+        cma['extent'],
+        cma['crs'].split(':')[1],
+    )
+    
+    return cma
+
+def get_array_shape_from_bounds_and_res(bounds: np.ndarray, pixel_size: Number):
+
+    # upack the bounding box
+    coord_west, coord_south, coord_east, coord_north = bounds[0], bounds[1], bounds[2], bounds[3]
+
+    # Need to get the array shape from resolution
+    raster_width = math.ceil(abs(coord_west - coord_east) / pixel_size)
+    raster_height = math.ceil(abs(coord_north - coord_south) / pixel_size)
+
+    return raster_width, raster_height, coord_west, coord_north
+
+
+def create_template_raster_from_bounds_and_resolution(
+        bounds,
+        target_crs,
+        pixel_size,
+        clipping_gdf
+    ):
+    print('bounds',bounds)
+    print('pixel size',pixel_size)
+
+    raster_width, raster_height, coord_west, coord_north = get_array_shape_from_bounds_and_res(
+        bounds,
+        pixel_size
+    )
+    out_array = np.full((1, raster_height, raster_width), 0, dtype=np.float32)
+
+    out_transform = from_origin(coord_west, coord_north, pixel_size, pixel_size)
+    # TODO: Figure out how to make the clipping gdf and if it is a geodataframe, then if indent the next three lines
+    # This should really only get done if the polygon != bounds
+    shapes = ((geom) for geom in clipping_gdf.geometry)
+    # This fill parameter doesn't seem to be working as I expect
+    # masking_array = rasterize(shapes=shapes, fill=np.finfo('float32').min, out=out_array, transform=out_transform, default_value=1)
+    masking_array = rasterize(
+        shapes=shapes,
+        fill=np.finfo('float32').min,
+        out=out_array,
+        transform=out_transform,
+        default_value=1
+    )
+    
+    out_array = np.where(
+        masking_array == 1, 1, np.finfo('float32').min
+    ).astype(np.float32)
+
+    out_meta = {
+        "width": raster_width,
+        "height": raster_height,
+        "count": 1,
+        "dtype": out_array.dtype,
+        "crs": target_crs,
+        "transform": out_transform,
+        "nodata": np.finfo('float32').min,
+        "driver": 'GTiff',
+        'compress': 'lzw',
+    }
+
+    # Replace with S3 boto3 type stuff here
+    mem_file = MemoryFile()
+    with mem_file.open(**out_meta) as ds:
+        ds.write(out_array)
+    
+    with rio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif', 'w', **out_meta) as new_dataset:
+        new_dataset.write(out_array)
+        
+    return mem_file
+
+
+def build_template_raster_from_CMA(cma, proj4, buffer_distance=0):
+    
+    geom = cma.extent.coordinates#['extent']['coordinates']
+    poly = geometry.Polygon(geom[0][0])
+    try:
+        target_crs = CRS.from_epsg(cma.crs)
+    except rio.errors.CRSError:
+        target_crs = CRS.from_string(proj4)
+
+    clipping_gdf = gpd.GeoDataFrame(geometry=[poly], crs=4326)
+    clipping_gdf = clipping_gdf.to_crs(target_crs)
+    if buffer_distance > 0:
+        clipping_gdf.geometry = clipping_gdf.buffer(buffer_distance)
+    bounds = clipping_gdf.total_bounds
+
+    # Todo: update create function to use both dimensions
+    pixel_size = cma.resolution[0]
+
+    return create_template_raster_from_bounds_and_resolution(
+        bounds=bounds,
+        target_crs=target_crs,
+        pixel_size=pixel_size,
+        clipping_gdf=clipping_gdf
+    )

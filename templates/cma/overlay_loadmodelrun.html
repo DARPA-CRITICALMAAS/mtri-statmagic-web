@@ -1,0 +1,25 @@
+{% load static %}
+<div id='load_model_run' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#load_model_run').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='parameters_form_title'>Load existing model run</div>
+        <div class='content'>
+            <table class='model_parameters_table cmamodelrun' id='model_runs_table'>
+                <thead>
+                    <td>Timestamp</td>
+                    <td>System</td>
+                    <td>System version</td>
+                    <td>Model type</td>
+                    <td># layers</td>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

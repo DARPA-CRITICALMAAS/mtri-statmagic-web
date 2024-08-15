@@ -520,7 +520,7 @@ select {
     background-color: transparent;
     font-size: 1.0rem;
     padding: 2px 8px;
-    color: #90d590;
+    color: #a5cd98;
     width: calc(100% - 26px);
      margin: 0px 10px 0px 0px;
 }
@@ -676,7 +676,7 @@ tr.subcategory_label td {
 }
 tr.subcategory_label td.colname,
 .content.datacube #datacube_layers thead td,
-#choose_cma_table thead td {
+.cmamodelrun thead td {
     font-size: 0.7rem;
     color: #999;
     text-align: center;
@@ -1900,6 +1900,14 @@ select#sites_display_select {
 .collapse div.topbar_button img {
     margin: 4px 0px 0px 0px;
     vertical-align: bottom;
+}
+
+.button.load {
+    background-color: #957b9d;
+}
+.button.load:hover {
+    background-color: #534158;
+    
 }
 
 @keyframes spin {

@@ -600,6 +600,8 @@ function loadCMA(cma_id) {
     var cma = CMAS_EXISTING[cma_id];
 //     console.log(cma);
     
+
+    
     // Populate the InitiateCMA form
     $.each(['description','mineral','crs','resolution'], function(i,attr) {
         var a = cma[attr];
@@ -625,6 +627,9 @@ function loadCMA(cma_id) {
     
     // Make UI changes (show model opts, etc.)
      onStartedCMA(cma);
+     
+     // Load model runs
+     loadModelRuns(cma_id);
      
      // Load known deposit sites
      loadMineralSites();
@@ -693,6 +698,37 @@ function getMetadata() {
             console.log(response);
         }
     });
+    
+}
+
+function loadModelRuns(cma_id) {
+    $.ajax(`/get_model_runs`, {
+        data: {
+            model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
+        },
+        success: function(response) {
+            console.log(response);
+            
+            trs = '';
+            $.each(response.model_runs, function(mrid, mobj) {
+                trs += `
+                    <tr>
+                        <td>${cleanTimestamp(mobj.event.timestamp)}</td>
+                        <td>${mobj.system}</td>
+                        <td>${mobj.system_version}</td>
+                        <td>${mobj.model_type}</td>
+                        <td>${mobj.event.payload.evidence_layers.length}</td>
+                    </tr>
+                `;
+            });
+            $('#model_runs_table tbody').html(trs);
+            
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+    
     
 }
 
@@ -2346,6 +2382,9 @@ function getDateAsYYYYMMDD(dt) {
         zeroPad(dt.getMonth()+1,2) + '-' + 
         zeroPad(dt.getDate(),2);
 }
+function cleanTimestamp(ts) {
+    return ts.slice(0,16);
+}
 
 function showLoadCMAmodal() {   
     $('#load_cma_modal').show();
@@ -2416,13 +2455,13 @@ function initiateCMA() {
         data: data,
         success: function(response) {
             console.log(response);
-
-            onStartedCMA(response.cma);
             
             // If CMA ID not already in the local CMA data store, add
-            if (!CMAS_EXISTING[response.cma_id]) {
-                CMAS_EXISTING[response.cma_id] = response.cma;
+            if (!CMAS_EXISTING[response.cma.cma_id]) {
+                CMAS_EXISTING[response.cma.cma_id] = response.cma;
             }
+            
+            loadCMA(response.cma);
         },
         error: function(response) {
             console.log(response);

@@ -12,6 +12,7 @@ from . import mapfile
 from osgeo import gdal, ogr
 from shapely import wkt
 from shapely.geometry import mapping
+import rasterio
 from geojson_pydantic import MultiPolygon
 import json
 
@@ -23,6 +24,7 @@ from cdr_schemas import prospectivity_models
 from cdr_schemas import prospectivity_input
 
 # Functions for handling requests
+
 
 # Default home page
 def home(request):
@@ -97,19 +99,22 @@ def get_metadata(request):
         for x in cdr.get_list_deposit_types() if x['name']
     ])
     
+
     # Get CMA list
     cmas = {}
     for cma in cdr.get_cmas():
         if cma['mineral'] == 'test_mineral':
             continue
         
+        cma = util.process_cma(cma)        
         cmas[cma['cma_id']] = cma
-        
-        # Reproject to WGS84
-        cmas[cma['cma_id']]['extent'] = util.simplify_and_transform_geojson(
-            cma['extent'],
-            cma['crs'].split(':')[1],
-        )
+
+    # Get model runs and attach to CMAs
+    for cma_id,cma in cmas.items():
+        cma['model_runs'] = []
+        for mr in cdr.get_model_runs(cma_id):
+            cma['model_runs'].append(mr['model_run_id'])
+    
     
     response = HttpResponse(
         json.dumps({
@@ -202,6 +207,7 @@ def upload_datalayer(request):
 
     return response
  
+ 
 def get_model_run(request):
     params = {
         'model_run_id': None,
@@ -220,6 +226,33 @@ def get_model_run(request):
     response['Content-Type'] = 'application/json'
 
     return response
+
+
+def get_model_runs(request):
+    '''
+    Returns list of model run metadata for the provided model_runs (comma 
+    separated list)
+    '''
+    params = {
+        'model_runs': None,
+    }
+    params = util.process_params(request,params)
+    
+    cdr = cdr_utils.CDR()
+    model_runs = {}
+    for mrid in params['model_runs'].split(','):
+        model_runs[mrid] = cdr.get_model_run(mrid)
+    
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'model_runs': model_runs,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
 
 
 def get_model_outputs(request):
@@ -348,9 +381,43 @@ def initiate_cma(request):
     geojson_dict = json.loads(json.dumps(geojson))
     params["extent"] = MultiPolygon(**geojson_dict)
     
+    cma = prospectivity_input.CreateCriticalMineralAssessment(
+        **params
+    )
+    
+    cma_json = cma.model_dump_json(exclude_none=True)
+    
+    
+    # Generate template raster
+    proj4 = models.CRS.objects.filter(srid=params['crs']).values_list('proj4text')[0][0]
+    memfile = util.build_template_raster_from_CMA(cma, proj4)
+    
+    
+    #profile = memfile.profile.copy()
+    #rasterio.shutil.copy(memfile, '/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif')
+   # with rasterio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif','w',**profile) as f:
+    #   f.write(memfile.read())
+                
+    #blerg
+    
+    #print(cma_json)
+    #blerg
+    
     # Initiate CMA to CDR, returning cma_id
     cdr = cdr_utils.CDR()
-    response = cdr.run_query("prospectivity/cma", POST=params)
+    response = cdr.post_cma(
+        input_file=open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif','rb').read(),#memfile,
+        metadata=cma_json,
+    )
+    
+    # And get the CMA object that was created  
+    cma = util.process_cma(cdr.get_cma(response['cma_id']))
+    
+    #  Returns JSON w/ ID indicating model run
+    response = HttpResponse(json.dumps({
+        'cma': cma,
+    }))
+    response['Content-Type'] = 'application/json'
     
     return response
 
@@ -438,9 +505,7 @@ def submit_model_run(request):
         'beak_som': prospectivity_input.SOMTrainConfig,
     }
    
-    # Build TA3 models
-    #if model.name == 'sri_NN':
-    
+    # Build TA3 models metadata instance
     model_run = prospectivity_input.CreateProspectModelMetaData(
         cma_id=params['cma_id'],
         system="",
@@ -452,61 +517,21 @@ def submit_model_run(request):
         train_config=model_map[model.name](**train_config),
         evidence_layers=evidence_layers
     )
-        
+    
+    # Post to CDR
     cdr = cdr_utils.CDR()
     res = cdr.post_model_run(
-        POST=model_run.model_dump_json(exclude_none=True)
+        model_run.model_dump_json(exclude_none=True)
     )
-        
-    print(res)
-    #if model.name == 'beak_som':
-        #train_config['size'] = train_config['dimensions_x']
-        
-        #beak_model_run = prospectivity_input.CreateProspectModelMetaData(
-            #cma_id=params['cma_id'],
-            #system="",
-            #system_version="",
-            #author=model.author,
-            #date=str(dt.now().date()),
-            #organization=model.organization,
-            #model_type=model.model_type,
-            #train_config=prospectivity_input.SOMTrainConfig(
-                #**train_config
-                ##size=20,
-                ##dimensions_x=20,
-                ##dimensions_y=20,
-                ##num_initializations=5,
-                ##num_epochs=10,
-                ##grid_type=SOMGrid.RECTANGULAR,
-                ##som_type=SOMType.TOROID,
-                ##som_initialization=SOMInitialization.RANDOM,
-                ##initial_neighborhood_size=0.0,
-                ##final_neighborhood_size=1.0,
-                ##neighborhood_function=NeighborhoodFunction.GAUSSIAN,
-                ##gaussian_neighborhood_coefficient=0.5,
-                ##learning_rate_decay=LearningRateDecay.LINEAR,
-                ##neighborhood_decay=NeighborhoodDecay.LINEAR,
-                ##initial_learning_rate=0.1,
-                ##final_learning_rate=0.01
-            #),
-            #evidence_layers=evidence_layers
-        #)
-    
-    # TODO: some code to:
-    #   (a) Send to CDR, return a job ID that the browser client can check
-    #       status of and request outputs for once completed
-    
-    model_run_id = 1
-    
-    # (if staying attached) Returns JSON w/ ID indicating model run
+
+    # Return JSON w/ ID indicating model run
     response = HttpResponse(json.dumps({
-        'model_run_id': model_run_id,
+        'model_run_id': res['model_run_id'],
     }))
     response['Content-Type'] = 'application/json'
     
     return response
-    
-    
+
 
 # Function for retrieving and returning a list of mineral sites to frontend
 @csrf_exempt

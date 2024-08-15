@@ -33,10 +33,12 @@ post_data_intersect_sources = {
         ]
     }
 }
-#
-# res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
-# print(res)
-# blerg
+
+res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
+
+#res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
+print(res)
+blerg
 #
 # res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
 # #res = cdr.get_cmas()
@@ -91,23 +93,23 @@ bbox_polygon_site_search = {
 #
 # print(r)
 
-res = cdr.get_tiles_sources(page_size=1000)
-systems = {}
-for r in res:
-    print()
-    #for cog in r:
-    #    print(cog)
-    system = r['system']
-    v = r['system_version']
-    if system not in systems:
-        systems[system] = []
-    if v not in systems[system]:
-        systems[system].append(v)
-    #systems[sys]
-    #print(r)
-
-for s in sorted(systems):
-    print(s, systems[s])
+# res = cdr.get_tiles_sources(page_size=1000)
+# systems = {}
+# for r in res:
+#     print()
+#     #for cog in r:
+#     #    print(cog)
+#     system = r['system']
+#     v = r['system_version']
+#     if system not in systems:
+#         systems[system] = []
+#     if v not in systems[system]:
+#         systems[system].append(v)
+#     #systems[sys]
+#     #print(r)
+#
+# for s in sorted(systems):
+#     print(s, systems[s])
 
 #print(len(res))
 
