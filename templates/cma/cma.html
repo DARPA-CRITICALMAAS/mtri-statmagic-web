@@ -130,7 +130,11 @@
                     <div class='collapse sub'>
                         <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}{% if category == "User uploads" %}<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div>{% endif %}</div>
                         <div class='content'>
-                            <table class='datalayer_table'{% if category == "User uploads" %} id='user_upload_layers_table'{% endif %}>
+                            <table class='datalayer_table'
+                                {% if category == "User uploads" %} id='user_upload_layers_table'{% endif %}
+                                {% if category == "model outputs" %} id='model_outputs_table'{% endif %}
+                            >
+                            {% if category != 'model outputs' %}
                             {% for subcategory,layers in cobj.items %}
                                 <tr class='subcategory_label'>
                                     <td>{{subcategory}}</td>
@@ -160,7 +164,8 @@
                   
                                     </tr>
                                 {% endfor %}
-                            {% endfor%}
+                            {% endfor %}
+                            {% endif %}
                             </table>
                         </div>
                     </div>
@@ -261,6 +266,7 @@
     const CRS_OPTIONS = {{ CRS_OPTIONS|safe }};
     const PROCESSING_STEPS = {{ PROCESSING_STEPS|safe }};
     const CDR_BEARER = '{{ CDR_API_TOKEN }}';
+    const TA1_SYSTEMS = {{ TA1_SYSTEMS|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
 <script src="{% static 'cma/js/cma.js' %}"></script>

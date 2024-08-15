@@ -79,8 +79,10 @@ class CDR():
                 timeout=self.timeout_seconds
             )
         else:
+            url = f'{self.cdr_host}/{self.cdr_version}/{query}'
+            print(url)
             resp = self.client.get(
-                f'{self.cdr_host}/{self.cdr_version}/{query}',
+                url,
                 headers=self.headers,
                 timeout=self.timeout_seconds
             )
@@ -220,9 +222,19 @@ class CDR():
             files={'input_file': input_file}
         )
 
+    def get_prospectivity_output_layers(self,cma_id='',page=0,size=100,model_run_id=''):
+        return self.run_query(
+            f'prospectivity/prospectivity_output_layers?page={page}&size={size}&cma_id={cma_id}&model_run_id={model_run_id}'
+        )
+
     def get_cmas(self, page=0,size=10,search_text=''):
         return self.run_query(
             f'prospectivity/cmas?page={page}&size={size}&search_text={search_text}'
+        )
+
+    def get_model_run(self, model_run_id):
+        return self.run_query(
+            f'prospectivity/model_run?model_run_id={model_run_id}'
         )
 
     def post_model_run(self,metadata):
@@ -232,8 +244,8 @@ class CDR():
 
     ####################################
     # Tiles
-    def get_tiles_sources(self):
-        return self.run_query(f'tiles/sources')
+    def get_tiles_sources(self,page_size=10):
+        return self.run_query(f'tiles/sources?page_size={page_size}')
 
     def intersect_sources(self,post_data):
         return self.run_query(

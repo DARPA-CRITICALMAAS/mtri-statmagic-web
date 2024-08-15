@@ -34,11 +34,15 @@ post_data_intersect_sources = {
     }
 }
 #
-res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
-#res = cdr.get_cmas()
-print(res)
-print(len(res))
-print(res[0].keys())
+# res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
+# print(res)
+# blerg
+#
+# res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
+# #res = cdr.get_cmas()
+# print(res)
+# print(len(res))
+# print(res[0].keys())
 #print(cdr.get_mineral_inventories('copper'))
 
 bbox_polygon_site_search = {
@@ -61,11 +65,12 @@ bbox_polygon_site_search = {
 }
 
 # res = cdr.get_mineral_sites_search(
-#     commodity='Zinc',
+#     commodity='Rare earth elements',
 #     candidate='',
 #     bbox_polygon=json.dumps(bbox_polygon_site_search),
 #     limit=-1
 # )
+# print(res)
 # commodities = {}
 # for r in res:
 #     c = r['mineral_inventory'][0]['commodity']
@@ -86,14 +91,25 @@ bbox_polygon_site_search = {
 #
 # print(r)
 
-# res = cdr.get_tiles_sources()
-#
-# for r in res:
-#     print()
-#     #for cog in r:
-#     #    print(cog)
-#     print(r)
-# print(len(res))
+res = cdr.get_tiles_sources(page_size=1000)
+systems = {}
+for r in res:
+    print()
+    #for cog in r:
+    #    print(cog)
+    system = r['system']
+    v = r['system_version']
+    if system not in systems:
+        systems[system] = []
+    if v not in systems[system]:
+        systems[system].append(v)
+    #systems[sys]
+    #print(r)
+
+for s in sorted(systems):
+    print(s, systems[s])
+
+#print(len(res))
 
 
 # res = cdr.get_prospectivity_input_layers()

@@ -618,7 +618,7 @@ span.collapse {
 .datalayer_table td.name,
 #datacube_layers td.name {
     font-family: 'Open Sans Condensed';
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     max-width: 140px;
 }
 #datacube_layers td.name {
@@ -1460,7 +1460,8 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     margin-top: 0px;
     color: #90d5c4;
     font-weight: bold;
-    font-size: 1.0rem;
+    font-size: .95rem;
+    line-height: 1.1rem;
 }
 #cma_loaded.notactive {
     color: #999;
@@ -1838,14 +1839,13 @@ select#sites_display_select {
     color: #bfbfbf;
     font-size: 0.8rem;
     padding: 0px 8px;
+    max-width: 400px;
 }
 
 .download_icon {
     margin: auto 4px;
     cursor: pointer;
-    
 }
-
 
 #model_info .parameters_form_title {
     font-size: 1.1rem;

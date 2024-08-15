@@ -2,7 +2,7 @@
 Backend utility code.
 '''
 
-import json, math, os, random, re, requests, string
+import json, math, os, random, re, requests, string, tempfile
 from pathlib import Path
 from datetime import datetime as dt
 from osgeo import gdal, ogr, osr
@@ -16,8 +16,10 @@ from django.db import connection
 from . import models
 from shapely import wkt
 from shapely.geometry import mapping
-
-
+import rasterio as rio
+from rasterio.io import MemoryFile
+from rio_cogeo.cogeo import cog_translate
+from rio_cogeo.profiles import cog_profiles
 
 def process_params(req,params,post=False,post_json=False):
     r = req.GET if not post else req.POST
@@ -460,7 +462,17 @@ def runSQL(sql):
     return res
         
 def get_tif_resolution(tif_path):
-    ds = gdal.Open(tif_path)
+    td = None
+    if ' ' in tif_path:
+        td = tempfile.TemporaryDirectory()
+        url = tif_path.replace("/vsicurl_streaming/","")
+        os.system(f'wget -P {td.name} "{url}"')
+        print(td, os.path.basename(tif_path))
+        ds = gdal.Open(os.path.join(td.name,os.path.basename(tif_path)))
+    else:
+        ds = gdal.Open(tif_path)
+    
+   # ds = gdal.Open(tif_path)
     _, xres, _, _, _, yres  = ds.GetGeoTransform()
     prj = ds.GetProjection()
     srs = osr.SpatialReference(prj.title())
@@ -474,6 +486,8 @@ def get_tif_resolution(tif_path):
         xres *= 100000
     
     del ds
+    if td:
+        td.cleanup()
     
     return xres
 
@@ -524,7 +538,64 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
             )
         else:
             print('NONTIF:',ds)
+            
+
+def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
+    '''
+    data_source_id: (optional) filter by data source ID if needed
+    '''
     
+    ### Pull layers from CDR
+    cdr = cdr_utils.CDR()
+    res = cdr.get_prospectivity_output_layers()
+
+    #print(json.dumps(res[0],indent=4))
+    #blerg
+
+    for ds in res:
+        if layer_id and ds['layer_id'] != layer_id:
+            continue
+        
+        if ds['download_url'].split('.')[0] != 'tif':
+            continue
+#            ds = r#['data_source']
+
+            #print(r)
+            #blerg
+
+        #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
+        #name = ds['layer_id']
+
+        dl, created = models.OutputLayer.objects.get_or_create(
+            data_source_id = ds['layer_id'],
+            defaults = {
+                'name' : ds['title'],
+                'name_alt': ds['title'],
+                'description': ds['title'],
+                #'authors': ds['authors'],
+                #'data_format': ds['format'],
+                #'publication_date': ds['publication_date'],
+                #'doi': ds['DOI'],
+                #'datatype': ds['type'],
+                'data_format': 'tif',
+                'category': 'model outputs',
+                'subcategory': ds['model'].capitalize().rstrip('s'),
+                #'spatial_resolution_m': ds['resolution'][0],
+                'download_url': ds['download_url'],
+                #'reference_url': ds['reference_url'],
+                #'derivative_ops': ds['derivative_ops']
+                'system': ds['system'],
+                'system_version': ds['system_version'],
+                'model': ds['model'],
+                'model_version': ds['model_version'],
+                'output_type': ds['output_type'],
+                'cma_id': ds['cma_id'],
+                'model_run_id': ds['model_run_id'],
+            },
+        )
+        #else:
+        #    print('NONTIF:',ds)
+
     
 def get_datalayers_for_gui(data_source_id=None):
     datalayers = {'User uploads':{}} # this object sorts by category/subcategory
@@ -532,29 +603,67 @@ def get_datalayers_for_gui(data_source_id=None):
     filters = {'disabled': False}
     if data_source_id:
         filters['data_source_id'] = data_source_id
-    for d in models.DataLayer.objects.filter(**filters).order_by(
-        'category','subcategory','name'
-        ):
-        cat = d.category if d.subcategory != 'User upload' else 'User uploads'
-        subcat = d.subcategory if d.subcategory != 'User upload' else d.category
         
-        if cat not in datalayers:
-            datalayers[cat] = {}
-        if subcat not in datalayers[cat]:
-            datalayers[cat][subcat] = []
+    for Obj in (models.DataLayer, models.OutputLayer):
+        for d in Obj.objects.filter(**filters).order_by(
+            'category','subcategory','name'
+            ):
+            cat = d.category if d.subcategory != 'User upload' else 'User uploads'
+            subcat = d.subcategory if d.subcategory != 'User upload' else d.category
             
-        data = model_to_dict(d)
-        data['publication_date'] = str(data['publication_date'])[:-9]
-        name_pretty = d.name
-        if d.name_alt:
-            name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
-        data['name_pretty'] = name_pretty
-        datalayers[cat][subcat].append(data)
-        datalayers_lookup[d.data_source_id] = data
+            if cat not in datalayers:
+                datalayers[cat] = {}
+            if subcat not in datalayers[cat]:
+                datalayers[cat][subcat] = []
+                
+            data = model_to_dict(d)
+            if 'publication_date' in data:
+                data['publication_date'] = str(data['publication_date'])[:-9]
+            name_pretty = d.name
+            if d.name_alt:
+                name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
+            data['name_pretty'] = name_pretty
+            datalayers[cat][subcat].append(data)
+            datalayers_lookup[d.data_source_id] = data
+            
         
     return {
         'datalayers': datalayers,
         'datalayers_lookup': datalayers_lookup,
     }
 
+
+# https://guide.cloudnativegeo.org/cloud-optimized-geotiffs/writing-cogs-in-python.html
+def cogify_from_buffer(data):
+    """
+    Given the path to a TIF file, turn it into a cloud optimized geotiff (COG).
+    If the given COG already exists, it will be overwritten.
+
+    Parameters
+    ----------
+    data : str
+        Memory data
+
+    Returns
+    -------
+    cog_filename : str
+        File path to the COG that was created and/or overwritten.
+    """
     
+    cog_filename = '/home/mgbillmi/PROCESSING/cogify_test.tif'
+    output_memfile = MemoryFile()
+    with MemoryFile(data).open() as memfile:
+        dst_profile = cog_profiles.get("deflate")
+
+        # Creating destination COG
+        cog_translate(
+            memfile,
+            output_memfile.name,
+            dst_profile,
+            use_cog_driver=True,
+            in_memory=False,
+            web_optimized=True,
+            overview_resampling="cubic"
+        )
+
+    return output_memfile.read()

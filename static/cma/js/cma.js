@@ -95,7 +95,7 @@ function onLoad() {
     createLegendControl('legend_content_sites');
     
     // Create legend control for standard layers
-    createLegendControl('legend_content');
+    createLegendControl('legend_content','topright');
     
     // Have the leaflet map update it's size after the control_panel show/hide
     // transition completes
@@ -609,7 +609,11 @@ function loadCMA(cma_id) {
     });
 
     // Populate KNOWN DEPOSIT SITES mineral
-    $('#commodity').val(capitalizeFirstLetter(cma.mineral));
+    var mineral = cma.mineral;
+    if (mineral != 'rare earth elements') {
+        mineral = capitalizeFirstLetter(mineral);
+    }
+    $('#commodity').val(mineral);
     
     // Load extent
     // Remove existing drawings before starting new one
@@ -624,6 +628,34 @@ function loadCMA(cma_id) {
      
      // Load known deposit sites
      loadMineralSites();
+     
+     // Load outputs
+     loadModelOutputs(cma_id);
+    
+}
+
+function loadModelOutputs(cma_id) {
+//     $.ajax(`/get_model_outputs`, {
+//         data: {
+//             cma_id: $('#cma_loaded').attr('data-cma_id')
+//         },
+//         success: function(response) {
+//             console.log(response)
+//         },
+//         error: function(response) {
+//             console.log(response);
+//         }
+//     });
+    var table = $('#model_outputs_table');
+    table.empty();
+    $.each(DATALAYERS_LOOKUP, function(dsid,d) {
+        if (d.cma_id && d.cma_id == cma_id) {
+            console.log(d);
+
+            addRowToDataLayersTable(table,d,true);
+        }
+        
+    });
     
 }
 
@@ -651,10 +683,36 @@ function getMetadata() {
             $.each(['commodity','deposit_type'], function(i,v) {
                 var opts = `<option value='' selected>[any]</option>`;
                 $.each(response[v], function(i,c) {
-                    opts += `<option value='${c}'>${c}</option>`;
+                    var c0 = c == 'Rare earth elements' ? 'rare earth elements' : c;
+                    opts += `<option value='${c0}'>${c}</option>`;
                 });
                 $(`#${v}`).html(opts);
             });
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+    
+}
+
+function getModelRun(model_run_id,dl) {
+    $.ajax(`/get_model_run`, {
+        data: {
+            model_run_id: model_run_id,
+        },
+        success: function(response) {
+            console.log(response);
+            var meta = response.model_run;
+            
+            $('#model_run__type').html(meta.model_type);
+            
+//             $('#dl_model_run_metadata').html(`
+//                 <span class='label'>Model run metadata:</span><br>
+//                 Model type : ${meta.model_type}<br>
+//                 
+//             `);
+            
         },
         error: function(response) {
             console.log(response);
@@ -691,7 +749,7 @@ function populateAddProcessingStep() {
 function createMapLayer(name,obj) {
     obj.maplayer = L.tileLayer.wms(
         WMS_URL, {
-            layers: name,
+            layers: name.replaceAll('.',''),
             map: MAPFILE,
             format: 'image/png',
             crs: L.CRS.EPSG4269,
@@ -724,53 +782,70 @@ function showMessage(title,content) {
 
 function createLayerControl() {
     
+    var images2 = {Layers:{}};
+    
     // Create a popup to use in the macrostrat layer
     var popup = L.popup({
         minWidth: 260,
         autoPan: false,
     });
     
-    var ta1_layer = L.vectorGrid.protobuf(
-        'https://api.cdr.land/v1/tiles/polygon/system/umn-usc-inferlink/system_version/0.0.5/tile/{z}/{x}/{y}', {
-        fetchOptions: {
-            headers: {
-                Authorization: `Bearer ${CDR_BEARER}`
-            },
-        },
-        rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
-        attribution: 'UMN',
-        interactive: true,
-        vectorTileLayerStyles: {
-            units: function(properties) {
-                return {
-                    weight: 0.5,
-                    color: properties.color,
-                    fillColor: properties.color,
-                    fillOpacity: 0.5,
-                    fill: true,
-                };
-            },
-            lines: function(properties) {
-                return {
-                    weight: 1,
-                    color: properties.color,
-                };
-            }
-        },
+    $.each(TA1_SYSTEMS,function(system, versions) {
+        $.each(versions, function(i,version) {
+            var ta1_layer = L.vectorGrid.protobuf(
+                `https://api.cdr.land/v1/tiles/polygon/system/${system}/system_version/${version}/tile/{z}/{x}/{y}`, {
+                fetchOptions: {
+                    headers: {
+                        Authorization: `Bearer ${CDR_BEARER}`
+                    },
+                },
+                rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+                attribution: system,
+                interactive: true,
+                vectorTileLayerStyles: {
+                    units: function(properties) {
+                        return {
+                            weight: 0.5,
+                            color: properties.color,
+                            fillColor: properties.color,
+                            fillOpacity: 0.5,
+                            fill: true,
+                        };
+                    },
+                    lines: function(properties) {
+                        return {
+                            weight: 1,
+                            color: properties.color,
+                        };
+                    }
+                },
+            });
+            ta1_layer.bindPopup(popup);
+            ta1_layer.on('click', function(e) {
+                var prop = e.layer.properties;
+                console.log(prop);
+                popup.setContent(`${prop.system} v${prop.system_version}<br><b>${prop.descrip}</b>`);
+                ta1_layer.openPopup();
+            });
+        //     ta1_layer.on('mouseover', function(e) {
+        //         console.log(e.layer);
+        // //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
+        // 
+        //         
+        //     });
+            
+            images2.Layers[`ta1__${system}_v${version}`] = {
+                group: 'Reference Layers',
+                label: `TA1 ${system} v${version}`,
+                as_checkbox: true,
+                title: '',
+                layers: [ta1_layer],
+                legend: '',
+            };
+        });
     });
-    ta1_layer.bindPopup(popup);
-    ta1_layer.on('click', function(e) {
-        var prop = e.layer.properties;
-        console.log(prop);
-        popup.setContent(`${prop.system} v${prop.system_version}<br><b>${prop.descrip}</b>`);
-        ta1_layer.openPopup();
-    });
-//     ta1_layer.on('mouseover', function(e) {
-//         console.log(e.layer);
-// //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
-// 
-//         
-//     });
+    
+    
     
     var macrostrat_layer_units = L.vectorGrid.protobuf(
         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
@@ -857,6 +932,23 @@ function createLayerControl() {
             }
         },
     });
+    
+    images2.Layers.macrostrat_units = {
+        group: 'Reference Layers',
+        label: 'Macrostrat - units',
+        as_checkbox: true,
+        title: '',
+        layers: [macrostrat_layer_units],
+        legend: '',
+    };
+    images2.Layers.macrostrat_lines = {
+        group: 'Reference Layers',
+        label: 'Macrostrat - lines',
+        as_checkbox: true,
+        title: '',
+        layers: [macrostrat_layer_lines],
+        legend: '',
+    }
 //     macrostrat_layer_lines.bindPopup(popup);
 //     macrostrat_layer_lines.on('click', function(e) {
 //         popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
@@ -929,55 +1021,63 @@ function createLayerControl() {
         emri_layer.openPopup();
     });
     
+    images2.Layers.emri_layer = {
+        group: 'Reference Layers',
+        label: 'Earth MRI Acquisitions',
+        as_checkbox: true,
+        title: '',
+        layers: [emri_layer],
+        legend: '',
+    };
     
     // Populate the 'images2' object
     // key: the layer control group (e.g. 'imagery','other','features', etc.)
     // values: object with:
     //      key: WMS layername
     //      value: object returned from "getWMSLayer"
-    var images2 = {
-        'Layers': {
-            macrostrat_units: {
-                group: 'Reference Layers',
-                label: 'Macrostrat - units',
-                as_checkbox: true,
-                title: '',
-                layers: [macrostrat_layer_units],
-                legend: '',
-            },
-            macrostrat_lines: {
-                group: 'Reference Layers',
-                label: 'Macrostrat - lines',
-                as_checkbox: true,
-                title: '',
-                layers: [macrostrat_layer_lines],
-                legend: '',
-            },
-            ta1_layer: {
-                group: 'Reference Layers',
-                label: 'TA1 Layers',
-                as_checkbox: true,
-                title: '',
-                layers: [ta1_layer],
-                legend: '',
-            },
-            emri_layer: {
-                group: 'Reference Layers',
-                label: 'Earth MRI Acquisitions',
-                as_checkbox: true,
-                title: '',
-                layers: [emri_layer],
-                legend: '',
-            },
-//             'geophysics': getWMSLayer(
-//                 'geophysics',
-//                 'Layers',
-//                 'GeophysicsMagRTP',
-//                 null,
-//                 ''
-//             ),
-        },
-    };
+//     var images2 = {
+//         'Layers': {
+//             macrostrat_units: {
+//                 group: 'Reference Layers',
+//                 label: 'Macrostrat - units',
+//                 as_checkbox: true,
+//                 title: '',
+//                 layers: [macrostrat_layer_units],
+//                 legend: '',
+//             },
+//             macrostrat_lines: {
+//                 group: 'Reference Layers',
+//                 label: 'Macrostrat - lines',
+//                 as_checkbox: true,
+//                 title: '',
+//                 layers: [macrostrat_layer_lines],
+//                 legend: '',
+//             },
+//             ta1_layer: {
+//                 group: 'Reference Layers',
+//                 label: 'TA1 Layers',
+//                 as_checkbox: true,
+//                 title: '',
+//                 layers: [ta1_layer],
+//                 legend: '',
+//             },
+// //             emri_layer: {
+// //                 group: 'Reference Layers',
+// //                 label: 'Earth MRI Acquisitions',
+// //                 as_checkbox: true,
+// //                 title: '',
+// //                 layers: [emri_layer],
+// //                 legend: '',
+// //             },
+// //             'geophysics': getWMSLayer(
+// //                 'geophysics',
+// //                 'Layers',
+// //                 'GeophysicsMagRTP',
+// //                 null,
+// //                 ''
+// //             ),
+//         },
+//     };
 //     images2 = {}
     var groups = Object.keys(images2).sort();
     images = {};
@@ -1525,12 +1625,13 @@ function createMineralSitesControl() {
     MAP.addControl(new controlPanel());
 }
 
-function createLegendControl(element_id) {
+function createLegendControl(element_id,position) {
+    position = position || 'topleft';
     
     // Create legend control
     var legendControl = L.Control.extend({
         options: {
-            position: 'topleft'
+            position: position,
         },
         onAdd: function () {
             var c = L.DomUtil.create('div', 'legend');
@@ -1655,16 +1756,32 @@ function submitModelRun() {
     });
 }
 
-function showDataLayerInfo(layer_name) {
+function showDataLayerInfo(layer_name,model_output) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
-
+    var src = `<span class='label'>Source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`;
+    
+    if (model_output) {
+        src = `
+            <span class='label'>Model:</span> ${dl.model}<br>
+            <span class='label'>Model type:</span> <span id='model_run__type'></span><br>
+            <span class='label'>System:</span> ${dl.system} <span class='label'>v</span>${dl.system_version}<br>
+            <span class='label'>Model run ID:</span> ${dl.model_run_id}
+        `;
+    }
     
     $('#dl_title').html(dl.name_pretty);
-    $('#dl_description').html(`<span class='label'>Description:</span><br>${dl.description}`);
+    $('#dl_description').html(`
+        <span class='label'>Description:</span><br>
+        ${dl.description}
+    `);
     $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr} m`);
     $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.download_url}' target='_blank'>${dl.download_url}</a>`);
-    $('#dl_source').html(`<span class='label'>Source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`);
+    $('#dl_source').html(`${src}`);
+    
+    if (model_output) {
+        getModelRun(dl.model_run_id,dl);
+    }
     
     $('#datalayer_info').show();
 }
@@ -1672,6 +1789,7 @@ function showDataLayerInfo(layer_name) {
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
+    var layer_name_scrubbed = layer_name.replaceAll('.','');
     var layer = datalayer.maplayer;
     
     // Remove all layers in group
@@ -1691,7 +1809,7 @@ function onToggleLayerClick(target,layer_name) {
         var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
         
         html = `
-            <div class='layer_legend' id='legendcontent_${layer_name}'>
+            <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
                 ${datalayer.name_pretty}
                 <table>
                     <tr>
@@ -1699,11 +1817,11 @@ function onToggleLayerClick(target,layer_name) {
                         <td>
                             <div class='colorbar'>
                                 <svg height='${h}' width='${w}'>
-                                    <linearGradient id="gradient_${layer_name}">
+                                    <linearGradient id="gradient_${layer_name_scrubbed}">
                                         <stop stop-color="#fff" offset="0%" />
                                         <stop stop-color="rgb(${datalayer.color})" offset="100%" />
                                     </linearGradient>
-                                    <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name})" />
+                                    <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name_scrubbed})" />
                                 </svg>
                             </div>
                         </td>
@@ -1723,7 +1841,7 @@ function onToggleLayerClick(target,layer_name) {
         MAP.removeLayer(layer);
 
         // Remove legend content
-        $(`#legendcontent_${layer_name}`).remove();
+        $(`#legendcontent_${layer_name_scrubbed}`).remove();
     }
 }
 
@@ -2308,6 +2426,49 @@ function initiateCMA() {
         }
     });
 }
+
+function addRowToDataLayersTable(table, dl, model_output) {
+    var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
+    var name_pretty = dl.name_pretty;
+    if (model_output) {
+        name_pretty += ` (${dl.system} v${dl.system_version})`;
+        
+    }
+    
+    // Add columns headers if date-based subcategory is empty
+    if (table.find(`tr.subcategory_label td:contains("${subcat}")`).length == 0) {
+        table.append(`
+            <tr class='subcategory_label'>
+                <td>${subcat}</td>
+                <td class='colname'>Info</td>
+                <td class='colname'>Show</td>
+                <td class='colname'>Download</td>
+                <td class='colname radiocube'>Add to cube</td>
+            </tr>
+        `);
+    }
+    // Add table row
+    table.append(`
+        <tr data-path="${dl.data_source_id}">
+            <td class='name'>${name_pretty}</td>
+            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${model_output});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
+            <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"${dl.data_source_id}");' /></td>
+            <td class='download'>
+                <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
+            </td>
+            <td>
+                <div class="radiocube" align="left">
+                    <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
+                    <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
+                    <input type="radio" name="radiocube_${dl.data_source_id}" value="yes" >
+                    <label class='yes' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">Y</label>
+                </div>
+            </td>
+
+        </tr>
+    `);
+    
+}
     
 function uploadDataLayer() {
     var formData = new FormData();
@@ -2343,41 +2504,7 @@ function uploadDataLayer() {
             
             // Add the layer to the layer list
             var table = $('#user_upload_layers_table');
-            
-            // Add columns headers if date-based subcategory is empty
-            if (table.find(`tr.subcategory_label td:contains("${dl.category}")`).length == 0) {
-                table.append(`
-                    <tr class='subcategory_label'>
-                        <td>${dl.category}</td>
-                        <td class='colname'>Info</td>
-                        <td class='colname'>Show</td>
-                        <td class='colname'>Download</td>
-                        <td class='colname radiocube'>Add to cube</td>
-                    </tr>
-                `);
-            }
-            // Add table row
-            table.append(`
-                <tr data-path="${dl.data_source_id}">
-                    <td class='name'>${dl.name_pretty}</td>
-                    <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}");'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
-                    <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"${dl.data_source_id}");' /></td>
-                    <td class='download'>
-                        <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
-                    </td>
-                    <td>
-                        <div class="radiocube" align="left">
-                            <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
-                            <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
-                            <input type="radio" name="radiocube_${dl.data_source_id}" value="yes" >
-                            <label class='yes' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">Y</label>
-                        </div>
-                    </td>
-
-                </tr>
-            `);
-            
-
+            addRowToDataLayersTable(table,dl);
             
             
             // Reset upload form

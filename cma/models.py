@@ -3,35 +3,21 @@ from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 
-class DataLayer(models.Model):
+class DisplayLayer(models.Model):
+    '''
+    Abstract model for WMS (MapServer)-enabled layers
+    '''
     class Meta:
-        db_table = 'datalayer'
+        abstract = True
         
     name = models.CharField(
         max_length=200,
-        unique=True,
+        #unique=True,
         help_text='Equivalent to evidence_layer_raster_prefix in CDR schema'
     )
-    name_alt = models.CharField(max_length=300,help_text='Display name (prettified)')
-    publication_date = models.DateTimeField(null=True,blank=True)
-    authors = ArrayField(
-        models.CharField(max_length=60),
-        null=True,
-        blank=True
-    )
+    name_alt = models.CharField(max_length=300,help_text='Display name (prettified)',null=True,blank=True)
+    description = models.CharField(max_length=2000,null=True,blank=True)
     data_source_id = models.CharField(max_length=300,unique=True)
-    doi = models.CharField(max_length=200,null=True,blank=True)
-    description = models.CharField(max_length=2000)
-    #source = models.CharField(max_length=400)
-    #external_link = models.CharField(max_length=1000, unique=True)
-    download_url = models.CharField(max_length=1000, unique=True)
-    reference_url = models.CharField(max_length=1000,null=True,blank=True)
-    category = models.CharField(max_length=40)
-    subcategory = models.CharField(max_length=40)
-    datatype = models.CharField(max_length=60,null=True,blank=True)
-    derivative_ops = models.CharField(max_length=200,null=True,blank=True)
-    #subcategory_type = models.CharField(max_length=20)
-    #notes = models.CharField(max_length=200, default=True, blank=True)
     data_format = models.CharField(
         max_length=100,
         choices=(
@@ -39,11 +25,58 @@ class DataLayer(models.Model):
             ('shp','shp',)
         )
     )
+    
+    category = models.CharField(max_length=40,null=True,blank=True)
+    subcategory = models.CharField(max_length=40,null=True,blank=True)
+    
+    download_url = models.CharField(max_length=1000, unique=True)
     stats_minimum = models.FloatField(null=True,blank=True)
     stats_maximum = models.FloatField(null=True, blank=True)
     spatial_resolution_m = models.FloatField(null=True,blank=True)
     color = models.CharField(max_length=20,null=True, blank=True)
     disabled = models.BooleanField(default=False)
+
+class OutputLayer(DisplayLayer):
+    class Meta:
+        db_table = 'outputlayer'
+        
+    system = models.CharField(max_length=30,null=True, blank=True)
+    system_version = models.CharField(max_length=50,null=True, blank=True)
+    model = models.CharField(max_length=50,null=True, blank=True)
+    model_version = models.CharField(max_length=50,null=True, blank=True)
+    output_type = models.CharField(max_length=50,null=True, blank=True)
+    cma_id = models.CharField(max_length=200,null=True, blank=True)
+    #title = models.CharField(max_length=20,null=True, blank=True) # <- 'title' in the CDR will be mapped to 'name'
+    model_run_id = models.CharField(max_length=200,null=True, blank=True)
+    
+
+class DataLayer(DisplayLayer):
+    class Meta:
+        db_table = 'datalayer'
+        
+    publication_date = models.DateTimeField(null=True,blank=True)
+    authors = ArrayField(
+        models.CharField(max_length=60),
+        null=True,
+        blank=True
+    )
+    #data_source_id = models.CharField(max_length=300,unique=True)
+    doi = models.CharField(max_length=200,null=True,blank=True)
+    
+    #source = models.CharField(max_length=400)
+    #external_link = models.CharField(max_length=1000, unique=True)
+    #download_url = models.CharField(max_length=1000, unique=True)
+    reference_url = models.CharField(max_length=1000,null=True,blank=True)
+    datatype = models.CharField(max_length=60,null=True,blank=True)
+    derivative_ops = models.CharField(max_length=200,null=True,blank=True)
+    #subcategory_type = models.CharField(max_length=20)
+    #notes = models.CharField(max_length=200, default=True, blank=True)
+    
+    #stats_minimum = models.FloatField(null=True,blank=True)
+    #stats_maximum = models.FloatField(null=True, blank=True)
+    #spatial_resolution_m = models.FloatField(null=True,blank=True)
+    #color = models.CharField(max_length=20,null=True, blank=True)
+    #disabled = models.BooleanField(default=False)
     
     
 class CRS(models.Model):

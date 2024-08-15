@@ -27,6 +27,14 @@ from cdr_schemas import prospectivity_input
 # Default home page
 def home(request):
     
+    # TA1 system/version combos
+    # **NOTE: hard-coded for now; only way to get these from CDR is to 
+    #         aggregate from the get_tiles_sources results
+    ta1_systems = {
+        'uiuc-golden-muscat': ['0.4.2'],
+        'umn-usc-inferlink': ['0.0.4', '0.0.5', '0.0.6'],
+        'uncharted-area': ['0.0.4']
+    }
     
     # Get CRS options
     crs_opts = {str(c.srid): model_to_dict(c) for c in models.CRS.objects.all()}
@@ -62,6 +70,7 @@ def home(request):
         'CRS_OPTIONS': json.dumps(crs_opts),
         'PROCESSING_STEPS': json.dumps(processing_steps),
         'CDR_API_TOKEN': os.environ['CDR_API_TOKEN'],
+        'TA1_SYSTEMS': json.dumps(ta1_systems),
     }
     
     return render(request, 'cma/cma.html', context)
@@ -77,7 +86,10 @@ def get_metadata(request):
     cdr = cdr_utils.CDR()
     
     # Get commodity list
-    commodities = sorted(cdr.get_mineral_dedupsite_commodities())
+    cs = cdr.get_mineral_dedupsite_commodities()
+    if 'rare earth elements' not in cs:
+        cs.append('Rare earth elements')
+    commodities = sorted(cs)
     
     # Get deposit type list
     deposit_types = sorted([
@@ -135,6 +147,10 @@ def upload_datalayer(request):
     res = int(util.get_tif_resolution(memtif))
     gdal.Unlink(memtif)
     
+    # Cogify
+    #gdal.FileFromMemBuffer(memtif, fread)
+    cogfile_bytes = util.cogify_from_buffer(fread)
+    
     # Get date
     date = dt.now().strftime('%Y-%m-%d')
 
@@ -160,7 +176,7 @@ def upload_datalayer(request):
     # Post to CDR
     cdr = cdr_utils.CDR()
     res = cdr.post_prospectivity_data_source(
-        input_file=fread,#f.read(),
+        input_file=cogfile_bytes,#open(cogfile,'rb').read(),#fread,#f.read(),
         metadata=ds.model_dump_json(exclude_none=True)
     )
 
@@ -186,6 +202,50 @@ def upload_datalayer(request):
 
     return response
  
+def get_model_run(request):
+    params = {
+        'model_run_id': None,
+    }
+    params = util.process_params(request,params)
+    
+    cdr = cdr_utils.CDR()
+    res = cdr.get_model_run(params['model_run_id'])
+    
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'model_run': res,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
+
+def get_model_outputs(request):
+    params = {
+        'cma_id': '',
+        'model_run_id': ''
+    }
+    params = util.process_params(request,params)
+    
+    cdr = cdr_utils.CDR()
+    res = cdr.get_prospectivity_output_layers(**params)
+    
+    #for layer in res:
+        # Load to GUI db if not there yet
+        
+    
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'model_outputs': res,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+    
 
 @csrf_exempt
 def get_vectorfile_as_geojson(request):

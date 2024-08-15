@@ -18,7 +18,11 @@ class CRSAdmin(admin.ModelAdmin):
     list_display = ('name','units','default_resolution')
 
 class DataLayerAdmin(admin.ModelAdmin):
-    list_display = ('name','spatial_resolution_m','download_url','category','disabled')
+    list_display = ('name','data_format','download_url','category','disabled')
+
+class OutputLayerAdmin(admin.ModelAdmin):
+    list_display = ('name','data_source_id','model','data_format','download_url','category','disabled')
+
 
 admin.site.register(models.ProspectivityModelType, ProspectivityModelTypeAdmin)
 admin.site.register(models.ProspectivityModelTypeParameter, ProspectivityModelTypeParameterAdmin)
@@ -26,3 +30,4 @@ admin.site.register(models.ProcessingStep, ProcessingStepAdmin)
 admin.site.register(models.ProcessingStepParameter, ProcessingStepParameterAdmin)
 admin.site.register(models.CRS, CRSAdmin)
 admin.site.register(models.DataLayer, DataLayerAdmin)
+admin.site.register(models.OutputLayer, OutputLayerAdmin)

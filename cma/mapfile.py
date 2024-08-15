@@ -1,4 +1,5 @@
-import codecs, copy, os, sys
+import codecs, copy, os, sys, tempfile
+from itertools import chain
 from django.conf import settings
 from django.forms.models import model_to_dict
 from osgeo import gdal, osr
@@ -32,7 +33,7 @@ def write_mapfile(
         mapfile_title = 'StatMAGIC data layers',
         processing_scale_buckets = 100,
     ):
-    from .models import DataLayer
+    from .models import DataLayer, OutputLayer
     '''
     processing_scale_buckets:   Parameter used to specify number of buckets to
                                 divide data into for classification; MASSIVELY 
@@ -71,7 +72,9 @@ def write_mapfile(
     #########
     # Build rasters dict from database
 
-    datasets = DataLayer.objects.filter().order_by('category','subcategory','name')
+    datalayers = DataLayer.objects.filter().order_by('category','subcategory','name')
+    outputlayers = OutputLayer.objects.filter().order_by('category','subcategory','name')
+    datasets = list(chain(datalayers, outputlayers))
     #.values(
         #'name',
         #'download_url',
@@ -88,7 +91,8 @@ def write_mapfile(
             continue
 
         # Processing path to raster
-        tif_path = r['download_url']
+        #   (replace spaces with '+' or URLs won't work)
+        tif_path = r['download_url'].replace(' ','+')
         
         if 'http' in tif_path:
             if '.cdr.' in tif_path:
@@ -101,7 +105,7 @@ def write_mapfile(
                 )
 
         # Load required params
-        rkey = r['name']
+        rkey = r['data_source_id']
         bn = os.path.basename(tif_path)
         ext = bn.split('.')[-1]
         
@@ -125,9 +129,22 @@ def write_mapfile(
         # Retrieve data range if not already loaded
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
             print('extracting stats for:',tif_path)
-            ds = gdal.Open(tif_path)
+            td = None
+            if ' ' in tif_path:
+                #print(r['download_url'])
+                td = tempfile.TemporaryDirectory()
+                url = r['download_url'].replace('/vsicurl_streaming/','')
+                os.system(f'wget -P {td.name} "{url}"')
+                tp = os.path.join(td.name,os.path.basename(tif_path))
+                #print(tp)
+                ds = gdal.Open(tp)
+            else:
+                ds = gdal.Open(tif_path)
+            
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds
+            if td:
+                td.cleanup()
             dr = [stats[0],stats[1]]
             dataset.stats_minimum = stats[0]
             dataset.stats_maximum = stats[1]
@@ -258,7 +275,7 @@ def write_mapfile(
             agg_extent[2] = max(te[2], agg_extent[2])
             agg_extent[3] = max(te[3], agg_extent[3])
 
-        wms_layername = robj['wms_layername']
+        wms_layername = robj['wms_layername'].replace('.','')
         wms_title = robj['wms_title']
 
         #proc = robj['wmslayerprocessing__processing']
