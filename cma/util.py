@@ -24,7 +24,8 @@ from rio_cogeo.profiles import cog_profiles
 def process_params(req,params,post=False,post_json=False):
     r = req.GET if not post else req.POST
     if post_json:
-        r = json.loads(req.body.decode('utf-8'))
+        body = req.body.decode('utf-8')#.replace("'",'"')
+        r = json.loads(body)
     for param in params:
         if param in r:#.has_key(param):
             params[param] = r[param]

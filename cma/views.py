@@ -509,6 +509,7 @@ def submit_model_run(request):
     
 
 # Function for retrieving and returning a list of mineral sites to frontend
+@csrf_exempt
 def get_mineral_sites(request):
     params = {
         'deposit_type': '',
@@ -517,7 +518,7 @@ def get_mineral_sites(request):
         'wkt': '' # WKT polygon indicating AOI
         # [...] insert other query params
     }
-    params = util.process_params(request, params)
+    params = util.process_params(request, params, post_json=True)
     
     params['wkt'] = util.validate_wkt_geom(params['wkt'])
     gj = util.convert_wkt_to_geojson(params['wkt'])
@@ -537,7 +538,7 @@ def get_mineral_sites(request):
         limit=int(params['limit'])
     )
     
-    print(json.dumps(gj))
+   # print(json.dumps(gj))
     
     # Convert to geoJSON
     sites_gj = []

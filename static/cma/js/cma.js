@@ -1268,12 +1268,15 @@ function loadMineralSites() {
     $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
     
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
-        data: {
+        data: JSON.stringify({
             deposit_site: $('#deposit_type').val(),
             commodity: $('#commodity').val(),
             limit: $('#mineral_sites_limit').val(),
             wkt: getWKT()
-        },
+        }),
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8',
         success: function(response) {
 //             console.log(response);
             GET_MINERAL_SITES_RESPONSE_MOST_RECENT = response;
