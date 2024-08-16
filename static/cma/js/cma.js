@@ -707,6 +707,8 @@ function loadModelRuns(cma_id) {
         $('#model_runs_table tbody').html('');
         return;
     }
+    
+    $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
     $.ajax(`/get_model_runs`, {
         data: {
             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),

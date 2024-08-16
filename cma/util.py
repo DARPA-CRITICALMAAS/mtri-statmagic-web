@@ -585,6 +585,12 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
         #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
         #name = ds['layer_id']
         print('get/creating:',ds['layer_id'])
+        stats_minimum = None
+        stats_maximum = None
+        if 'ikelihoo' in ds['title']:
+            stats_minimum = 0
+            stats_maximum = 1
+            
         dl, created = models.OutputLayer.objects.get_or_create(
             data_source_id = ds['layer_id'],
             #download_url = ds['download_url'],
@@ -611,6 +617,8 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
                 'output_type': ds['output_type'],
                 'cma_id': ds['cma_id'],
                 'model_run_id': ds['model_run_id'],
+                'stats_minimum': stats_minimum,
+                'stats_maximum': stats_maximum,
             },
         )
         #else:

@@ -1360,6 +1360,9 @@ table.model_parameters_table {
     -webkit-appearance: none;
     margin: 0;
 }
+.model_parameters_table input[type="number"] {
+    -moz-appearance: textfield;
+}
 
 .model_parameters_table select {
     width: auto;
@@ -1952,6 +1955,11 @@ select#sites_display_select {
 .datalayer_lowlight:hover {
 /*     color: white; */
     font-weight: normal;
+}
+
+.cmamodelrun tbody td {
+    font-size: 0.9rem;
+    
 }
 
 @keyframes spin {
