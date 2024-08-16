@@ -123,7 +123,7 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     return response
     
 
-def simplify_and_transform_geojson(geometry,s_srs):
+def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     sql = f'''
         SELECT ST_AsGeoJSON(
             ST_Simplify(
@@ -132,20 +132,25 @@ def simplify_and_transform_geojson(geometry,s_srs):
                         ST_GeomFromGeoJSON('{str(geometry).replace("'",'"')}'),
                         {s_srs}
                     ),
-                    4326
+                    {t_srs}
                 ),
                 0.002 -- simplify to ~200m 
             )
         );
     '''
-    return json.loads(reduce_geojson_precision(runSQL(sql)[0]))
+
+    # Set geojson precision to 0 if units are meters
+    precision = 4
+    if int(t_srs) == 102008:
+        precision = 0
+    return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
     
 
 def convert_wkt_to_geojson(wkt_string):
     shape = wkt.loads(wkt_string)
     return mapping(shape)
     
-def reduce_geojson_precision(data, remove_zeroes=False):
+def reduce_geojson_precision(data, remove_zeroes=False, precision=4):
     '''
     The gdal_polygonize process used to vectorize the rasters to geojson 
     specifies polygon coordinates to an absurd level of precision (15 decimal 
@@ -155,9 +160,11 @@ def reduce_geojson_precision(data, remove_zeroes=False):
     optimization step; it reduces file size and therefore browser load times.
     '''
     
+    #print(data)
+    
     # 5 gives us accuracy down to ~1m
     # see: https://en.wikipedia.org/wiki/Decimal_degrees
-    precision = 4
+    #precision = 4
     
     #print(data)
     #blerg
@@ -675,6 +682,7 @@ def cogify_from_buffer(data):
     return output_memfile.read()
 
 def process_cma(cma):
+    print(cma)
     # Reproject to WGS84
     cma['extent'] = simplify_and_transform_geojson(
         cma['extent'],
@@ -741,27 +749,30 @@ def create_template_raster_from_bounds_and_resolution(
     }
 
     # Replace with S3 boto3 type stuff here
-    mem_file = MemoryFile()
-    with mem_file.open(**out_meta) as ds:
+    #mem_file = MemoryFile()
+    tmpfile = os.path.join(settings.BASE_DIR,'cma','temp',f'{getUniqueID()}.tif')#tempfile.NamedTemporaryFile()
+    with rio.open(tmpfile, 'w', **out_meta) as ds:
+    #with tmpfile.open(**out_meta) as ds:
         ds.write(out_array)
     
-    with rio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif', 'w', **out_meta) as new_dataset:
-        new_dataset.write(out_array)
+    #with rio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif', 'w', **out_meta) as new_dataset:
+        #new_dataset.write(out_array)
         
-    return mem_file
+    return tmpfile
 
 
 def build_template_raster_from_CMA(cma, proj4, buffer_distance=0):
     
     geom = cma.extent.coordinates#['extent']['coordinates']
     poly = geometry.Polygon(geom[0][0])
-    try:
-        target_crs = CRS.from_epsg(cma.crs)
-    except rio.errors.CRSError:
-        target_crs = CRS.from_string(proj4)
+    print(geom)
+    #try:
+        #target_crs = CRS.from_epsg(cma.crs)
+    #except rio.errors.CRSError:
+    target_crs = CRS.from_string(proj4)
 
-    clipping_gdf = gpd.GeoDataFrame(geometry=[poly], crs=4326)
-    clipping_gdf = clipping_gdf.to_crs(target_crs)
+    clipping_gdf = gpd.GeoDataFrame(geometry=[poly], crs=target_crs)
+   # clipping_gdf = clipping_gdf.to_crs(target_crs)
     if buffer_distance > 0:
         clipping_gdf.geometry = clipping_gdf.buffer(buffer_distance)
     bounds = clipping_gdf.total_bounds

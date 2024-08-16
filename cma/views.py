@@ -103,9 +103,9 @@ def get_metadata(request):
     # Get CMA list
     cmas = {}
     for cma in cdr.get_cmas():
-        if cma['mineral'] == 'test_mineral':
+        if cma['mineral'] in ('test_mineral','test_mineral2'):
             continue
-        
+        #print(cma)
         cma = util.process_cma(cma)        
         cmas[cma['cma_id']] = cma
 
@@ -373,40 +373,38 @@ def initiate_cma(request):
     params['resolution'] = [float(x) for x in request.POST.getlist('resolution[]')]
     params['extent'] = util.validate_wkt_geom(params['extent'])
 
-    # convert wkt to geojson_pydantic.MultiPolygon via intermediate geoJSON
+    # Convert wkt to geojson_pydantic.MultiPolygon via intermediate geoJSON
+
     shape = wkt.loads(params["extent"])
     geojson = mapping(shape)
     geojson['type'] = 'MultiPolygon'
     geojson['coordinates'] = [geojson['coordinates']]
     geojson_dict = json.loads(json.dumps(geojson))
-    params["extent"] = MultiPolygon(**geojson_dict)
+
+    # Extent always comes in as 4326, so reproject and simplify while at it
+    params['extent'] = util.simplify_and_transform_geojson(
+        geojson_dict,
+        4326,
+        t_srs=params['crs'].split(':')[1]
+    )
+
+    params["extent"] = MultiPolygon(**params["extent"])
     
+    # Create CDR schema instance
     cma = prospectivity_input.CreateCriticalMineralAssessment(
         **params
     )
     
     cma_json = cma.model_dump_json(exclude_none=True)
     
-    
     # Generate template raster
     proj4 = models.CRS.objects.filter(srid=params['crs']).values_list('proj4text')[0][0]
-    memfile = util.build_template_raster_from_CMA(cma, proj4)
-    
-    
-    #profile = memfile.profile.copy()
-    #rasterio.shutil.copy(memfile, '/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif')
-   # with rasterio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif','w',**profile) as f:
-    #   f.write(memfile.read())
-                
-    #blerg
-    
-    #print(cma_json)
-    #blerg
+    tmpfile = util.build_template_raster_from_CMA(cma, proj4)
     
     # Initiate CMA to CDR, returning cma_id
     cdr = cdr_utils.CDR()
     response = cdr.post_cma(
-        input_file=open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif','rb').read(),#memfile,
+        input_file=open(tmpfile,'rb'),#memfile,
         metadata=cma_json,
     )
     

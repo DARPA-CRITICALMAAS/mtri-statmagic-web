@@ -62,7 +62,7 @@ function onLoad() {
     var opts = ``;
     $.each(CRS_OPTIONS, function(crs,cobj) {
 
-        var selected = crs == 'NA Albers (EPSG:102008)' ? ' selected' : '';
+        var selected = crs == 'ESRI:102008' ? ' selected' : '';
 //         console.log(crs,selected);
         opts += `<option value='${cobj.srid}'${selected}>${cobj.name}</option>`;
     });
@@ -121,7 +121,7 @@ function onLoad() {
     });
     
     // Set default CRS to CONUS Albers
-    $('#cma_crs').val("102008");
+    $('#cma_crs').val("ESRI:102008");
     onCRSselect();
     
     // Load models to dropdown
@@ -702,6 +702,10 @@ function getMetadata() {
 }
 
 function loadModelRuns(cma_id) {
+    if (!CMAS_EXISTING[cma_id].model_runs) {
+        $('#model_runs_table tbody').html('');
+        return;
+    }
     $.ajax(`/get_model_runs`, {
         data: {
             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
@@ -1998,7 +2002,7 @@ function onRemoveDataCubeLayerClick(cmp) {
 function onCRSselect() {
     var crs_name = $('#cma_crs').val();
     var crs = CRS_OPTIONS[crs_name];
-    console.log(crs_name);
+    console.log(crs_name,crs);
     $('#cma_crs_units').html(crs.units);
     $('#cma_resolution').val(crs.default_resolution);
     getFishnet();
@@ -2461,7 +2465,7 @@ function initiateCMA() {
                 CMAS_EXISTING[response.cma.cma_id] = response.cma;
             }
             
-            loadCMA(response.cma);
+            loadCMA(response.cma.cma_id);
         },
         error: function(response) {
             console.log(response);

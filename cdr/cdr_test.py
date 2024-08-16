@@ -34,10 +34,13 @@ post_data_intersect_sources = {
     }
 }
 
-res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
+res = cdr.get_cmas()
+print(res)
+
+#res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 
 #res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
-print(res)
+#print(res)
 blerg
 #
 # res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
