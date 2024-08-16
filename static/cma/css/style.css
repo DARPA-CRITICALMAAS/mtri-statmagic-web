@@ -1753,7 +1753,9 @@ div.emri_keyword {
 .button.load_sites.sites {
     margin: 0px 10px 10px 10px;
     display: inline-block;
-    width: 25%;
+    line-height: 1.3rem;
+    padding: 10px 10px;
+    width: 30%;
     
 }
 
@@ -1932,6 +1934,24 @@ select#sites_display_select {
 #modeling_initial_message2 {
     display: none;
     
+}
+#load_model_run .modal {
+    width: 80%;
+    left: 7%;
+    
+}
+.datalayer_lowlight {
+    color: #999;
+}
+
+.datalayer_table td.name:hover, #datacube_layers td.name:hover {
+    color: white;
+    font-weight: bold;
+}
+
+.datalayer_lowlight:hover {
+/*     color: white; */
+    font-weight: normal;
 }
 
 @keyframes spin {

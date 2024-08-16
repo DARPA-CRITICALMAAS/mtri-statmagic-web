@@ -29,7 +29,7 @@ class DisplayLayer(models.Model):
     category = models.CharField(max_length=40,null=True,blank=True)
     subcategory = models.CharField(max_length=40,null=True,blank=True)
     
-    download_url = models.CharField(max_length=1000, unique=True)
+    download_url = models.CharField(max_length=1000)
     stats_minimum = models.FloatField(null=True,blank=True)
     stats_maximum = models.FloatField(null=True, blank=True)
     spatial_resolution_m = models.FloatField(null=True,blank=True)

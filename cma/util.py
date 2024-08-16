@@ -518,7 +518,10 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
     #blerg
 
     for ds in res:
-        if data_source_id and ds['data_source_id'] != data_source_id:
+        if data_source_id and ds['evidence_layer_raster_prefix'] != data_source_id:
+            continue
+        
+        if 'user_upload_example' in ds['data_source_id']:
             continue
         
         if ds['format'] == 'tif':
@@ -566,11 +569,14 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
     #blerg
 
     for ds in res:
+        #print('here')
         if layer_id and ds['layer_id'] != layer_id:
             continue
         
-        if ds['download_url'].split('.')[0] != 'tif':
+        #print('woop')
+        if ds['download_url'].split('.')[-1] != 'tif':
             continue
+        
 #            ds = r#['data_source']
 
             #print(r)
@@ -578,9 +584,10 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
 
         #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
         #name = ds['layer_id']
-
+        print('get/creating:',ds['layer_id'])
         dl, created = models.OutputLayer.objects.get_or_create(
             data_source_id = ds['layer_id'],
+            #download_url = ds['download_url'],
             defaults = {
                 'name' : ds['title'],
                 'name_alt': ds['title'],

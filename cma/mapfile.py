@@ -95,13 +95,14 @@ def write_mapfile(
         tif_path = r['download_url'].replace(' ','+')
         
         if 'http' in tif_path:
-            if '.cdr.' in tif_path:
+            # WARNING: temporarily, model outputs are sync'd locally
+            if '.cdr.' in tif_path and 'model' not in r: 
                 tif_path = f'/vsicurl_streaming/{tif_path}'
             else:
                 # NOTE: for now sync'ing these locally '
                 tif_path = os.path.join(
                     settings.TILESERVER_LOCAL_SYNC_FOLDER,
-                    os.path.basename(tif_path)
+                    f'{r["data_source_id"]}.tif'#os.path.basename(tif_path)
                 )
 
         # Load required params

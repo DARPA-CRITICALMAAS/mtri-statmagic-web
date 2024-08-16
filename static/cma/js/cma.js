@@ -716,6 +716,12 @@ function loadModelRuns(cma_id) {
             
             trs = '';
             $.each(response.model_runs, function(mrid, mobj) {
+                // Skip model runs w/ zero evidence layers
+                if (mobj.event.payload.evidence_layers.length == 0) {
+                    return;
+                }
+               
+                
                 var cma = CMAS_EXISTING[mobj.cma_id];
                 
                 // Store model runs in the CMA object
@@ -730,6 +736,11 @@ function loadModelRuns(cma_id) {
                         n_outputs += 1;
                     }
                 });
+                
+                // WARNING: temporary! don't show model runs w/ no output layers
+                //    * for demo purposes only; in practice users may want to
+                //      load model runs that are IN PROGRESS
+                if (n_outputs == 0) { return;}
                 
                 var sys = mobj.system || '--';
                 var sysv = mobj.system_version || '--';
@@ -780,7 +791,42 @@ function loadModelRun(cma_id,model_run_id) {
     $('#model_select').val(mtype);
     onModelSelect();
     
+    // Populate model config
+    var train_config = model_run.event.payload.train_config;
+    
+    $.each(train_config, function(p,v) {
+        $(`#${mtype}__${p}`).val(v);
+    });
+    
+    
     // Populate data cube
+    // First clear existing datacube
+    DATACUBE_CONFIG = [];
+    $.each(DATALAYERS_LOOKUP, function(dsid,obj) {
+        onRadioCubeClick($(`label[for='radiocube_${dsid}'][class='no']`)[0]);
+    });
+    
+//     $('#datacube_layers tbody').empty();
+    
+    
+    var layers = model_run.event.payload.evidence_layers;
+//     console.log(layers);
+    $.each(layers, function(i,layer) {
+//         console.log(layer);
+        var dsid = layer.data_source.data_source_id;
+        var dl = DATALAYERS_LOOKUP[dsid];
+        // TODO: current workaround for there not being non-tif data sources
+        //       loaded yet; 
+        if (dl) {
+//             addLayerToDataCube(dl);
+            
+            // Update the 'Add to cube' interface
+            onRadioCubeClick($(`label[for='radiocube_${dsid}'][class='yes']`)[0]);//.trigger('click');
+        }
+    });
+    
+    // Update the 'xx layers added' label
+    updateDataCubeLabelInfo();
     
 }
 
@@ -1857,7 +1903,7 @@ function showDataLayerInfo(layer_name,model_output) {
             <span class='label'>Model:</span> ${dl.model}<br>
             <span class='label'>Model type:</span> <span id='model_run__type'></span><br>
             <span class='label'>System:</span> ${dl.system} <span class='label'>v</span>${dl.system_version}<br>
-            <span class='label'>Model run info:</span>${dl.model_run_id} (<span class='link' onclick="loadModelRun('${dl.cma_id}','${dl.model_run_id}');">load model run</span>)
+            <span class='label'>Model run info:</span> ${dl.model_run_id} (<span class='link' onclick="loadModelRun('${dl.cma_id}','${dl.model_run_id}');">load model run</span>)
         `;
     }
     
@@ -1936,9 +1982,41 @@ function onToggleLayerClick(target,layer_name) {
     }
 }
 
+function addLayerToDataCube(datalayer) {
+    var dsid = datalayer.data_source_id;
+    
+    DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
+        
+    // Hide instructions 
+    $('#datacube_layers tr.instructions').hide();
+    
+    // Add row 
+    var icon_height = 13;
+    $('#datacube_layers tr.cube_layer:last').after(`
+        <tr class='cube_layer' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
+            <td class='name'>${datalayer.name_pretty}</td>
+            <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
+            <td class='remove'>
+                <div class='img_hover' onclick=''>
+                    <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
+                        <img src="/static/cma/img/icon_trash2.png" height="${icon_height}px" />
+                    </div>
+                    <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
+                        <img src="/static/cma/img/icon_trash2_hover.png" height="${icon_height}px" />
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `);
+    
+}
+
 function onRadioCubeClick(cmp) {
     var el = $(cmp);
     var for_radio = el.prop('for');
+    if (!for_radio) {
+        return;
+    }
     var radio = $(`input[name='${for_radio}']`);
     var valnew = el.prop('class');
 //     console.log(valnew);
@@ -1965,32 +2043,14 @@ function onRadioCubeClick(cmp) {
         }
     } else { // Add layer to cube
 //         var datalayer = DATALAYERS_LOOKUP[dsid];
-        DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
-        
-        // Hide instructions 
-        $('#datacube_layers tr.instructions').hide();
-        
-        // Add row 
-        var icon_height = 13;
-        $('#datacube_layers tr.cube_layer:last').after(`
-            <tr class='cube_layer' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
-                <td class='name'>${datalayer.name_pretty}</td>
-                <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
-                <td class='remove'>
-                    <div class='img_hover' onclick=''>
-                        <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
-                            <img src="/static/cma/img/icon_trash2.png" height="${icon_height}px" />
-                        </div>
-                        <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
-                            <img src="/static/cma/img/icon_trash2_hover.png" height="${icon_height}px" />
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `);
+        addLayerToDataCube(datalayer);
     }
     
     // Update header_info 
+    updateDataCubeLabelInfo();
+}
+
+function updateDataCubeLabelInfo() {
     var nlayers = $('#datacube_layers tr.cube_layer').length - 1; // -1 b/c of instructions row 
     var s = nlayers == 1 ? '' : 's';
     var el = $('.header_info.datacube');
@@ -2528,11 +2588,11 @@ function addRowToDataLayersTable(table, dl, model_output) {
     var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
     var name_pretty = dl.name_pretty;
     if (model_output) {
-        name_pretty += ` (${dl.system} v${dl.system_version})`;
-        
+        name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
     }
     
     // Add columns headers if date-based subcategory is empty
+    var radiocube_header = model_output ? '' : `Add to cube`;
     if (table.find(`tr.subcategory_label td:contains("${subcat}")`).length == 0) {
         table.append(`
             <tr class='subcategory_label'>
@@ -2540,11 +2600,19 @@ function addRowToDataLayersTable(table, dl, model_output) {
                 <td class='colname'>Info</td>
                 <td class='colname'>Show</td>
                 <td class='colname'>Download</td>
-                <td class='colname radiocube'>Add to cube</td>
+                <td class='colname radiocube'>${radiocube_header}</td>
             </tr>
         `);
     }
     // Add table row
+    var radiocube = model_output ? '' : `
+        <div class="radiocube" align="left">
+            <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
+            <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
+            <input type="radio" name="radiocube_${dl.data_source_id}" value="yes" >
+            <label class='yes' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">Y</label>
+        </div>
+    `;
     table.append(`
         <tr data-path="${dl.data_source_id}">
             <td class='name'>${name_pretty}</td>
@@ -2553,15 +2621,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
             <td class='download'>
                 <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
             </td>
-            <td>
-                <div class="radiocube" align="left">
-                    <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
-                    <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
-                    <input type="radio" name="radiocube_${dl.data_source_id}" value="yes" >
-                    <label class='yes' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">Y</label>
-                </div>
-            </td>
-
+            <td>${radiocube}</td>
         </tr>
     `);
     

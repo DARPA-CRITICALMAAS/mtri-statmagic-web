@@ -7,7 +7,7 @@ import django
 django.setup()
 from django.conf import settings
 #from cma import models
-from cma.models import DataLayer
+from cma.models import DataLayer, OutputLayer
 import cma.models as models
 import cma.util as util
 
@@ -27,6 +27,9 @@ def exit():
 
 def getDataLayers():
     return DataLayer.objects.all().order_by('category','subcategory','name')
+
+def getOutputLayers():
+    return OutputLayer.objects.all().order_by('category','subcategory','name')
 
 
 def create_fishnet(
