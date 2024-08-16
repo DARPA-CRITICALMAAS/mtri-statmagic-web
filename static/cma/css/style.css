@@ -37,6 +37,7 @@
 /*     display: inline-block; */
 /*     width: 33%; */
     height: 800px;
+    position: relative;
     
 }
 
@@ -1018,7 +1019,7 @@ table.editprocessingsteps_table td {
 }
 
 #sidebar_collapse_button {
-    position: relative;
+    position: absolute;
     top: 16px;
     font-size: 1.0rem;
     right: -18px;
@@ -1961,7 +1962,10 @@ select#sites_display_select {
     font-size: 0.9rem;
     
 }
-
+.header.topbar.toptop {
+    margin-bottom: 8px;
+    
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
