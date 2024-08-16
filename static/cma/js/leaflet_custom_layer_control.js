@@ -159,12 +159,9 @@ function onToggleOtherLayerClick(target, id) {
     // Add any checked checkbox layers back on top
     $.each(checked_checkboxes, function(c, chk) {
         $.each(images[chk].layers, function(l,layer) {
-//             console.log('adding layer...', layer);
-//             map.removeLayer(layer);
             MAP.addLayer(layer);
         });
         $(`#${chk}-legend`).slideDown(0);
-        
     });
 }
 
@@ -188,7 +185,7 @@ $('.header').hover(
 
 function toggleHeader(hdr) {
     var do_hide = false;
-//     console.log(hdr);
+    console.log(hdr);
     $(hdr).find('td.collapse').text(function(_, value){
         do_hide = value == '-';
         return value=='-'?'+':'-'

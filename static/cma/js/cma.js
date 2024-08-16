@@ -260,7 +260,7 @@ function addCMAControl() {
     
     // Add listeners to stop click propagation to underlying map 
     $('.cma_header input').on('dblclick', function(e) {
-        console.log('stopping propagation');
+//         console.log('stopping propagation');
         e.stopPropagation();
     });
     // This is for Safari browsers that for whatever reason pass the click 
@@ -1581,7 +1581,7 @@ function loadMineralSitesToMap() {
     // Create/add legend
     html = `
         <div class='layer_legend' id='legendcontent_sites'>
-            <div class='legend_header' onclick='toggleHeader(this);'><span class='collapse'>-</span> Known deposit sites</div>
+            <div class='legend_header'><span class='collapse'>-</span> Known deposit sites</div>
             <div class='legend_body'>
                 <table>
                     <tr>
@@ -1597,6 +1597,12 @@ function loadMineralSitesToMap() {
         </div>
     `;
     $('#legend_content_sites').html(html);
+    
+    $('#legendcontent_sites .legend_header').on('click', function(e) {
+//         console.log(e);
+        e.stopPropagation();
+        toggleHeader(e.target);
+    });
     
     // Trigger display by change to style the markers
     onMineralSitesDisplayByChange();
