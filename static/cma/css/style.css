@@ -521,7 +521,7 @@ select {
     font-size: 1.0rem;
     padding: 2px 8px;
     color: #a5cd98;
-    width: calc(100% - 26px);
+     width: calc(100% - 26px);
      margin: 0px 10px 0px 0px;
 }
 
@@ -1297,7 +1297,8 @@ span.highlight.notRelevant {
 .modal_upload .highlight {
     font-weight: 600;
 }
-.model_select_div {
+.collapse div.model_select_div {
+    width: calc(100% - 40px);
     display: none;
     color: #999;
     font-size: 1.0rem;
@@ -1907,6 +1908,29 @@ select#sites_display_select {
 }
 .button.load:hover {
     background-color: #534158;
+    
+}
+
+#model_runs_table tr {
+    cursor: pointer;
+    
+}
+
+.date {
+    color: #c09cc9;
+}
+.time {
+    color: #c99ca7;
+}
+.model_run_instructions {
+    font-size: 0.80rem;
+    text-align: left;
+    padding: 8px 0px;
+    
+}
+
+#modeling_initial_message2 {
+    display: none;
     
 }
 

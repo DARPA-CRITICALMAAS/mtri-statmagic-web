@@ -533,12 +533,26 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
 }
 
+function resetModelUI() {
+    $('.selected_model_config').hide();
+    $('.collapse_datacube').hide();
+    $('.collapse_training').hide();
+    $('.collapse_parameters').hide();
+    $('.collapse_model_run').hide();
+    $('#modeling_buttons_table').hide();
+    $('.radiocube').hide();
+    
+}
+
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
 //     console.log(model, $('#model_select').val(), model.uses_training);
+
+    
     // First hide everything
-    $('.collapse_datacube').hide();
-    $('.collapse_training').hide();
+    resetModelUI();
+    
+
 //     $('.collapse_parameters').hide();
 //     $('.collapse_training').hide();
 //     $('.collapse_model_run').hide();
@@ -639,29 +653,16 @@ function loadCMA(cma_id) {
     
 }
 
-function loadModelOutputs(cma_id) {
-//     $.ajax(`/get_model_outputs`, {
-//         data: {
-//             cma_id: $('#cma_loaded').attr('data-cma_id')
-//         },
-//         success: function(response) {
-//             console.log(response)
-//         },
-//         error: function(response) {
-//             console.log(response);
-//         }
-//     });
+function loadModelOutputs(cma_id,model_run_id) {
     var table = $('#model_outputs_table');
     table.empty();
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
-        if (d.cma_id && d.cma_id == cma_id) {
-            console.log(d);
-
+        if (d.cma_id && d.cma_id == cma_id &&
+            (!model_run_id || (d.model_run_id && d.model_run_id == model_run_id))
+        ) {
             addRowToDataLayersTable(table,d,true);
         }
-        
     });
-    
 }
 
 function getMetadata() {
@@ -715,13 +716,31 @@ function loadModelRuns(cma_id) {
             
             trs = '';
             $.each(response.model_runs, function(mrid, mobj) {
+                var cma = CMAS_EXISTING[mobj.cma_id];
+                
+                // Store model runs in the CMA object
+                if (!cma.model_run_objects) {
+                    cma.model_run_objects = {};
+                }
+                cma.model_run_objects[mrid] = mobj;
+                
+                var n_outputs = 0;
+                $.each(DATALAYERS_LOOKUP, function(dsid,d) {
+                    if (d.model_run_id && d.model_run_id == mrid) {
+                        n_outputs += 1;
+                    }
+                });
+                
+                var sys = mobj.system || '--';
+                var sysv = mobj.system_version || '--';
                 trs += `
-                    <tr>
+                    <tr onclick="loadModelRun('${mobj.cma_id}','${mrid}')";>
                         <td>${cleanTimestamp(mobj.event.timestamp)}</td>
-                        <td>${mobj.system}</td>
-                        <td>${mobj.system_version}</td>
+                        <td>${sys}</td>
+                        <td>${sysv}</td>
                         <td>${mobj.model_type}</td>
                         <td>${mobj.event.payload.evidence_layers.length}</td>
+                        <td>${n_outputs}</td>
                     </tr>
                 `;
             });
@@ -732,7 +751,36 @@ function loadModelRuns(cma_id) {
             console.log(response);
         }
     });
+}
+
+function loadModelRun(cma_id,model_run_id) {
+    // Loads model run to model UI
+    $('#load_model_run').hide();
+    $('#datalayer_info').hide();
+    $('#modeling_initial_message2').hide();
+    $('.model_select_div').show();
     
+    var model_run = CMAS_EXISTING[cma_id].model_run_objects[model_run_id];
+    console.log(model_run);
+    
+    // Populate model config
+    // Map of various model type vars to those listed in GUI
+    var mtypemap = {
+        beak_som: 'beak_som',
+        som: 'beak_som',
+        SOM: 'beak_som',
+        
+        sri_NN: 'sri_NN',
+        'Neural Net': 'sri_NN',
+        
+        
+    }
+    var mtype = mtypemap[model_run.model_type];
+    
+    $('#model_select').val(mtype);
+    onModelSelect();
+    
+    // Populate data cube
     
 }
 
@@ -1809,7 +1857,7 @@ function showDataLayerInfo(layer_name,model_output) {
             <span class='label'>Model:</span> ${dl.model}<br>
             <span class='label'>Model type:</span> <span id='model_run__type'></span><br>
             <span class='label'>System:</span> ${dl.system} <span class='label'>v</span>${dl.system_version}<br>
-            <span class='label'>Model run ID:</span> ${dl.model_run_id}
+            <span class='label'>Model run info:</span>${dl.model_run_id} (<span class='link' onclick="loadModelRun('${dl.cma_id}','${dl.model_run_id}');">load model run</span>)
         `;
     }
     
@@ -2387,7 +2435,10 @@ function getDateAsYYYYMMDD(dt) {
         zeroPad(dt.getDate(),2);
 }
 function cleanTimestamp(ts) {
-    return ts.slice(0,16);
+    return `
+        <span class='date'>${ts.slice(0,10)}</span>
+        <span class='time'>${ts.slice(11,16)}</span>
+    `;
 }
 
 function showLoadCMAmodal() {   
@@ -2580,6 +2631,11 @@ function uploadDataLayer() {
     });
 }
     
+function startNewModelRun() {
+    $('#modeling_initial_message2').hide();
+    $('.model_select_div').show();
+}
+
 function onStartedCMA(cma) {
 //     var cma_description = $('#cma_description').val();
     $('#cma_loaded').attr('data-cma_id',cma.cma_id);
@@ -2589,10 +2645,15 @@ function onStartedCMA(cma) {
     showCMAstart();
     
     $('#modeling_initial_message').hide();
-    $('.model_select_div').show();
+    $('#modeling_initial_message2').show();
+    
+    $('.model_select_div').hide();
     
     // Hide "Choose existing MPM" modal
     $('#load_cma_modal').hide();
+    
+    // Reset model UI
+    resetModelUI();
 }
 
 

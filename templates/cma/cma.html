@@ -182,7 +182,8 @@
                         <div id="new_model_run" class="button load_sites sites submit" onclick="startNewModelRun();">New model run</div>
                     </div>
                     <div class='model_select_div'>
-                        Select model: <select id='model_select' onChange="onModelSelect();">
+                        <div class='model_run_instructions'><span class='start_cma_link' onclick="$('#load_model_run').show();">Load an existing model run</span> or start a new one by selecting a model type below.</div>
+                        Select model type: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
                             
                         </select> <img src="/static/cma/img/information.png" height="18px" class="download_icon" onclick='showModelInfo();'>
@@ -252,8 +253,8 @@
                                 <td><div class='button predict'>Predict</div></td>
                             </tr>
                             </table>
-<!--                         </div> <!--content model_run--> -->
-                  <!--  </div> <!--collapse sub (model_run)-->-->
+<!--                         </div> <!--content model_run--> 
+                  <!--  </div> <!--collapse sub (model_run)-->
                 </div> <!--content main-->
             </div> <!--collapse (Modeling)-->
         </div><!--control_panel-->
