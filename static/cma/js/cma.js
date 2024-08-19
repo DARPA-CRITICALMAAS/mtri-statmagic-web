@@ -631,6 +631,9 @@ function loadCMA(cma_id) {
     }
     $('#commodity').val(mineral);
     
+    // Change sites request limit to -1 so all sites are returned
+    $('#mineral_sites_limit').val(-1);
+    
     // Load extent
     // Remove existing drawings before starting new one
     if (drawnLayer && MAP.hasLayer(drawnLayer)) {
