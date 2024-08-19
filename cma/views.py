@@ -104,7 +104,7 @@ def get_metadata(request):
     # Get CMA list
     cmas = {}
     for cma in cdr.get_cmas():
-        if cma['mineral'] in ('test_mineral','test_mineral2'):
+        if 'test_' in cma['mineral'] or ('Surprise' in cma['mineral'] and cma['resolution'] == [1000,1000]):
             continue
         #print(cma)
         cma = util.process_cma(cma)        
@@ -522,6 +522,9 @@ def submit_model_run(request):
         train_config=model_map[model.name](**train_config),
         evidence_layers=evidence_layers
     )
+    
+    print('POSTing model run to CDR:')
+    print(model_run)
     
     # Post to CDR
     cdr = cdr_utils.CDR()

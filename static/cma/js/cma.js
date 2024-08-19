@@ -745,7 +745,7 @@ function loadModelRuns(cma_id) {
                 // WARNING: temporary! don't show model runs w/ no output layers
                 //    * for demo purposes only; in practice users may want to
                 //      load model runs that are IN PROGRESS
-                if (n_outputs == 0) { return;}
+               // if (n_outputs == 0) { return;}
                 
                 var sys = mobj.system || '--';
                 var sysv = mobj.system_version || '--';
