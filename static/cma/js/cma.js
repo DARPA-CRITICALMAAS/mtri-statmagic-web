@@ -706,21 +706,23 @@ function getMetadata() {
 }
 
 function loadModelRuns(cma_id) {
-    if (!CMAS_EXISTING[cma_id].model_runs) {
-        $('#model_runs_table tbody').html('');
-        return;
-    }
+//     if (!CMAS_EXISTING[cma_id].model_runs) {
+//         $('#model_runs_table tbody').html('');
+//         return;
+//     }
     
     $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
     $.ajax(`/get_model_runs`, {
         data: {
-            model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
+            cma_id: cma_id,
+//             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
         },
         success: function(response) {
             console.log(response);
             
             trs = '';
             $.each(response.model_runs, function(mrid, mobj) {
+                
                 // Skip model runs w/ zero evidence layers
                 if (mobj.event.payload.evidence_layers.length == 0) {
                     return;

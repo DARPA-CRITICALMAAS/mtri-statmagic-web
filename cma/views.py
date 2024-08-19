@@ -111,11 +111,11 @@ def get_metadata(request):
         cma = util.process_cma(cma)        
         cmas[cma['cma_id']] = cma
 
-    # Get model runs and attach to CMAs
-    for cma_id,cma in cmas.items():
-        cma['model_runs'] = []
-        for mr in cdr.get_model_runs(cma_id):
-            cma['model_runs'].append(mr['model_run_id'])
+    ## Get model runs and attach to CMAs
+    #for cma_id,cma in cmas.items():
+        #cma['model_runs'] = []
+        #for mr in cdr.get_model_runs(cma_id):
+            #cma['model_runs'].append(mr['model_run_id'])
     
     
     response = HttpResponse(
@@ -231,6 +231,25 @@ def get_model_run(request):
 
     return response
 
+def get_model_runs_for_cma(request):
+    params = {
+        'cma_id': '',
+    }
+    params = util.process_params(request,params)
+    
+    mrs = []
+    for mr in cdr.get_model_runs(params['cma_id']):
+        mrs.append(mr['model_run_id'])
+        
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'model_runs': mrs,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
 
 def get_model_runs(request):
     '''
@@ -238,14 +257,21 @@ def get_model_runs(request):
     separated list)
     '''
     params = {
-        'model_runs': None,
+        'cma_id': '',
+        #'model_runs': None,
     }
     params = util.process_params(request,params)
     
     cdr = cdr_utils.CDR()
+    
+    # Get model runs and attach to CMAs
     model_runs = {}
-    for mrid in params['model_runs'].split(','):
-        model_runs[mrid] = cdr.get_model_run(mrid)
+    for mr in cdr.get_model_runs(params['cma_id']):
+        model_runs[mr['model_run_id']] = cdr.get_model_run(mr['model_run_id'])
+    
+   #model_runs = {}
+    #for mrid in mr:#params['model_runs'].split(','):
+        #model_runs[mrid] = cdr.get_model_run(mrid)
     
     response = HttpResponse(
         json.dumps({
