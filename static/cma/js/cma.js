@@ -2421,7 +2421,7 @@ function getFishnet() {
     AJAX_GET_FISHNET = $.ajax('get_fishnet', {
         data: {
             resolution: res,
-            srid: CRS_OPTIONS[crs].srid,
+            srid: CRS_OPTIONS[crs].srid.split(':')[1],
             extent_wkt: getWKT()
         },
         type: 'GET',

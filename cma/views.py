@@ -1,4 +1,5 @@
 import json, os, sys
+from django.core.exceptions import BadRequest
 from datetime import datetime as dt
 from django.shortcuts import render
 from django.forms.models import model_to_dict
