@@ -819,6 +819,8 @@ def get_cache_key(prefix,params,exclude_params=[]):
             ):
             #v = params[p] if params[p] else '|'
             v = str(params[p]).replace(' ','') if params[p] not in (None,'None') else ''
+            if p in ('bbox_polygon',):
+                v = v.replace('"type":"Polygon","coordinates":','').replace('{','').replace('}','').replace('[','').replace(']','')[:150]
             k.append(v)
     
     return '|'.join(k)

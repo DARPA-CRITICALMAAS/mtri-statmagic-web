@@ -564,9 +564,14 @@ def get_mineral_sites(request):
     }
     
     cache_key = util.get_cache_key('getmineralsites',args)
+    print('cache key:\n',cache_key)
+    #blerg
     sites = cache.get(cache_key)
     #print('\n\ncached sites:',sites)
     if not sites or args['limit'] > 0: # if no cache results exist or limit provided
+        print(cache_key)
+        print('no cache!')
+        
         # Query sites from CDR
         cdr = cdr_utils.CDR()
         sites = cdr.get_mineral_sites_search(
@@ -579,7 +584,8 @@ def get_mineral_sites(request):
         
         if args['limit'] < 0:
             cache.set(cache_key,sites)
-    
+    else:
+        print('cache found!')
    # print(json.dumps(gj))
     
     # Convert to geoJSON
