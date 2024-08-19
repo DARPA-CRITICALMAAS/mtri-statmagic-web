@@ -697,7 +697,7 @@ def cogify_from_buffer(data):
     return output_memfile.read()
 
 def process_cma(cma):
-    print(cma)
+    #print(cma)
     # Reproject to WGS84
     cma['extent'] = simplify_and_transform_geojson(
         cma['extent'],

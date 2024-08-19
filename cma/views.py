@@ -176,7 +176,7 @@ def upload_datalayer(request):
         evidence_layer_raster_prefix = params['description'],
     )
 
-    print(ds.model_dump_json(exclude_none=True))
+    #print(ds.model_dump_json(exclude_none=True))
     #blerg
 
     # Post to CDR
