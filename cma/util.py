@@ -801,3 +801,24 @@ def build_template_raster_from_CMA(cma, proj4, buffer_distance=0):
         pixel_size=pixel_size,
         clipping_gdf=clipping_gdf
     )
+
+def get_cache_key(prefix,params,exclude_params=[]):
+    k = [prefix,]#str(settings.VERSION)]
+    for p in sorted(params):
+        if p not in exclude_params and p not in (
+           #'wkt',
+            #'wkt_geos',
+            'limit',
+            'ignore_cache',
+            #'output_spatial_aggregations',
+            'output_temporal_aggregations',
+            'nawfd_stochastic_use_cached',
+            'output_format',
+            'format_for_calculator',
+            'ignore_limit',
+            ):
+            #v = params[p] if params[p] else '|'
+            v = str(params[p]).replace(' ','') if params[p] not in (None,'None') else ''
+            k.append(v)
+    
+    return '|'.join(k)

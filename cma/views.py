@@ -5,6 +5,7 @@ from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.encoding import force_str
 from django.http import HttpResponse
+from django.core.cache import cache
 from cdr import cdr_utils
 from . import util
 from . import models
@@ -371,6 +372,8 @@ def initiate_cma(request):
     }
     params = util.process_params(request, params, post=True)
     params['resolution'] = [float(x) for x in request.POST.getlist('resolution[]')]
+    
+    print(params['extent'])
     params['extent'] = util.validate_wkt_geom(params['extent'])
 
     # Convert wkt to geojson_pydantic.MultiPolygon via intermediate geoJSON
@@ -552,14 +555,30 @@ def get_mineral_sites(request):
         gj['type'] = 'Polygon';
         gj['coordinates'] = gj['coordinates'][0]
 
-    # Query sites from CDR
-    cdr = cdr_utils.CDR()
-    sites = cdr.get_mineral_sites_search(
-        commodity=params['commodity'],
-        candidate=params['deposit_type'],
-        bbox_polygon=json.dumps(gj),
-        limit=int(params['limit'])
-    )
+    # Args to (a) send to CDR and (b) use as cache key
+    args = {
+        'commodity': params['commodity'],
+        'candidate': params['deposit_type'],
+        'bbox_polygon': json.dumps(gj),
+        'limit': int(params['limit']),
+    }
+    
+    cache_key = util.get_cache_key('getmineralsites',args)
+    sites = cache.get(cache_key)
+    #print('\n\ncached sites:',sites)
+    if not sites or args['limit'] > 0: # if no cache results exist or limit provided
+        # Query sites from CDR
+        cdr = cdr_utils.CDR()
+        sites = cdr.get_mineral_sites_search(
+            **args
+            #commodity=params['commodity'],
+            #candidate=params['deposit_type'],
+            #bbox_polygon=json.dumps(gj),
+            #limit=int(params['limit'])
+        )
+        
+        if args['limit'] < 0:
+            cache.set(cache_key,sites)
     
    # print(json.dumps(gj))
     
