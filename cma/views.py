@@ -373,7 +373,7 @@ def initiate_cma(request):
     params = util.process_params(request, params, post=True)
     params['resolution'] = [float(x) for x in request.POST.getlist('resolution[]')]
     
-    print(params['extent'])
+    #print(params['extent'])
     params['extent'] = util.validate_wkt_geom(params['extent'])
 
     # Convert wkt to geojson_pydantic.MultiPolygon via intermediate geoJSON

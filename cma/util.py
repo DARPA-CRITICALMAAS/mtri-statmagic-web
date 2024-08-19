@@ -780,7 +780,7 @@ def build_template_raster_from_CMA(cma, proj4, buffer_distance=0):
     
     geom = cma.extent.coordinates#['extent']['coordinates']
     poly = geometry.Polygon(geom[0][0])
-    print(geom)
+    #print(geom)
     #try:
         #target_crs = CRS.from_epsg(cma.crs)
     #except rio.errors.CRSError:
