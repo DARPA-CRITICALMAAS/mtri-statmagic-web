@@ -155,6 +155,8 @@ def upload_datalayer(request):
     
     # Cogify
     #gdal.FileFromMemBuffer(memtif, fread)
+    # TODO: add step to convert type based on data type
+    #   * e.g. binary should be a reduced type
     cogfile_bytes = util.cogify_from_buffer(fread)
     
     # Get date
@@ -614,6 +616,14 @@ def get_mineral_sites(request):
     
     return response
     
+def recreate_mapfile(request):
+    mapfile.write_mapfile()
+    
+    # Return response as JSON to client
+    response = HttpResponse('Mapfile written')
+    response['Content-Type'] = 'application/json'
+    
+    return response
     
 def get_fishnet(request):
     params = {
