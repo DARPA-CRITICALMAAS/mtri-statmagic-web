@@ -400,6 +400,10 @@ def initiate_cma(request):
     
     cma_json = cma.model_dump_json(exclude_none=True)
     
+    #print('\n\n\n\n\n')
+    #print(cma_json)
+    #blerg
+    
     # Generate template raster
     proj4 = models.CRS.objects.filter(srid=params['crs']).values_list('proj4text')[0][0]
     tmpfile = util.build_template_raster_from_CMA(cma, proj4)

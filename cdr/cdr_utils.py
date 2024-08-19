@@ -239,7 +239,7 @@ class CDR():
             f'prospectivity/cma?cma_id={cma_id}'
         )
 
-    def get_cmas(self, page=0,size=10,search_text=''):
+    def get_cmas(self, page=0,size=1000,search_text=''):
         return self.run_query(
             f'prospectivity/cmas?page={page}&size={size}&search_text={search_text}'
         )
