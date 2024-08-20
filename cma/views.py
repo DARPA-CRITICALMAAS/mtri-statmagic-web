@@ -21,6 +21,7 @@ import json
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
     sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
+    #print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
 #sys.path.append('/usr/local/project/cdr_schemas/')
 from cdr_schemas import prospectivity_models
 from cdr_schemas import prospectivity_input
@@ -182,10 +183,14 @@ def upload_datalayer(request):
     #print(ds.model_dump_json(exclude_none=True))
     #blerg
 
+    #print(cogfile_bytes)
+    #print(ds.model_dump_json(exclude_none=True))
+    #blerg
+    #blerg
     # Post to CDR
     cdr = cdr_utils.CDR()
     res = cdr.post_prospectivity_data_source(
-        input_file=cogfile_bytes,#open(cogfile,'rb').read(),#fread,#f.read(),
+        input_file=open(cogfile_bytes,'rb'),#open(cogfile,'rb').read(),#fread,#f.read(),
         metadata=ds.model_dump_json(exclude_none=True)
     )
 
@@ -518,7 +523,7 @@ def submit_model_run(request):
 
             tms.append(v)
 
-
+        print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
         l = prospectivity_input.DefineProcessDataLayer(
             cma_id = params['cma_id'],
             data_source_id = el["data_source_id"],

@@ -523,6 +523,9 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
         
         if 'user_upload_example' in ds['data_source_id']:
             continue
+    
+        #if '12a66407aa9e4941a7d67e23c404e357.tif' in ds['download_url']:
+        #    continue
         
         if ds['format'] == 'tif':
             #ds = r#['data_source']
@@ -679,14 +682,16 @@ def cogify_from_buffer(data):
     """
     
     cog_filename = '/home/mgbillmi/PROCESSING/cogify_test.tif'
-    output_memfile = MemoryFile()
+    #output_memfile = MemoryFile()
+    output_memfile = os.path.join(settings.BASE_DIR,'cma','temp',f'{getUniqueID()}.tif')
+    print('temp file:',output_memfile)
     with MemoryFile(data).open() as memfile:
         dst_profile = cog_profiles.get("deflate")
 
         # Creating destination COG
         cog_translate(
             memfile,
-            output_memfile.name,
+            output_memfile,#.name,
             dst_profile,
             use_cog_driver=True,
             in_memory=False,
@@ -694,7 +699,7 @@ def cogify_from_buffer(data):
             overview_resampling="cubic"
         )
 
-    return output_memfile.read()
+    return output_memfile#open(output_memfile,'rb')#.read()
 
 def process_cma(cma):
     #print(cma)

@@ -40,14 +40,14 @@ post_data_intersect_sources = {
 #res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 
 #res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
-#print(res)
-res = cdr.get_prospectivity_output_layers()
-for r in res:
-    print()
-    print(r)
-print(len(res))
-blerg
-#
+# #print(res)
+# res = cdr.get_prospectivity_output_layers()
+# for r in res:
+#     print()
+#     print(r)
+# print(len(res))
+# blerg
+# #
 # res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
 # #res = cdr.get_cmas()
 # print(res)
@@ -122,10 +122,11 @@ bbox_polygon_site_search = {
 #print(len(res))
 
 
-# res = cdr.get_prospectivity_input_layers()
-# for r in res:
-#     if 'LAB' in r['data_source']['description']:# == 'tif':
-#         print(r)
+res = cdr.get_prospectivity_input_layers()
+for r in res:
+    #if '12m' in r['data_source']['description']:# == 'tif':
+    #if 'evidence_layer_raster_prefix' in r['data_source']:
+    print(list(r['data_source'].keys()))#['evidence_layer_raster_prefix'])
 
 
 #print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))
