@@ -518,7 +518,7 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
     #blerg
 
     for ds in res:
-        if data_source_id and ds['evidence_layer_raster_prefix'] != data_source_id:
+        if data_source_id and ds['data_source_id'] != data_source_id:
             continue
         
         if 'user_upload_example' in ds['data_source_id']:

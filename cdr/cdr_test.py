@@ -122,11 +122,13 @@ bbox_polygon_site_search = {
 #print(len(res))
 
 
-res = cdr.get_prospectivity_input_layers()
+res = cdr.get_prospectivity_data_sources()
 for r in res:
     #if '12m' in r['data_source']['description']:# == 'tif':
     #if 'evidence_layer_raster_prefix' in r['data_source']:
-    print(list(r['data_source'].keys()))#['evidence_layer_raster_prefix'])
+    if '12mhack' in r['description']:
+        print(r['description'],r['data_source_id'])
+    #print(list(r['data_source'].keys()))#['evidence_layer_raster_prefix'])
 
 
 #print(cdr.get_polygons_by_sgmc_geology_major1('Sedimentary'))

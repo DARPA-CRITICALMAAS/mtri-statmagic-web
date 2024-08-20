@@ -195,6 +195,8 @@ def upload_datalayer(request):
     )
 
     dsid = res['data_source_id']
+    #print(dsid)
+    #blerg
     
     # Sync to GUI db:
     util.sync_cdr_prospectivity_datasources_to_datalayer(
@@ -206,6 +208,8 @@ def upload_datalayer(request):
     
     # Send layer entry to GUI 
     dl = util.get_datalayers_for_gui(data_source_id=dsid)['datalayers_lookup']
+    
+    print(dsid,dl)
     
     response = HttpResponse(
         json.dumps({
