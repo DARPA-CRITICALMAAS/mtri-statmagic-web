@@ -124,6 +124,7 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     
 
 def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
+    simplify = 0.002 if t_srs == 4326 else 200
     sql = f'''
         SELECT ST_AsGeoJSON(
             ST_Simplify(
@@ -134,7 +135,7 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
                     ),
                     {t_srs}
                 ),
-                0.002 -- simplify to ~200m 
+               {simplify} -- simplify to ~200m 
             )
         );
     '''
@@ -143,7 +144,9 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     precision = 4
     if int(t_srs) == 102008:
         precision = 0
+
     return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
+    #return json.loads(runSQL(sql)[0])
     
 
 def convert_wkt_to_geojson(wkt_string):
@@ -198,6 +201,7 @@ def reduce_geojson_precision(data, remove_zeroes=False, precision=4):
     if remove_zeroes:
         data = re.sub(dn0_match, remove, re.sub(coords_match,mround,data))
     else:
+        
         data = re.sub(coords_match,mround,data)
         data = re.sub(coords_match2,mround,data)
         data = re.sub(coords_match3,mround,data)

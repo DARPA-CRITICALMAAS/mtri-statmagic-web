@@ -108,7 +108,8 @@ def get_metadata(request):
     for cma in cdr.get_cmas():
         print(cma['description'],cma['resolution'][0])
         if ('test_' in cma['mineral'] or 
-            ('Surprise' in cma['description'] and cma['resolution'][0] == 1000.0)
+            ('Surprise' in cma['description'] and cma['resolution'][0] == 1000.0) or 
+            (cma['mineral'] in ('mvt_Test','mvt_Test2'))
         ):
             continue
         #print(cma)
@@ -432,9 +433,11 @@ def initiate_cma(request):
 
     shape = wkt.loads(params["extent"])
     geojson = mapping(shape)
-    geojson['type'] = 'MultiPolygon'
-    geojson['coordinates'] = [geojson['coordinates']]
+    if geojson['type'] == 'Polygon':
+        geojson['type'] = 'MultiPolygon'
+        geojson['coordinates'] = [geojson['coordinates']]
     geojson_dict = json.loads(json.dumps(geojson))
+
 
     # Extent always comes in as 4326, so reproject and simplify while at it
     params['extent'] = util.simplify_and_transform_geojson(
@@ -443,6 +446,7 @@ def initiate_cma(request):
         t_srs=params['crs'].split(':')[1]
     )
 
+   # print(params['extent'])
     params["extent"] = MultiPolygon(**params["extent"])
     
     # Create CDR schema instance

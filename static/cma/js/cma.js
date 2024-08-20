@@ -925,14 +925,15 @@ function createLayerControl() {
     
     var images2 = {Layers:{}};
     
-    // Create a popup to use in the macrostrat layer
-    var popup = L.popup({
-        minWidth: 260,
-        autoPan: false,
-    });
+
     
     $.each(TA1_SYSTEMS,function(system, versions) {
         $.each(versions, function(i,version) {
+            // Create a popup 
+            var popup = L.popup({
+                minWidth: 260,
+                autoPan: false,
+            });
             var ta1_layer = L.vectorGrid.protobuf(
                 `https://api.cdr.land/v1/tiles/polygon/system/${system}/system_version/${version}/tile/{z}/{x}/{y}`, {
                 fetchOptions: {
@@ -987,7 +988,11 @@ function createLayerControl() {
     });
     
     
-    
+     // Create a popup 
+    var popup2 = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
     var macrostrat_layer_units = L.vectorGrid.protobuf(
         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
         attribution: 'Macrostrat',
@@ -1008,7 +1013,7 @@ function createLayerControl() {
             }
         },
     });
-    macrostrat_layer_units.bindPopup(popup);
+    macrostrat_layer_units.bindPopup(popup2);
     macrostrat_layer_units.on('click', function(e) {
         var prop = e.layer.properties;
         
@@ -1027,7 +1032,7 @@ function createLayerControl() {
     
         var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
     
-        popup.setContent(`
+        popup2.setContent(`
             <b>${prop.name}</b>
             <br><br>
             <span class='label'>Age:</span> <b>${prop.age}</b><br>
@@ -1058,6 +1063,11 @@ function createLayerControl() {
         e.layer.setStyle({fillOpacity: 0.5,});
     });
     
+     // Create a popup 
+    var popup = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
     var macrostrat_layer_lines = L.vectorGrid.protobuf(
         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
         attribution: 'Macrostrat',
@@ -1118,7 +1128,11 @@ function createLayerControl() {
     function parseEMRIprogram(properties) {
         return JSON.parse(properties.program)[0].toLowerCase();//properties.program.slice(2,-2).split(',')[0].replace('"','').toLowerCase();
     }
-    
+     // Create a popup 
+    var popup = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
     var emri_layer = L.vectorGrid.protobuf(
         'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
         fetchOptions: {
@@ -1896,6 +1910,7 @@ function submitModelRun() {
         contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
+            alert('Model run submitted successfully! Run id: ');
 //             $('.loading_fishnet').hide();
         },
         error: function(response) {
