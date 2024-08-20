@@ -1812,7 +1812,7 @@ select#sites_display_select {
 #choose_cma_table td {
     text-align: left;
     padding: 6px 8px;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
 }
 
 #choose_cma_table td.description {
@@ -1965,6 +1965,10 @@ select#sites_display_select {
 .header.topbar.toptop {
     margin-bottom: 8px;
     
+}
+#uploadForm_datalayer .model_parameters_table td.label.subheader {
+    padding-top: 20px;
+    color: #fdc086;
 }
 @keyframes spin {
     0% { transform: rotate(0deg); }

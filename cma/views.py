@@ -106,7 +106,10 @@ def get_metadata(request):
     # Get CMA list
     cmas = {}
     for cma in cdr.get_cmas():
-        if 'test_' in cma['mineral'] or ('Surprise' in cma['mineral'] and cma['resolution'] == [1000,1000]):
+        print(cma['description'],cma['resolution'][0])
+        if ('test_' in cma['mineral'] or 
+            ('Surprise' in cma['description'] and cma['resolution'][0] == 1000.0)
+        ):
             continue
         #print(cma)
         cma = util.process_cma(cma)        
@@ -138,15 +141,32 @@ def upload_datalayer(request):
     geojson format.
     '''
     params = {
+        'doi': '',
         'author': '',
+        'publication_date': '',
         'description': '',
         'reference_url': '',
         'category': 'geophysics',
+        'subcategory': 'User upload',
         'type': 'continuous',
+        'derivative_ops': '',
     }
     params = util.process_params(request,params,post=True)
+    if not params['publication_date']:
+        params['publication_date'] = dt.now().strftime('%Y-%m-%d')
+    else:
+        try:
+            dt.strptime(params['publication_date'], '%Y-%m-%d')
+        except:
+            msg = f'publication_date "{params["publication_date"]}" is invalid; must be YYYY-MM-DD format'
+            return HttpResponse(msg, status=400)
+    
     f = request.FILES.getlist('file')[0]
     fread = f.read()
+    
+    #print(f.name)
+    #print(params)
+    #blerg
     
     # Extract spatial resolution from file
     sid = util.getUniqueID()
@@ -162,17 +182,17 @@ def upload_datalayer(request):
     cogfile_bytes = util.cogify_from_buffer(fread)
     
     # Get date
-    date = dt.now().strftime('%Y-%m-%d')
+    #date = 
 
     # Create CDR metadata object
     ds = prospectivity_input.CreateDataSource(
-        DOI = '',
+        DOI = params['doi'],
         authors = params['author'].split(','),
-        publication_date = date,
+        publication_date = params['publication_date'],
         category = params['category'],
-        subcategory = 'User uploads',
+        subcategory = params['subcategory'],
         description = params['description'],
-        derivative_ops = '',
+        derivative_ops = params['derivative_ops'],
         type = params['type'],
         resolution = [res,res],
         format = 'tif',
@@ -181,11 +201,7 @@ def upload_datalayer(request):
     )
 
     #print(ds.model_dump_json(exclude_none=True))
-    #blerg
-
-    #print(cogfile_bytes)
-    #print(ds.model_dump_json(exclude_none=True))
-    #blerg
+    #print(params)
     #blerg
     # Post to CDR
     cdr = cdr_utils.CDR()
@@ -195,8 +211,6 @@ def upload_datalayer(request):
     )
 
     dsid = res['data_source_id']
-    #print(dsid)
-    #blerg
     
     # Sync to GUI db:
     util.sync_cdr_prospectivity_datasources_to_datalayer(
