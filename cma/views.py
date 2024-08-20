@@ -604,7 +604,8 @@ def get_mineral_sites(request):
         'deposit_type': '',
         'commodity': 'copper', # Commodity to search for
         'limit': 100,
-        'wkt': '' # WKT polygon indicating AOI
+        'wkt': '', # WKT polygon indicating AOI
+        'format': 'json'    
         # [...] insert other query params
     }
     params = util.process_params(request, params, post_json=True)
@@ -661,12 +662,19 @@ def get_mineral_sites(request):
             'geometry': gj_point
         })
 
-    # Return response as JSON to client
-    response = HttpResponse(json.dumps({
-        'mineral_sites': sites_gj,
-        'params': params
-    }))
-    response['Content-Type'] = 'application/json'
+    if params['format'] == 'json':
+        # Return response as JSON to client
+        response = HttpResponse(json.dumps({
+            'mineral_sites': sites_gj,
+            'params': params
+        }))
+        response['Content-Type'] = 'application/json'
+        
+    if params['format'] == 'shp':
+        return util.downloadShapefile(
+            {'features': sites_gj},
+            shp_name=f'StatMAGIC_{params["commodity"]}_{params["deposit_type"]}_{dt.now().date()}'
+        )
     
     return response
     

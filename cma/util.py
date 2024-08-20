@@ -2,8 +2,9 @@
 Backend utility code.
 '''
 
-import json, math, os, random, re, requests, string, tempfile
+import json, math, os, random, re, requests, string, tempfile, zipfile
 from pathlib import Path
+from io import BytesIO
 from numbers import Number
 import geopandas as gpd
 from datetime import datetime as dt
@@ -833,3 +834,110 @@ def get_cache_key(prefix,params,exclude_params=[]):
             k.append(v)
     
     return '|'.join(k)
+
+def downloadShapefile(FeatureCollection, shp_name='test5'):
+    '''
+    Data is a list of GeoJSON features; a dict w/ 'features'
+    '''
+    
+    # map of fields to be truncated b/c the way shapefile does this
+    # automatically kind of sucks
+    trunc_fields = {
+        'burnedarea_id': 'id',
+        'consumption_mg': 'cons_mg',
+        'fuel_available_total_mg': 'fuel_mg',
+        'heat_release_smoldering_kbtu': 'hr_s_kbtu',
+        'heat_release_residual_kbtu': 'hr_r_kbtu',
+        'heat_release_flaming_kbtu': 'hr_f_kbtu',
+        'heat_release_total_kbtu': 'hr_t_kbtu',
+        'fuel_moisture_1000hr_pct': 'fm_1khr_pc',
+        'fuel_moisture_litter_pct': 'fm_litt_pc',
+        'fuel_moisture_duff_pct': 'fm_duff_pc',
+    }
+
+    shp_tempfile = os.path.join('/tmp', '{}.shp'.format(shp_name))
+
+    # "4" = ESRI Shapefil
+    #driver = ogr.GetDriver(6)
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+
+    ds = driver.CreateDataSource(shp_tempfile)
+
+    # Create spatial reference
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+
+    # Create the layer
+    layer = ds.CreateLayer('layer', srs, geom_type=ogr.wkbPoint)
+
+    # Add fields; pull from properties
+    type_dict = {
+        str: ogr.OFTString,
+        #type(u''): ogr.OFTString,
+        float: ogr.OFTReal,
+        int: ogr.OFTInteger,
+        np.float64: ogr.OFTReal,
+        list: None,#ogr.OFTString,
+        dict: None,#ogr.OFTString
+    }
+    
+    data = FeatureCollection['features']
+    if data:
+        
+        fields = data[0]['properties'].keys()
+        for field in fields:
+            fn = field if field not in trunc_fields else trunc_fields[field]
+                
+            v = data[0]['properties'][field]
+            dtype = ogr.OFTString  # assume string by default
+            if v:
+                dtype = type_dict[type(v)]
+            if not dtype:
+                continue
+            
+            layer.CreateField(ogr.FieldDefn(str(fn), dtype))
+
+
+        # Now add data
+        for row in data:
+            feature = ogr.Feature(layer.GetLayerDefn())
+            for p, v in row['properties'].items():
+                p2 = p if p not in trunc_fields else trunc_fields[p]
+                u = v
+                if v:
+                    dtype = type_dict[type(v)]
+                if not dtype:
+                    continue
+                #if type(v) == unicode:
+                    #u = str(v)
+    
+                feature.SetField(str(p2), u)
+                #if 'fuel_moisture' in p:
+                    #tmp1 = p2
+                    #tmp2 = str(p2)
+                    #tmp3 = [feature.GetField(x) for x in range(len(fields))]
+                    #blerg
+
+            poly = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
+            feature.SetGeometry(poly)
+            layer.CreateFeature(feature)
+
+            feature = None
+            poly = None
+
+        ds = None
+        
+    # Now write the files to zip
+    bytes_io = BytesIO()
+    with zipfile.ZipFile(bytes_io, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for ext in ('.shp','.dbf','.shx','.prj'):
+            f = shp_tempfile.replace('.shp',ext)
+            archive.write(f,os.path.basename(f))
+
+    bytes_io.seek(0) # Go to the first byte
+    response = HttpResponse(bytes_io.read(), content_type='application/zip')
+    bytes_io.close() # Dispose of the in-memory file
+
+    response['Content-Disposition'] = 'attachment; filename="{}.zip"'.format(shp_name)
+    
+    return response

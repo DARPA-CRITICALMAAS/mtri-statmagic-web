@@ -1407,6 +1407,7 @@ function finishDraw(layer) {
 }
 
 
+
 function loadMineralSites() {
     // Request the selected sites
     
@@ -1449,6 +1450,48 @@ function loadMineralSites() {
             $('#load_sites_button').removeClass('disabled');
             $('#load_sites_button').html('Load sites');
             
+        },
+        error: function(response) {
+            console.log(response);
+            $('.loading_sites').hide();
+            $('#load_sites_button').removeClass('disabled');
+            $('#load_sites_button').html('Load sites');
+        }
+    });
+    
+}
+
+function downloadMineralSites() {
+    // Request the selected sites
+    
+    // First abort any requests to the same endpoint that are in progress
+    if (AJAX_GET_MINERAL_SITES) {
+        AJAX_GET_MINERAL_SITES.abort();
+    }
+    
+    // Show loading spinner
+    $('.loading_sites').show();
+    
+    // Temporarily disable the "load sites" button
+    $('#load_sites_button').addClass('disabled');
+    $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
+    
+    AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
+        data: JSON.stringify({
+            deposit_site: $('#deposit_type').val(),
+            commodity: $('#commodity').val(),
+            limit: $('#mineral_sites_limit').val(),
+            wkt: getWKT(),
+            format: 'shp',
+        }),
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8',
+        success: function(response) {
+            console.log(response);
+            $('.loading_sites').hide();
+            $('#load_sites_button').removeClass('disabled');
+            $('#load_sites_button').html('Load sites');
         },
         error: function(response) {
             console.log(response);
@@ -1910,7 +1953,7 @@ function submitModelRun() {
         contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
-            alert('Model run submitted successfully! Run id: ');
+            alert(`Model run submitted successfully! Run id: ${response.model_run_id}`);
 //             $('.loading_fishnet').hide();
         },
         error: function(response) {
