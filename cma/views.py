@@ -685,8 +685,10 @@ def get_mineral_sites(request):
     print('cache key:\n',cache_key)
     #blerg
     sites_df = cache.get(cache_key)
+    #print(type(sites_df))
+    #blerg
     #print('\n\ncached sites:',sites)
-    if type(sites_df) is None or args['limit'] > 0: # if no cache results exist or limit provided
+    if type(sites_df) is type(None) or args['limit'] > 0: # if no cache results exist or limit provided
         print(cache_key)
         print('no cache!')
         
