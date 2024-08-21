@@ -1846,6 +1846,7 @@ select#sites_display_select {
     color: #bfbfbf;
     font-size: 0.8rem;
     padding: 0px 8px;
+    min-width: 200px;
     max-width: 400px;
 }
 

@@ -202,7 +202,7 @@ function addCMAControl() {
                 <div class='cma_start_div'>
                     <div class='mpm_top_options'>
                         <span class='start_cma_link' onClick='showInitializeCMAform();'>initiate </span> | 
-                        <span id="btn_cma_load" class='start_cma_link' onClick='showLoadCMAmodal();'>load</span>
+                        <span id="btn_cma_load" class='start_cma_link' onClick='showLoadCMAmodal();'>load</span> | <span id="btn_cma_clear" class='start_cma_link' onClick='clearCMA();'>clear</span>
                     </div>
                     <div class='mpm_top_active' title='Active Mineral Processing Model (MPM)'>
                         Active MPM:
@@ -614,11 +614,34 @@ function onModelParameterCheckboxChange(cmp) {
     console.log(cmp);
 }
 
+function clearCMA() {
+    $('#cma_loaded').addClass('notactive');
+    $('#cma_loaded').attr('data-cma_id','');
+    $('#cma_loaded').html('--');
+    
+    $('#modeling_initial_message').show();
+    $('#modeling_initial_message2').hide();
+    
+    $('.model_select_div').hide();
+    
+    // Clear any model outputs associated w/ CMA 
+    $('#model_outputs_table').empty();
+
+    // Hide "Choose existing MPM" modal
+    $('#load_cma_modal').hide();
+    
+    resetModelUI();
+    
+    // Clear mineral sites
+    clearMineralSites();
+}
+
 function loadCMA(cma_id) {
     var cma = CMAS_EXISTING[cma_id];
 //     console.log(cma);
     
-
+    // Clear queried sites
+    clearMineralSites();
     
     // Populate the InitiateCMA form
     $.each(['description','mineral','crs','resolution'], function(i,attr) {
