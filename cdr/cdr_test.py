@@ -84,7 +84,7 @@ for r in json.loads(res.to_json(orient='records')):
     #for k,v in r.items():
         #print(k,v)
     ranks.append(r['rank'])
-    
+
 print(list(set(ranks)))
 blerg
 # print(res)

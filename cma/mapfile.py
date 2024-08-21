@@ -72,8 +72,8 @@ def write_mapfile(
     #########
     # Build rasters dict from database
 
-    datalayers = DataLayer.objects.filter().order_by('category','subcategory','name')
-    outputlayers = OutputLayer.objects.filter().order_by('category','subcategory','name')
+    datalayers = DataLayer.objects.filter(data_format='tif').order_by('category','subcategory','name')
+    outputlayers = OutputLayer.objects.filter(data_format='tif').order_by('category','subcategory','name')
     datasets = list(chain(datalayers, outputlayers))
     #.values(
         #'name',

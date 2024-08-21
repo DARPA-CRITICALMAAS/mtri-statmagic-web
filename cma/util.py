@@ -532,7 +532,7 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
         #if '12a66407aa9e4941a7d67e23c404e357.tif' in ds['download_url']:
         #    continue
         
-        if ds['format'] == 'tif':
+        if True: #ds['format'] == 'tif':
             #ds = r#['data_source']
 
             #print(r)
@@ -649,7 +649,7 @@ def get_datalayers_for_gui(data_source_id=None):
     
     for Obj in (models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
-            'category','subcategory','name'
+                'category','subcategory','name'
             ):
             cat = d.category if d.subcategory != 'User upload' else 'User uploads'
             subcat = d.subcategory if d.subcategory != 'User upload' else d.category
@@ -694,8 +694,18 @@ def cogify_from_buffer(data):
     """
     
     cog_filename = '/home/mgbillmi/PROCESSING/cogify_test.tif'
+    
+    #with open(cog_filename,'wb') as f:
+    #    f.write(data)
+    
     #output_memfile = MemoryFile()
-    output_memfile = os.path.join(settings.BASE_DIR,'cma','temp',f'{getUniqueID()}.tif')
+    output_memfile = os.path.join(
+        settings.BASE_DIR,
+        'cma',
+        'temp',
+        f'{getUniqueID()}.tif'
+    )
+    
     print('temp file:',output_memfile)
     with MemoryFile(data).open() as memfile:
         dst_profile = cog_profiles.get("deflate")
@@ -707,7 +717,7 @@ def cogify_from_buffer(data):
             dst_profile,
             use_cog_driver=True,
             in_memory=False,
-            web_optimized=True,
+            #web_optimized=True,
             overview_resampling="cubic"
         )
 

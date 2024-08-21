@@ -790,6 +790,7 @@ function processModelRunsFromCDR(model_runs) {
         var sysv = mobj.system_version || '--';
         trs += `
             <tr onclick="loadModelRun('${mobj.cma_id}','${mrid}')";>
+                <td>${mrid}</td>
                 <td>${cleanTimestamp(mobj.event.timestamp)}</td>
                 <td>${sys}</td>
                 <td>${sysv}</td>
@@ -1812,7 +1813,7 @@ function onMineralSitesDisplayByChange() {
                 fillColor = site_types[prop.type].color;
             } else {
                 if (prop.type) {
-                    console.log('***new site type!',prop.type);
+//                     console.log('***new site type!',prop.type);
                 }
                 fillColor = '#fb9a99';
             }
@@ -2756,6 +2757,16 @@ function addRowToDataLayersTable(table, dl, model_output) {
     if (model_output) {
         name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
     }
+    var show_chk = `
+        <input type='checkbox' 
+               onChange='onToggleLayerClick(this,"${dl.data_source_id}");' />
+    `;
+    var ext = dl.download_url.split('.').slice(-1)[0];
+    console.log(ext);
+    if (dl.data_format != 'tif') {
+        console.log(dl);
+        show_chk = `${dl.download_url.split('.').slice(-1)[0]}`;
+    }
     
     // Add columns headers if date-based subcategory is empty
     var radiocube_header = model_output ? '' : `Add to cube`;
@@ -2783,7 +2794,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
         <tr data-path="${dl.data_source_id}">
             <td class='name'>${name_pretty}</td>
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${model_output});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
-            <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"${dl.data_source_id}");' /></td>
+            <td class='show_chk'>${show_chk}</td>
             <td class='download'>
                 <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
             </td>

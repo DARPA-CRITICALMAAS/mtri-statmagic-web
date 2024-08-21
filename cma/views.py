@@ -196,17 +196,20 @@ def upload_datalayer(request):
     
     f = request.FILES.getlist('file')[0]
     fread = f.read()
-    
-    #print(f.name)
-    #print(params)
-    #blerg
-    
-    # Extract spatial resolution from file
+
+    # Extract spatial resolution and prj from file
     sid = util.getUniqueID()
     memtif = f'/vsimem/{sid}.tif'
     gdal.FileFromMemBuffer(memtif, fread)
     res = int(util.get_tif_resolution(memtif))
+    ds = gdal.Open(memtif)
+    prj = ds.GetProjection()
+    del ds
     gdal.Unlink(memtif)
+    
+    if not prj:
+        msg = f'upload file "{f.name}" has no projection'
+        return HttpResponse(msg, status=400)
     
     # Cogify
     #gdal.FileFromMemBuffer(memtif, fread)
@@ -647,7 +650,7 @@ def get_mineral_sites(request):
         'rank': 'A,B,C,U',
         'top1_deposit_type': None,
         'top1_deposit_group': None,
-        'top1_deposit_classification_confidence__gte': 0.5,
+        'top1_deposit_classification_confidence__gte': 0.0,
         
         # this will be converted to bbox_polygon for CDR
         'wkt': '', # WKT polygon indicating AOI
@@ -672,48 +675,68 @@ def get_mineral_sites(request):
         gj['type'] = 'Polygon';
         gj['coordinates'] = gj['coordinates'][0]
 
-    # Args to (a) send to CDR and (b) use as cache key
-    args = {
-        'commodity': params['commodity'],
-        'with_deposit_types_only': params['with_deposit_types_only'],
-        'top_n': params['top_n'],
-        'bbox_polygon': json.dumps(gj),
-        'limit': int(params['limit']),
-    }
-    
-    cache_key = util.get_cache_key('getdedupsitescdr',args)
-    print('cache key:\n',cache_key)
-    #blerg
-    sites_df = cache.get(cache_key)
-    #print(type(sites_df))
-    #blerg
-    #print('\n\ncached sites:',sites)
-    if type(sites_df) is type(None) or args['limit'] > 0: # if no cache results exist or limit provided
-        print(cache_key)
-        print('no cache!')
+    cs = [params['commodity']]
+    if params['commodity'] == 'rare earth elements':
+        cs = [
+            'Lanthanum', 
+            'Cerium', 
+            'Yttrium', 
+            'Praseodymium', 
+            'Neoymium', 
+            'Samarium',
+            'Europium',
+            'Terbium', 
+            'Gadolinium',
+            'Ytterbium', 
+            'Dysprosium', 
+            'Thulium', 
+            'Lutetium',
+            'Holmium', 
+            'Erbium'
+        ]
+
+    print(cs)
+    sites_json = []
+    for c in cs:
+        # Args to (a) send to CDR and (b) use as cache key
+        args = {
+            'commodity': c,
+            'with_deposit_types_only': params['with_deposit_types_only'],
+            'top_n': params['top_n'],
+            'bbox_polygon': json.dumps(gj),
+            'limit': int(params['limit']),
+        }
         
-        # Query sites from CDR
-        cdr = cdr_utils.CDR()
-        sites_df = cdr.get_dedup_sites_search(
-            **args
-            #commodity=params['commodity'],
-            #candidate=params['deposit_type'],
-            #bbox_polygon=json.dumps(gj),
-            #limit=int(params['limit'])
-        )
+        cache_key = util.get_cache_key('getdedupsitescdr',args)
+        print('cache key:\n',cache_key)
+
+        sites_df = cache.get(cache_key)
+        if type(sites_df) is type(None) or args['limit'] > 0: # if no cache results exist or limit provided
+            print(cache_key)
+            print('no cache!')
+            
+            # Query sites from CDR
+            cdr = cdr_utils.CDR()
+            sites_df = cdr.get_dedup_sites_search(**args)
+            
+            # only cache no-limit returns
+            if args['limit'] < 0:
+                cache.set(cache_key,sites_df)
+        else:
+            print('cache found!')
         
-        # only cache no-limit returns
-        if args['limit'] < 0:
-            cache.set(cache_key,sites_df)
-    else:
-        print('cache found!')
+        sites_json += json.loads(sites_df.to_json(orient='records'))
     # print(json.dumps(gj))
     
     # Convert to geoJSON
-    #   * TODO: apply post-filters here
     #   * TODO: also trim out unncessary properties
     sites_gj = []
-    for site in json.loads(sites_df.to_json(orient='records')):
+    for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
+        conf_thresh = params['top1_deposit_classification_confidence__gte']
+        conf = site['top1_deposit_classification_confidence']
+        if conf_thresh and conf:
+            if float(conf) < float(conf_thresh):
+                continue
         
         # Apply rank and type filters
         skip = False
@@ -756,7 +779,11 @@ def get_mineral_sites(request):
     
     return response
     
+
 def recreate_mapfile(request):
+    '''
+    Admin convenience function for initiating mapfile rewrite from browser.
+    '''
     mapfile.write_mapfile()
     
     # Return response as JSON to client
@@ -765,6 +792,7 @@ def recreate_mapfile(request):
     
     return response
     
+
 def get_fishnet(request):
     params = {
         'resolution': 1000,
