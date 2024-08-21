@@ -21,7 +21,7 @@ class DataLayerAdmin(admin.ModelAdmin):
     list_display = ('name','data_format','download_url','category','disabled')
 
 class OutputLayerAdmin(admin.ModelAdmin):
-    list_display = ('name','data_source_id','model','data_format','download_url','category','disabled')
+    list_display = ('id','name','data_source_id','cma_id','model','data_format','download_url','category','disabled')
 
 
 admin.site.register(models.ProspectivityModelType, ProspectivityModelTypeAdmin)

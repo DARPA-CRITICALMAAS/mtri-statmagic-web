@@ -295,6 +295,7 @@ function clearMineralSites() {
     
     // Clear query results
     $('#mineral_sites_n_results').html('--');
+    $('.mineral_sites_download_link').hide();
     
     // Add 'disabled' class back to clear button
     $('#clear_sites_button').addClass('disabled');
@@ -465,6 +466,9 @@ function buildParametersTable(mobj, table_selector, dobj) {
         var start_vals = p.html_attributes.value;
         if (!start_vals) {
             start_vals = [p.html_attributes.min,p.html_attributes.max];
+        }
+        if ($(cmp).is(':empty')) {
+            return;
         }
         noUiSlider.create(cmp, {
             range: {
@@ -689,8 +693,8 @@ function getMetadata() {
             $('#choose_cma_table tbody').html(trs);
             
             // Now load these to the dropdowns
-            $.each(['commodity','deposit_type'], function(i,v) {
-                var opts = `<option value='' selected>[any]</option>`;
+            $.each(['commodity','top1_deposit_type'], function(i,v) {
+                var opts = v == 'commodity' ? '' : `<option value='' selected>[any]</option>`;
                 $.each(response[v], function(i,c) {
                     var c0 = c == 'Rare earth elements' ? 'rare earth elements' : c;
                     opts += `<option value='${c0}'>${c}</option>`;
@@ -719,56 +723,61 @@ function loadModelRuns(cma_id) {
         },
         success: function(response) {
             console.log(response);
+            processModelRunsFromCDR(response.model_runs);
             
-            trs = '';
-            $.each(response.model_runs, function(mrid, mobj) {
-                
-                // Skip model runs w/ zero evidence layers
-                if (mobj.event.payload.evidence_layers.length == 0) {
-                    return;
-                }
-               
-                
-                var cma = CMAS_EXISTING[mobj.cma_id];
-                
-                // Store model runs in the CMA object
-                if (!cma.model_run_objects) {
-                    cma.model_run_objects = {};
-                }
-                cma.model_run_objects[mrid] = mobj;
-                
-                var n_outputs = 0;
-                $.each(DATALAYERS_LOOKUP, function(dsid,d) {
-                    if (d.model_run_id && d.model_run_id == mrid) {
-                        n_outputs += 1;
-                    }
-                });
-                
-                // WARNING: temporary! don't show model runs w/ no output layers
-                //    * for demo purposes only; in practice users may want to
-                //      load model runs that are IN PROGRESS
-               // if (n_outputs == 0) { return;}
-                
-                var sys = mobj.system || '--';
-                var sysv = mobj.system_version || '--';
-                trs += `
-                    <tr onclick="loadModelRun('${mobj.cma_id}','${mrid}')";>
-                        <td>${cleanTimestamp(mobj.event.timestamp)}</td>
-                        <td>${sys}</td>
-                        <td>${sysv}</td>
-                        <td>${mobj.model_type}</td>
-                        <td>${mobj.event.payload.evidence_layers.length}</td>
-                        <td>${n_outputs}</td>
-                    </tr>
-                `;
-            });
-            $('#model_runs_table tbody').html(trs);
             
         },
         error: function(response) {
             console.log(response);
         }
     });
+}
+
+function processModelRunsFromCDR(model_runs) {
+    
+    trs = '';
+    $.each(model_runs, function(mrid, mobj) {
+        
+        // Skip model runs w/ zero evidence layers
+        if (mobj.event.payload.evidence_layers.length == 0) {
+            return;
+        }
+        
+        var cma = CMAS_EXISTING[mobj.cma_id];
+        
+        // Store model runs in the CMA object
+        if (!cma.model_run_objects) {
+            cma.model_run_objects = {};
+        }
+        cma.model_run_objects[mrid] = mobj;
+        
+        var n_outputs = 0;
+        $.each(DATALAYERS_LOOKUP, function(dsid,d) {
+            if (d.model_run_id && d.model_run_id == mrid) {
+                n_outputs += 1;
+            }
+        });
+        
+        // WARNING: temporary! don't show model runs w/ no output layers
+        //    * for demo purposes only; in practice users may want to
+        //      load model runs that are IN PROGRESS
+        // if (n_outputs == 0) { return;}
+        
+        var sys = mobj.system || '--';
+        var sysv = mobj.system_version || '--';
+        trs += `
+            <tr onclick="loadModelRun('${mobj.cma_id}','${mrid}')";>
+                <td>${cleanTimestamp(mobj.event.timestamp)}</td>
+                <td>${sys}</td>
+                <td>${sysv}</td>
+                <td>${mobj.model_type}</td>
+                <td>${mobj.event.payload.evidence_layers.length}</td>
+                <td>${n_outputs}</td>
+            </tr>
+        `;
+    });
+    $('#model_runs_table tbody').html(trs);
+
 }
 
 function loadModelRun(cma_id,model_run_id) {
@@ -1423,12 +1432,25 @@ function loadMineralSites() {
     $('#load_sites_button').addClass('disabled');
     $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
     
+    var rank = [];
+    $('.dedup_chk.rank:checked').each(function(i,chk) {
+        rank.push(chk.id.split('__')[1]);
+    });
+    
+    var types = [];
+    $('.dedup_chk.type:checked').each(function(i,chk) {
+        types.push(chk.id.split('__')[1].replace('_',' '));
+    });
+    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: JSON.stringify({
-            deposit_site: $('#deposit_type').val(),
+            top1_deposit_type: $('#top1_deposit_type').val(),
+            top1_deposit_classification_confidence__gte: $('#top1_deposit_classification_confidence__gte').val(),
             commodity: $('#commodity').val(),
+            rank: rank.join(','),
+            type: types.join(','),
             limit: $('#mineral_sites_limit').val(),
-            wkt: getWKT()
+            wkt: getWKT(),
         }),
         type: 'POST',
         dataType: 'json',
@@ -1445,6 +1467,7 @@ function loadMineralSites() {
             
             // Update query results n
             $('#mineral_sites_n_results').html(response.mineral_sites.length);
+            $('.mineral_sites_download_link').show();
             $('.loading_sites').hide();
             
             $('#load_sites_button').removeClass('disabled');
@@ -1476,34 +1499,38 @@ function downloadMineralSites() {
     $('#load_sites_button').addClass('disabled');
     $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
     
-    AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
-        data: JSON.stringify({
-            deposit_site: $('#deposit_type').val(),
-            commodity: $('#commodity').val(),
-            limit: $('#mineral_sites_limit').val(),
-            wkt: getWKT(),
-            format: 'shp',
-        }),
-        type: 'POST',
-        dataType: 'json',
-        contentType: 'application/json; charset=utf-8',
-        success: function(response) {
-            console.log(response);
-            $('.loading_sites').hide();
-            $('#load_sites_button').removeClass('disabled');
-            $('#load_sites_button').html('Load sites');
-        },
-        error: function(response) {
-            console.log(response);
-            $('.loading_sites').hide();
-            $('#load_sites_button').removeClass('disabled');
-            $('#load_sites_button').html('Load sites');
-        }
-    });
+    var data = {
+        deposit_site: $('#deposit_type').val(),
+        commodity: $('#commodity').val(),
+        limit: $('#mineral_sites_limit').val(),
+        wkt: getWKT(),
+        format: 'shp',
+    };
     
+    // Use XMLHttpRequest instead of Jquery $ajax
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        var a;
+        if (xhttp.readyState === 4 && xhttp.status === 200) {
+            // Trick for making downloadable link
+            a = document.createElement('a');
+            a.href = window.URL.createObjectURL(xhttp.response);
+            // Give filename you wish to download
+            a.download = `statmagic_${data.commodity}_${data.deposit_site}_${getDateAsYYYYMMDD()}_shp.zip`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+        }
+    };
+    // Post data to URL which handles post request
+    xhttp.open("POST", `/get_mineral_sites`);
+    xhttp.setRequestHeader("Content-Type", "application/json");
+    // You should set responseType as blob for binary responses
+    xhttp.responseType = 'blob';
+    xhttp.send(JSON.stringify(data));
 }
 
- function getCommodityAndDTsFromSite(site_prop) {
+function getCommodityAndDTsFromSite_old(site_prop) {
     var commodities = [];
     $.each(site_prop.mineral_inventory, function(i,m) {
         if (commodities.indexOf(m.commodity) == -1) {
@@ -1528,7 +1555,36 @@ function downloadMineralSites() {
         dtcs_w_conf: dtcs_w_conf,
     };
 }
+
+function getCommodityAndDTsFromSite(site_prop) {
+    var commodities = [];
+//     $.each(site_prop.mineral_inventory, function(i,m) {
+    if (commodities.indexOf(site_prop.commodity) == -1) {
+        commodities.push(site_prop.commodity);
+    }
+//     });
+    var dtcs = [];
+    var dtcs_w_conf = [];
+//     $.each(site_prop.deposit_type_candidate, function(i,m) {
+    if (dtcs.indexOf(site_prop.top1_deposit_type) == -1) {
+        dtcs.push(site_prop.top1_deposit_type);
+        dtcs_w_conf.push({name: site_prop.top1_deposit_type, conf: site_prop.top1_deposit_classification_confidence});
+    }
+//     });
+    if (dtcs_w_conf.length == 0) {
+        dtcs_w_conf = [{name: '--', conf: ''}];
+    }
     
+    return {
+        commodities: commodities,
+        dtcs: dtcs,
+        dtcs_w_conf: dtcs_w_conf,
+    };
+}
+
+function maybeArrToStr(n) {
+    return n.indexOf('[') > -1 ? JSON.parse(n) : n;
+}
 
 function loadMineralSitesToMap() {
     
@@ -1550,14 +1606,60 @@ function loadMineralSitesToMap() {
                 weight: 0.5,
                 className: 'mineral_site_marker',
             });
+        },
+        onEachFeature: function(feature,layer) {
+            var popup = L.popup({
+                minWidth: 260,
+                autoPan: false,
+            });
+            var prop = feature.properties;//e.layer.feature.properties;      
+            var src = '';
+            var msids = maybeArrToStr(prop.mineral_site_ids);
+            
+//             var source_id = prop.mineral_site_ids.split('__')[0];
+//             var record_id = prop.mineral_site_ids.split('__')[1];
+            
+            layer.bindPopup(popup);
+            
+//             if (source_id.indexOf('mrdata') > -1) {
+//                 src = `${source_id}/show-mrds.php?dep_id=${record_id}`;
+//             }
+        
+            var commdts = getCommodityAndDTsFromSite(prop);
+            
+            var dtcs_html = '';
+            $.each(commdts.dtcs_w_conf, function(i,d) {
+                var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
+                dtcs_html += `<div class='emri_keyword'>${d.name} ${conf}</div>`;
+            });
+            
+            popup.setContent(`
+                <b>${maybeArrToStr(prop.names)}</b>
+                <br><br>
+                <span class='label'>Site type:</span> <b>${maybeArrToStr(prop.type)}</b>
+                <br>
+                <span class='label'>Rank:</span> <b>${maybeArrToStr(prop.rank)}</b>
+                <br>
+                <span class='label'>Source:</span> <b><a href='${src}' target='_blank'>${msids}</a></b>
+        
+                <br><br>
+                <span class='label'>Minerals:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+                <br><br>
+                <span class='label'>Deposit type candidates:</span> ${dtcs_html}
+
+                
+            `);
+            
+//         });
+            
         }
     });
     
     // Create a popup to use in the macrostrat layer
-    var popup = L.popup({
-        minWidth: 260,
-        autoPan: false,
-    });
+//     var popup = L.popup({
+//         minWidth: 260,
+//         autoPan: false,
+//     });
 //     MINERAL_SITES_LAYER.bindPopup(popup);
     MINERAL_SITES_LAYER.on('mouseover', function(e) {
         e.layer.setStyle({radius: 10});
@@ -1572,40 +1674,8 @@ function loadMineralSitesToMap() {
 //         e.layer.openPopup();
     });
     MINERAL_SITES_LAYER.on('click', function(e) {
-        var prop = e.layer.feature.properties;      
-        var src = '';
-
-        e.layer.bindPopup(popup);
-        
-        if (prop.source_id.indexOf('mrdata') > -1) {
-            src = `${prop.source_id}/show-mrds.php?dep_id=${prop.record_id}`;
-        }
-    
-        var commdts = getCommodityAndDTsFromSite(prop);
-        
-        var dtcs_html = '';
-        $.each(commdts.dtcs_w_conf, function(i,d) {
-            var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
-            dtcs_html += `<div class='emri_keyword'>${d.name} ${conf}</div>`;
-        });
-        
-        popup.setContent(`
-            <b>${prop.name}</b>
-            <br><br>
-            <span class='label'>Site type:</span> <b>${prop.site_type}</b>
-            <br>
-            <span class='label'>Source:</span> <b><a href='${src}' target='_blank'>${prop.source_id}</a></b>
-            <br>
-            <span class='label'>Record ID:</span> <b>${prop.record_id}</b>
-            <br>
-            <span class='label'>System:</span> <b>${prop.system}</b> v<b>${prop.system_version}</b>
-            <br><br>
-            <span class='label'>Minerals:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-            <br><br>
-            <span class='label'>Deposit type candidates:</span> ${dtcs_html}
-
-            
-        `);
+//         console.log(e.layer,e.layer.feature);
+   
         
         e.layer.openPopup();
 //         popup.setLatLng(e.layer.feature.geometry.coordinates);
@@ -1625,7 +1695,6 @@ function loadMineralSitesToMap() {
             });
         });
     });
-    
     
     var opts = '<option value="site_type" selected>Site type</option>';
     
@@ -1703,7 +1772,10 @@ function onMineralSitesDisplayByChange() {
         },
         Unknown: {
             color: '#fb9a99'
-        }                
+        },
+        'NotSpecified': {
+            color: '#fb9a99'
+        }  
     };
     
     MINERAL_SITES_LAYER.eachLayer(function(flayer) {
@@ -1713,11 +1785,11 @@ function onMineralSitesDisplayByChange() {
         if (display_by == 'site_type') {
             
             // Update marker style
-            if (site_types[prop.site_type]) {
-                fillColor = site_types[prop.site_type].color;
+            if (site_types[prop.type]) {
+                fillColor = site_types[prop.type].color;
             } else {
-                if (prop.site_type) {
-                    console.log('***new site type!',prop.site_type);
+                if (prop.type) {
+                    console.log('***new site type!',prop.type);
                 }
                 fillColor = '#fb9a99';
             }

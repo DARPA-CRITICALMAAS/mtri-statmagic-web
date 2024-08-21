@@ -131,6 +131,9 @@ def write_mapfile(
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
             print('extracting stats for:',tif_path)
             td = None
+            tif_path2 = tif_path
+            if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
+                tif_path2 = f'/net/vm-apps2/{tif_path}'
             if ' ' in tif_path:
                 #print(r['download_url'])
                 td = tempfile.TemporaryDirectory()
@@ -140,7 +143,10 @@ def write_mapfile(
                 #print(tp)
                 ds = gdal.Open(tp)
             else:
+                #print(tif_path)
                 ds = gdal.Open(tif_path)
+                
+           
             
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds

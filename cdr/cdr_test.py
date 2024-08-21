@@ -64,22 +64,29 @@ bbox_polygon_site_search = {
     # ],
     "type": "Polygon",
     "coordinates": [
-        (
-            [-88.392,36.217],
-            [-88.392,38.685],
-            [-86.594,38.685],
-            [-86.594,36.217],
-            [-88.392,36.217]
-        )
+        [
+            [-98.392, 36.217],
+            [-98.392, 38.685],
+            [-86.594, 38.685],
+            [-86.594, 36.217],
+            [-98.392, 36.217]
+        ]
     ]
 }
 
-# res = cdr.get_mineral_sites_search(
-#     commodity='Rare earth elements',
-#     candidate='',
-#     bbox_polygon=json.dumps(bbox_polygon_site_search),
-#     limit=-1
-# )
+res = cdr.get_dedup_sites_search(
+    commodity='Copper',
+    bbox_polygon=json.dumps(bbox_polygon_site_search),
+    limit=1000
+)
+ranks = []
+for r in json.loads(res.to_json(orient='records')):
+    #for k,v in r.items():
+        #print(k,v)
+    ranks.append(r['rank'])
+    
+print(list(set(ranks)))
+blerg
 # print(res)
 # commodities = {}
 # for r in res:

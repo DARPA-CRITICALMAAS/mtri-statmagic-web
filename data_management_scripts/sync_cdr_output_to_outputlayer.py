@@ -1,4 +1,6 @@
 import dm_util
 
 
-dm_util.util.sync_cdr_prospectivity_outputs_to_outputlayer()
+dm_util.util.sync_cdr_prospectivity_outputs_to_outputlayer(
+    cma_id='ESRI:102008_b2f8589dda1a9471873ad66d40bda90a72e7713f09bbee1ac1231ef61c838227__res0_5000_res1_5000_Tungsten'
+)

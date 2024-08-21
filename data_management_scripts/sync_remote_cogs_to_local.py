@@ -18,10 +18,10 @@ for datalayer in dm_util.getOutputLayers():
                 #print(r.content)
                 f.write(r.content)
 
-    # Compress and add overviews
-    temp_tif = 'temp_compress.tif'
-    cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'
-    os.system(cmd)
-    shutil.move(temp_tif, ofile)
+        # Compress and add overviews
+        temp_tif = 'temp_compress.tif'
+        cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'
+        os.system(cmd)
+        shutil.move(temp_tif, ofile)
 
-    os.system(f'gdaladdo {ofile} 2 4 8 16')
+        os.system(f'gdaladdo {ofile} 2 4 8 16')

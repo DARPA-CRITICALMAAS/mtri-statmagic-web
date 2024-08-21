@@ -1970,6 +1970,14 @@ select#sites_display_select {
     padding-top: 20px;
     color: #fdc086;
 }
+.mineral_sites_download_link {
+    display:none;
+}
+
+.datalayer_table input[type="checkbox"].dedup_chk {
+    margin-right: 6px;
+    
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

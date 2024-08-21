@@ -41,10 +41,10 @@ class OutputLayer(DisplayLayer):
         db_table = 'outputlayer'
         
     system = models.CharField(max_length=30,null=True, blank=True)
-    system_version = models.CharField(max_length=50,null=True, blank=True)
-    model = models.CharField(max_length=50,null=True, blank=True)
-    model_version = models.CharField(max_length=50,null=True, blank=True)
-    output_type = models.CharField(max_length=50,null=True, blank=True)
+    system_version = models.CharField(max_length=200,null=True, blank=True)
+    model = models.CharField(max_length=200,null=True, blank=True)
+    model_version = models.CharField(max_length=200,null=True, blank=True)
+    output_type = models.CharField(max_length=200,null=True, blank=True)
     cma_id = models.CharField(max_length=200,null=True, blank=True)
     #title = models.CharField(max_length=20,null=True, blank=True) # <- 'title' in the CDR will be mapped to 'name'
     model_run_id = models.CharField(max_length=200,null=True, blank=True)

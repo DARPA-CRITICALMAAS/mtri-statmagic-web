@@ -58,7 +58,7 @@
                         <div class='content'>
                             <table class='datalayer_table'>
                                 <tr>
-                                    <td class='label'>Commodity filter:</td>
+                                    <td class='label'>Commodity:</td>
                                     <td align='right'>
                                         <select id='commodity' onChange="validateLoadSitesButton();">
                                             <option value="" disabled selected hidden>Select...</option>
@@ -69,9 +69,9 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class='label'>Deposit type filter:</td>
+                                    <td class='label'>Primary deposit type:</td>
                                     <td align='right'>
-                                        <select id='deposit_type' onChange="validateLoadSitesButton();">
+                                        <select id='top1_deposit_type' onChange="validateLoadSitesButton();">
                                             <option value="" disabled selected hidden>Select...</option>
                                             <!--{% for commodity in commodities %}
                                                 <option value="{{commodity}}">{{commodity}}</option>
@@ -79,9 +79,38 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td class='label'>Primary deposit type confidence:</td>
+                                    <td align='right'>
+                                        >=<input id='top1_deposit_classification_confidence__gte' onChange="validateLoadSitesButton();" type='number' min=0, max=1 value=0.50>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class='label'>Rank:</td>
+                                    <td align='right'>
+                                        <label>A <input class='dedup_chk rank' type='checkbox' id='rank__A' checked /></label>
+                                        <label>B <input class='dedup_chk rank' type='checkbox' id='rank__B' checked /></label>
+                                        <label>C <input class='dedup_chk rank' type='checkbox' id='rank__C' checked /></label>
+                                        <label>D <input class='dedup_chk rank' type='checkbox' id='rank__D' /></label>
+                                        <label>E <input class='dedup_chk rank' type='checkbox' id='rank__E' /></label>
+                                        <label>U <input class='dedup_chk rank' type='checkbox' id='rank__U' checked /></label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class='label'>Type:</td>
+                                    <td align='right'>
+                                        <label>Occurrence <input class='dedup_chk type' type='checkbox' id='type__Occurrence'  /></label><br>
+                                        <label>Prospect <input class='dedup_chk type' type='checkbox' id='type__Prospect' checked /></label><br>
+                                        <label>Past producer <input class='dedup_chk type' type='checkbox' id='type__Past_Producer' checked /></label><br>
+                                        <label>Producer <input class='dedup_chk type' type='checkbox' id='type__Producer' checked /></label><br>
+                                        <label>Plant <input class='dedup_chk type' type='checkbox' id='type__Plant' /></label><br>
+                                        <label>Unknown/Not Specified <input class='dedup_chk type' type='checkbox' id='type__NotSpecified' checked /></label>
+                                    </td>
+                                </tr>
                                 <tr title='Limits the number of results returned for the query; lower values will load faster. For no limit, use -1.'>
                                     <td class='label'>Results limit:</td>
-                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-100' value=100 step=100 /></td>
+                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-100' value=-1 step=100 /></td>
                                 </tr>
                                 <tr id='mineral_sites_extent_tr'> 
                                     
@@ -109,7 +138,8 @@
                                     <td colspan=2 align='center'>
                                         <div class='mineral_sites_results_message'>
                                         # query results: <span id='mineral_sites_n_results'>--</span>
-                                        </div>
+                                            <br><span class='link mineral_sites_download_link' onclick='downloadMineralSites();'>download shp</span>
+                                        </div> 
                                         <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
                                         <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load sites</div>
                                         

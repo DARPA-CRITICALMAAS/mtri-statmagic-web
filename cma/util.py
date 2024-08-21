@@ -564,7 +564,10 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
             print('NONTIF:',ds)
             
 
-def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
+def sync_cdr_prospectivity_outputs_to_outputlayer(
+        layer_id=None,
+        cma_id=None,
+    ):
     '''
     data_source_id: (optional) filter by data source ID if needed
     '''
@@ -575,14 +578,17 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
 
     #print(json.dumps(res[0],indent=4))
     #blerg
-
-    for ds in res:
+    
+    for i,ds in enumerate(res):
         #print('here')
         if layer_id and ds['layer_id'] != layer_id:
             continue
         
         #print('woop')
         if ds['download_url'].split('.')[-1] != 'tif':
+            continue
+        
+        if cma_id and ds['cma_id'] != cma_id:
             continue
         
 #            ds = r#['data_source']
@@ -592,7 +598,8 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(layer_id=None):
 
         #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
         #name = ds['layer_id']
-        print('get/creating:',ds['layer_id'])
+        print(i, 'get/creating:',ds['layer_id'])
+        #continue
         stats_minimum = None
         stats_maximum = None
         if 'ikelihoo' in ds['title']:
@@ -639,7 +646,7 @@ def get_datalayers_for_gui(data_source_id=None):
     filters = {'disabled': False}
     if data_source_id:
         filters['data_source_id'] = data_source_id
-        
+    
     for Obj in (models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
             'category','subcategory','name'

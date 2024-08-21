@@ -59,7 +59,6 @@ def home(request):
         
         util.load_parameters(model_opts[modelname]['parameters'],mp)
 
-    
     # Get data layers
     dls = util.get_datalayers_for_gui()
     
@@ -91,6 +90,39 @@ def get_metadata(request):
     cdr = cdr_utils.CDR()
     
     # Get commodity list
+    #cs = [
+        #'Cerium',
+        #'Cobalt',
+        #'Copper',
+        #'Dysprosium',
+        #'Erbium',
+        #'Europium',
+        #'Gadolinium',
+        #'Gallium',
+        #'Germanium',
+        #'Gold',
+        #'Holmium',
+        #'Indium',
+        #'Lanthanum',
+        #'Lithium',
+        #'Lutetium',
+        #'Molybdenum',
+        #'Neoymium',
+        #'Nickel',
+        #'Praseodymium',
+        #'Rare earth elements',
+        #'Rhenium',
+        #'Samarium',
+        #'Scandium',
+        #'Silver',
+        #'Tellurium',
+        #'Terbium',
+        #'Thulium',
+        #'Tungsten',
+        #'Ytterbium',
+        #'Yttrium',
+        #'Zinc',
+    #]
     cs = cdr.get_mineral_dedupsite_commodities()
     if 'rare earth elements' not in cs:
         cs.append('Rare earth elements')
@@ -126,7 +158,7 @@ def get_metadata(request):
     response = HttpResponse(
         json.dumps({
             'commodity': commodities,
-            'deposit_type': deposit_types,
+            'top1_deposit_type': deposit_types,
             'cmas': cmas
         })
     )
@@ -587,10 +619,13 @@ def submit_model_run(request):
     res = cdr.post_model_run(
         model_run.model_dump_json(exclude_none=True)
     )
+    
+    res2 = cdr.get_model_run(res['model_run_id'])
 
     # Return JSON w/ ID indicating model run
     response = HttpResponse(json.dumps({
         'model_run_id': res['model_run_id'],
+        'model_run': res2
     }))
     response['Content-Type'] = 'application/json'
     
@@ -601,14 +636,32 @@ def submit_model_run(request):
 @csrf_exempt
 def get_mineral_sites(request):
     params = {
-        'deposit_type': '',
-        'commodity': 'copper', # Commodity to search for
+        # top group are args that go to CDR/cache:
+        'commodity': 'Copper', # Commodity to search for
+        'with_deposit_types_only': 'false',
         'limit': 100,
+        'top_n': 1,
+        
+        # this next group are filters applied to what is returned from CDR 
+        'type': 'Past Producer,Prospect,Producer,NotSpecified',
+        'rank': 'A,B,C,U',
+        'top1_deposit_type': None,
+        'top1_deposit_group': None,
+        'top1_deposit_classification_confidence__gte': 0.5,
+        
+        # this will be converted to bbox_polygon for CDR
         'wkt': '', # WKT polygon indicating AOI
+        
+        # output format
         'format': 'json'    
-        # [...] insert other query params
     }
     params = util.process_params(request, params, post_json=True)
+    
+    # Convert comma-separated params to lists
+    for p in ('type','rank'):
+        params[p] = params[p].split(',')
+    
+    #print(params)
     
     params['wkt'] = util.validate_wkt_geom(params['wkt'])
     gj = util.convert_wkt_to_geojson(params['wkt'])
@@ -622,23 +675,24 @@ def get_mineral_sites(request):
     # Args to (a) send to CDR and (b) use as cache key
     args = {
         'commodity': params['commodity'],
-        'candidate': params['deposit_type'],
+        'with_deposit_types_only': params['with_deposit_types_only'],
+        'top_n': params['top_n'],
         'bbox_polygon': json.dumps(gj),
         'limit': int(params['limit']),
     }
     
-    cache_key = util.get_cache_key('getmineralsites',args)
+    cache_key = util.get_cache_key('getdedupsitescdr',args)
     print('cache key:\n',cache_key)
     #blerg
-    sites = cache.get(cache_key)
+    sites_df = cache.get(cache_key)
     #print('\n\ncached sites:',sites)
-    if not sites or args['limit'] > 0: # if no cache results exist or limit provided
+    if type(sites_df) is None or args['limit'] > 0: # if no cache results exist or limit provided
         print(cache_key)
         print('no cache!')
         
         # Query sites from CDR
         cdr = cdr_utils.CDR()
-        sites = cdr.get_mineral_sites_search(
+        sites_df = cdr.get_dedup_sites_search(
             **args
             #commodity=params['commodity'],
             #candidate=params['deposit_type'],
@@ -646,16 +700,38 @@ def get_mineral_sites(request):
             #limit=int(params['limit'])
         )
         
+        # only cache no-limit returns
         if args['limit'] < 0:
-            cache.set(cache_key,sites)
+            cache.set(cache_key,sites_df)
     else:
         print('cache found!')
-   # print(json.dumps(gj))
+    # print(json.dumps(gj))
     
     # Convert to geoJSON
+    #   * TODO: apply post-filters here
+    #   * TODO: also trim out unncessary properties
     sites_gj = []
-    for site in sites:
-        gj_point = util.convert_wkt_to_geojson(site['location']['geom'])
+    for site in json.loads(sites_df.to_json(orient='records')):
+        
+        # Apply rank and type filters
+        skip = False
+        for p in ('rank','type'):
+            if params[p]:
+                srank = site[p]
+                if not srank:
+                    skip = True
+                    continue
+                if '[' in srank:
+                    srank = eval(srank)
+                else:
+                    srank = [srank]
+                matches =  [i for i in srank if i in params[p]]
+                if not matches:
+                    skip = True
+        if skip:
+            continue
+        
+        gj_point = util.convert_wkt_to_geojson(site['wkt'])
         sites_gj.append({
             'type': 'Feature',
             'properties': site,

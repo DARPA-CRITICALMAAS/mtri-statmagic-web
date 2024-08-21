@@ -118,6 +118,7 @@ class CDR():
         response : pandas dataframe
             Represents CSV response from API
         '''
+
         return pd.read_csv(io.BytesIO(content_bytes))
 
     ####################################
@@ -126,7 +127,17 @@ class CDR():
     def get_list_deposit_types(self):
         return self.run_query('minerals/deposit-types')
 
-    def get_mineral_sites_search(self, commodity='', candidate='', bbox_polygon='', limit=10):
+
+    def get_dedup_sites_search(
+            self,
+            commodity='',
+            with_deposit_types_only='false',
+            system='',
+            system_version='',
+            top_n=1,
+            bbox_polygon='',
+            limit=10
+        ):
         '''
 
         :param commodity: (optional) should be capitalized, e.g. Iron, Zinc
@@ -136,8 +147,9 @@ class CDR():
         :return:
         '''
         return self.run_query(
-            f'minerals/sites/search?candidate={candidate}&commodity={commodity}&limit={limit}',
-            POST=bbox_polygon
+            f'minerals/dedup-site/search/{commodity}?top_n={top_n}&with_deposit_types_only={with_deposit_types_only}&limit={limit}',
+            POST=bbox_polygon,
+            csv = True,
         )
 
     def get_mineral_systems(self):
@@ -222,7 +234,7 @@ class CDR():
             files={'input_file': input_file}
         )
 
-    def get_prospectivity_output_layers(self,cma_id='',page=0,size=100,model_run_id=''):
+    def get_prospectivity_output_layers(self,cma_id='',page=0,size=10000,model_run_id=''):
         return self.run_query(
             f'prospectivity/prospectivity_output_layers?page={page}&size={size}&cma_id={cma_id}&model_run_id={model_run_id}'
         )
