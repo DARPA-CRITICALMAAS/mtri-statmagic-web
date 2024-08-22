@@ -144,7 +144,7 @@ def write_mapfile(
                 ds = gdal.Open(tp)
             else:
                 #print(tif_path)
-                ds = gdal.Open(tif_path)
+                ds = gdal.Open(tif_path2)
                 
            
             

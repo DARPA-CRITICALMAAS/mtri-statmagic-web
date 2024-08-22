@@ -133,22 +133,23 @@ def get_metadata(request):
         x['name']
         for x in cdr.get_list_deposit_types() if x['name']
     ])
-    
 
     # Get CMA list
     cmas = {}
     for cma in cdr.get_cmas():
-        print(cma['description'],cma['resolution'][0])
         if ('test_' in cma['mineral'] or 
             ('Surprise' in cma['description'] and cma['resolution'][0] == 1000.0) or 
-            (cma['mineral'] in ('mvt_Test','mvt_Test2'))
+            cma['mineral'] in ('mvt_Test','mvt_Test2') or
+            cma['description'] in ('mvttest3','Tungsten_2024-08-30')
         ):
             continue
         #print(cma)
         cma = util.process_cma(cma)        
         cmas[cma['cma_id']] = cma
 
-    ## Get model runs and attach to CMAs
+    # vvv This is now only done when loading a CMA to avoid unnecessary calls to
+    #     CDR
+    ## Get model runs and attach to CMAs 
     #for cma_id,cma in cmas.items():
         #cma['model_runs'] = []
         #for mr in cdr.get_model_runs(cma_id):
@@ -682,7 +683,8 @@ def get_mineral_sites(request):
             'Cerium', 
             'Yttrium', 
             'Praseodymium', 
-            'Neoymium', 
+            'Neoymium',
+            #'Neodymium',
             'Samarium',
             'Europium',
             'Terbium', 
@@ -738,9 +740,9 @@ def get_mineral_sites(request):
             if float(conf) < float(conf_thresh):
                 continue
         
-        # Apply rank and type filters
+        # Apply other filters
         skip = False
-        for p in ('rank','type'):
+        for p in ('rank','type','top1_deposit_type','top1_deposit_group'):
             if params[p]:
                 srank = site[p]
                 if not srank:
@@ -756,6 +758,9 @@ def get_mineral_sites(request):
         if skip:
             continue
         
+        #if params['top1_deposit_type']:
+            #if params['top1_deposit_type'] != site['top1_deposit_type']:
+                #continue
         gj_point = util.convert_wkt_to_geojson(site['wkt'])
         sites_gj.append({
             'type': 'Feature',
@@ -774,7 +779,7 @@ def get_mineral_sites(request):
     if params['format'] == 'shp':
         return util.downloadShapefile(
             {'features': sites_gj},
-            shp_name=f'StatMAGIC_{params["commodity"]}_{params["deposit_type"]}_{dt.now().date()}'
+            shp_name=f'StatMAGIC_{params["commodity"]}_{dt.now().date()}'
         )
     
     return response

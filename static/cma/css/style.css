@@ -1961,6 +1961,7 @@ select#sites_display_select {
 
 .cmamodelrun tbody td {
     font-size: 0.9rem;
+    padding: 3px 6px;
     
 }
 .header.topbar.toptop {

@@ -1449,12 +1449,7 @@ function loadMineralSites() {
         AJAX_GET_MINERAL_SITES.abort();
     }
     
-    // Show loading spinner
-    $('.loading_sites').show();
-    
-    // Temporarily disable the "load sites" button
-    $('#load_sites_button').addClass('disabled');
-    $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
+    setLoadingLoadSitesButton();
     
     var rank = [];
     $('.dedup_chk.rank:checked').each(function(i,chk) {
@@ -1492,20 +1487,40 @@ function loadMineralSites() {
             // Update query results n
             $('#mineral_sites_n_results').html(response.mineral_sites.length);
             $('.mineral_sites_download_link').show();
-            $('.loading_sites').hide();
             
-            $('#load_sites_button').removeClass('disabled');
-            $('#load_sites_button').html('Load sites');
+            enableLoadSitesButton();
             
         },
         error: function(response) {
             console.log(response);
-            $('.loading_sites').hide();
-            $('#load_sites_button').removeClass('disabled');
-            $('#load_sites_button').html('Load sites');
+            enableLoadSitesButton();
         }
     });
     
+}
+
+function setLoadingLoadSitesButton() {
+    // Show loading spinner
+    $('.loading_sites').show();
+    
+    // Temporarily disable the "load sites" button
+    setLoadingButton('load_sites_button');
+}
+
+function enableLoadSitesButton(btn_id,label) {
+    $('.loading_sites').hide();
+    resetButton('load_sites_button','Load sites');
+}
+
+function setLoadingButton(btn_id) {
+    $(`#${btn_id}`).addClass('disabled');
+    $(`#${btn_id}`).html("loading <div class='loading_spinner'></div>");
+    
+}
+
+function resetButton(btn_id,label) {
+    $(`#${btn_id}`).removeClass('disabled');
+    $(`#${btn_id}`).html(label);
 }
 
 function downloadMineralSites() {
@@ -1516,12 +1531,7 @@ function downloadMineralSites() {
         AJAX_GET_MINERAL_SITES.abort();
     }
     
-    // Show loading spinner
-    $('.loading_sites').show();
-    
-    // Temporarily disable the "load sites" button
-    $('#load_sites_button').addClass('disabled');
-    $('#load_sites_button').html("loading <div class='loading_spinner'></div>");
+   setLoadingLoadSitesButton();
     
     var data = {
         deposit_site: $('#deposit_type').val(),
@@ -1540,10 +1550,12 @@ function downloadMineralSites() {
             a = document.createElement('a');
             a.href = window.URL.createObjectURL(xhttp.response);
             // Give filename you wish to download
-            a.download = `statmagic_${data.commodity}_${data.deposit_site}_${getDateAsYYYYMMDD()}_shp.zip`;
+            a.download = `StatMAGIC_${data.commodity}_${getDateAsYYYYMMDD(null,true)}_shp.zip`;
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
+            
+            enableLoadSitesButton();
         }
     };
     // Post data to URL which handles post request
@@ -1641,13 +1653,14 @@ function loadMineralSitesToMap() {
             var msids = maybeArrToStr(prop.mineral_site_ids);
             
 //             var source_id = prop.mineral_site_ids.split('__')[0];
-//             var record_id = prop.mineral_site_ids.split('__')[1];
+            var record_id = prop.mineral_site_ids.split('__').slice(-1)[0];
             
             layer.bindPopup(popup);
             
-//             if (source_id.indexOf('mrdata') > -1) {
-//                 src = `${source_id}/show-mrds.php?dep_id=${record_id}`;
-//             }
+            if (prop.mineral_site_ids.indexOf('mrdata') > -1) {
+                src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`;
+            //https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}
+            }
         
             var commdts = getCommodityAndDTsFromSite(prop);
             
@@ -1664,12 +1677,12 @@ function loadMineralSitesToMap() {
                 <br>
                 <span class='label'>Rank:</span> <b>${maybeArrToStr(prop.rank)}</b>
                 <br>
-                <span class='label'>Source:</span> <b><a href='${src}' target='_blank'>${msids}</a></b>
+                <span class='label'>Source(s):</span> <b><a href='${src}' target='_blank'>${src}</a></b>
         
                 <br><br>
-                <span class='label'>Minerals:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+                <span class='label'>Commodity:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
                 <br><br>
-                <span class='label'>Deposit type candidates:</span> ${dtcs_html}
+                <span class='label'>Deposit type:</span> ${dtcs_html}
 
                 
             `);
@@ -1720,14 +1733,17 @@ function loadMineralSitesToMap() {
         });
     });
     
-    var opts = '<option value="site_type" selected>Site type</option>';
+    var opts = `
+        <option value="site_type" selected>Site type</option>
+        <option value="top1_deposit_classification_confidence">Primary dep. type conf.</option>
+    `;
     
     $.each(all_opts.commodities.sort(), function(i,m) {
         if (!m) {return;}
         opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
     });
     $.each(all_opts.dtcs.sort(), function(i,d) {
-        opts += `<option value='deposit_type__${d}'>dep. type cand.: ${d}</option>`;
+        opts += `<option value='deposit_type__${d}'>Prim. deposit type: ${d}</option>`;
     });
     
     // Show the "display by" selector <- only needed if 'display by' dropdown is moved under the KNOWN DEPOSIT SITES filter form
@@ -1802,18 +1818,39 @@ function onMineralSitesDisplayByChange() {
         }  
     };
     
+    // Map of confidence to style
+    var confidence_colormap = [
+        {thresh: 0, color: '#fff'},
+        {thresh: .1, color: '#f7fcf5'},
+        {thresh: .2, color: '#e5f5e0'},
+        {thresh: .3, color: '#c7e9c0'},
+        {thresh: .4, color: '#a1d99b'},
+        {thresh: .5, color: '#74c476'},
+        {thresh: .6, color: '#41ab5d'},
+        {thresh: .7, color: '#238b45'},
+        {thresh: .8, color: '#006d2c'},
+        {thresh: .9, color: '#00441b'},
+    ];
+    
     MINERAL_SITES_LAYER.eachLayer(function(flayer) {
         prop = flayer.feature.properties;
         var fillColor = fillColor_default;
         var fillOpacity = fillOpacity_default;
+
         if (display_by == 'site_type') {
             
-            // Update marker style
-            if (site_types[prop.type]) {
-                fillColor = site_types[prop.type].color;
+            // If type is an array, just take the 1st
+            var ptype = prop.type;
+            if (ptype.indexOf('[') > -1) {
+                ptype = JSON.parse(ptype)[0];
+            }
+            if (site_types[ptype]) {
+                fillColor = site_types[ptype].color;
             } else {
+//                 ptype = JSON.parse(prop.type);
+//                 fillColor = site_types[ptype].color;
                 if (prop.type) {
-//                     console.log('***new site type!',prop.type);
+                    console.log('***new site type!',prop.type);
                 }
                 fillColor = '#fb9a99';
             }
@@ -1822,6 +1859,21 @@ function onMineralSitesDisplayByChange() {
                 fillOpacity: 0.9,
                 weight: strokeWeight_default,
             });
+        } else if (display_by == 'top1_deposit_classification_confidence') {
+            var conf = Number(prop.top1_deposit_classification_confidence);
+            var fillColor = '#fff';
+            $.each(confidence_colormap, function(i,cm) {
+                if (conf >= cm.thresh) {
+                    fillColor = cm.color;
+                }
+            });
+            
+            flayer.setStyle({
+                fillColor: fillColor,
+                fillOpacity: 0.8,
+                weight: strokeWeight_default,
+            });
+        
         } else {
             var strokeWeight = 0.2;
             var display_cat = display_by.split('__')[0];
@@ -1859,6 +1911,10 @@ function onMineralSitesDisplayByChange() {
     if (display_by == 'site_type') {
         $.each(site_types, function(label,obj) {
             lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${label}</div>`;
+        });
+    } else if (display_by == 'top1_deposit_classification_confidence') {
+        $.each(confidence_colormap, function(i,obj) {
+            lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${obj.thresh.toFixed(1)}</div>`;
         });
     } else {
         lhtml = `
@@ -2655,12 +2711,15 @@ function zeroPad(num, places) {
     return Array(+(zero > 0 && zero)).join("0") + num;
 }
 
-function getDateAsYYYYMMDD(dt) {
+function getDateAsYYYYMMDD(dt,hhmm) {
     dt = dt || new Date();
-    return dt.getFullYear() + '-' + 
-        zeroPad(dt.getMonth()+1,2) + '-' + 
-        zeroPad(dt.getDate(),2);
+    var dtstr = `${dt.getFullYear()}-${zeroPad(dt.getMonth()+1,2)}-${zeroPad(dt.getDate(),2)}`;
+    if (hhmm) {
+        dtstr += `_${zeroPad(dt.getHours(),2)}${zeroPad(dt.getMinutes(),2)}`;
+    }
+    return dtstr;
 }
+
 function cleanTimestamp(ts) {
     return `
         <span class='date'>${ts.slice(0,10)}</span>
@@ -2819,6 +2878,7 @@ function uploadDataLayer() {
     if (AJAX_UPLOAD_SHAPEFILE) {
         AJAX_UPLOAD_SHAPEFILE.abort();
     }
+    setLoadingButton('submit_upload_datalayer_button');
 //     AUDIO.submit.play();
     AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_datalayer', {
         processData: false,
@@ -2840,7 +2900,6 @@ function uploadDataLayer() {
             var table = $('#user_upload_layers_table');
             addRowToDataLayersTable(table,dl);
             
-            
             // Reset upload form
             updateSHPlabel(
                 null,
@@ -2853,10 +2912,13 @@ function uploadDataLayer() {
             e.wrap('<form>').closest('form').get(0).reset();
             e.unwrap();
             
+            resetButton('submit_upload_datalayer_button','Submit');
+            
         },
         error: function(response) {
             console.log(response);
 //             AUDIO.error.play();
+            resetButton('submit_upload_datalayer_button');
             alert(response.responseText);
 //             $('.submission_opts').show();
 //             $('#burn_id_filter').show();
