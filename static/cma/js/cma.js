@@ -678,10 +678,11 @@ function loadCMA(cma_id) {
      // Load known deposit sites
      loadMineralSites();
      
-     // NOTE: vvv this is now done at the end of the loadModelRuns process b/c
-     //       there is now a check for unsync'd layers from CDR here.
+     // NOTE: vvv inititally load outputs; then check for others via "sync
 //      Load outputs
-//      loadModelOutputs(cma_id);
+      loadModelOutputs(cma_id);
+      
+      syncModelOutputs(cma_id);
     
 }
 
@@ -743,9 +744,35 @@ function loadModelRuns(cma_id) {
 //         $('#model_runs_table tbody').html('');
 //         return;
 //     }
+//     setLoadingButton('load_model_run');
     
     $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
     $.ajax(`/get_model_runs`, {
+        data: {
+            cma_id: cma_id,
+//             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
+        },
+        success: function(response) {
+            console.log(response);
+            
+            // Load outputs
+            loadModelOutputs(cma_id);
+            
+            processModelRunsFromCDR(response.model_runs);
+            
+//             resetButton('load_model_run','Load model run');
+        },
+        error: function(response) {
+            console.log(response);
+//             resetButton('load_model_run','Load model run');
+        }
+    });
+}
+
+
+function syncModelOutputs(cma_id) {
+
+    $.ajax(`/sync_model_outputs`, {
         data: {
             cma_id: cma_id,
 //             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
@@ -770,10 +797,6 @@ function loadModelRuns(cma_id) {
                 }
             });
             
-            // Load outputs
-            loadModelOutputs(cma_id);
-            
-            processModelRunsFromCDR(response.model_runs);
         },
         error: function(response) {
             console.log(response);

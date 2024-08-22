@@ -632,6 +632,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
             },
         )
         if created:
+            print('\tcreated!')
             dsids.append(dl.data_source_id)
         #else:
         #    print('NONTIF:',ds)
@@ -685,6 +686,7 @@ def get_datalayers_for_gui(data_source_ids=[]):
     if data_source_ids:
         filters['data_source_id__in'] = data_source_ids
     
+    print(filters)
     for Obj in (models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
                 'category','subcategory','name'
