@@ -301,10 +301,19 @@ def get_model_runs_for_cma(request):
     for mr in cdr.get_model_runs(params['cma_id']):
         mrs.append(mr['model_run_id'])
         
+        
+    # While we're at it, check CDR and sync any outputs not yet present
+    dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
+        cma_id = params['cma_id']
+    )
+    
+    dls = util.get_datalayers_for_gui()
+    
     response = HttpResponse(
         json.dumps({
             'params': params,
             'model_runs': mrs,
+            'DATALAYERS_LOOKUP_UPDATES': json.dumps(dls['datalayers_lookup']),
         })
     )
     response['Content-Type'] = 'application/json'
@@ -328,15 +337,19 @@ def get_model_runs(request):
     model_runs = {}
     for mr in cdr.get_model_runs(params['cma_id']):
         model_runs[mr['model_run_id']] = cdr.get_model_run(mr['model_run_id'])
+        
+    # While we're at it, check CDR and sync any outputs not yet present
+    dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
+        cma_id = params['cma_id']
+    )
     
-   #model_runs = {}
-    #for mrid in mr:#params['model_runs'].split(','):
-        #model_runs[mrid] = cdr.get_model_run(mrid)
+    dls = util.get_datalayers_for_gui(data_source_ids = dsids)
     
     response = HttpResponse(
         json.dumps({
             'params': params,
             'model_runs': model_runs,
+            'DATALAYERS_LOOKUP_UPDATES': dls['datalayers_lookup'],
         })
     )
     response['Content-Type'] = 'application/json'

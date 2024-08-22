@@ -17,6 +17,7 @@ from django.core.exceptions import BadRequest
 from django.http import HttpResponse
 from django.db import connection
 from . import models
+from . import mapfile
 from shapely import geometry, wkt
 from shapely.geometry import mapping
 import rasterio as rio
@@ -567,6 +568,7 @@ def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
 def sync_cdr_prospectivity_outputs_to_outputlayer(
         layer_id=None,
         cma_id=None,
+        sync_remote_to_local=True, # <- downloads files to local disk to speed rendering
     ):
     '''
     data_source_id: (optional) filter by data source ID if needed
@@ -578,7 +580,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
 
     #print(json.dumps(res[0],indent=4))
     #blerg
-    
+    dsids = []
     for i,ds in enumerate(res):
         #print('here')
         if layer_id and ds['layer_id'] != layer_id:
@@ -590,14 +592,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
         
         if cma_id and ds['cma_id'] != cma_id:
             continue
-        
-#            ds = r#['data_source']
 
-            #print(r)
-            #blerg
-
-        #name = ds['description'].replace(' ','_').replace('-','_').replace('(','').replace(')','')
-        #name = ds['layer_id']
         print(i, 'get/creating:',ds['layer_id'])
         #continue
         stats_minimum = None
@@ -636,16 +631,59 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
                 'stats_maximum': stats_maximum,
             },
         )
+        if created:
+            dsids.append(dl.data_source_id)
         #else:
         #    print('NONTIF:',ds)
+        
+    if len(dsids) > 0:
+        print('New output layers; processing...')
+        if sync_remote_to_local:
+            sync_remote_outputs_to_local()
+            
+        # Finally, rewrite mapfile
+        print('Rewriting mapfile')
+        mapfile.write_mapfile()
+    
+    return dsids
+            
+            
+def getOutputLayers():
+    return models.OutputLayer.objects.all().order_by('category','subcategory','name')
+
+
+def sync_remote_outputs_to_local():
+    dd = f'/net/vm-apps2{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+
+    # for datalayer in dm_util.getDataLayers():
+    for datalayer in getOutputLayers():
+        #print(datalayer.download_url)
+
+        ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
+
+        if not os.path.exists(ofile):
+            print('syncing to local:',datalayer.download_url)
+            bn = os.path.basename(datalayer.download_url)
+            with requests.get(datalayer.download_url) as r:
+                with open(ofile,'wb') as f:
+                    #print(r.content)
+                    f.write(r.content)
+
+            # Compress and add overviews
+            temp_tif = 'temp_compress.tif'
+            cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'
+            os.system(cmd)
+            shutil.move(temp_tif, ofile)
+
+            os.system(f'gdaladdo {ofile} 2 4 8 16')
 
     
-def get_datalayers_for_gui(data_source_id=None):
+def get_datalayers_for_gui(data_source_ids=[]):
     datalayers = {'User uploads':{}} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
     filters = {'disabled': False}
-    if data_source_id:
-        filters['data_source_id'] = data_source_id
+    if data_source_ids:
+        filters['data_source_id__in'] = data_source_ids
     
     for Obj in (models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
@@ -851,6 +889,7 @@ def get_cache_key(prefix,params,exclude_params=[]):
             k.append(v)
     
     return '|'.join(k)
+
 
 def downloadShapefile(FeatureCollection, shp_name='test5'):
     '''

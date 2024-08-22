@@ -678,12 +678,18 @@ function loadCMA(cma_id) {
      // Load known deposit sites
      loadMineralSites();
      
-     // Load outputs
-     loadModelOutputs(cma_id);
+     // NOTE: vvv this is now done at the end of the loadModelRuns process b/c
+     //       there is now a check for unsync'd layers from CDR here.
+//      Load outputs
+//      loadModelOutputs(cma_id);
     
 }
 
 function loadModelOutputs(cma_id,model_run_id) {
+    
+    // Check for outputs that are not sync'ed to the GUI yet
+    // PUT THIS IN LOADMOELRUNS
+    
     var table = $('#model_outputs_table');
     table.empty();
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
@@ -746,9 +752,28 @@ function loadModelRuns(cma_id) {
         },
         success: function(response) {
             console.log(response);
+            
+            // Update DATALAYERS_LOOKUP
+            $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
+                if (!DATALAYERS_LOOKUP[dsid]) {
+                    DATALAYERS_LOOKUP[dsid] = dl;
+                    
+                    // Create WMS map layer so it can be loaded to map
+                    createMapLayer(dl.data_source_id,dl)
+                    
+                    // Add layer lookup 
+                    DATALAYERS_LOOKUP[dl.data_source_id] = dl;
+                    
+                    // Add the layer to the layer list
+                    var table = $('#model_outputs_table');
+                    addRowToDataLayersTable(table,dl);
+                }
+            });
+            
+            // Load outputs
+            loadModelOutputs(cma_id);
+            
             processModelRunsFromCDR(response.model_runs);
-            
-            
         },
         error: function(response) {
             console.log(response);
@@ -1509,7 +1534,7 @@ function setLoadingLoadSitesButton() {
 
 function enableLoadSitesButton(btn_id,label) {
     $('.loading_sites').hide();
-    resetButton('load_sites_button','Load sites');
+    resetButton('load_sites_button','Load/refresh sites');
 }
 
 function setLoadingButton(btn_id) {
@@ -1972,7 +1997,7 @@ function createMineralSitesControl() {
                     </tr>
                     <tr>
                         <td colspan=2>
-                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load sites</div>
+                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load/refresh sites</div>
                         </td>
                     </tr>
                 </table>
