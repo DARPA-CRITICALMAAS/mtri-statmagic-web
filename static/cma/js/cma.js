@@ -1706,7 +1706,7 @@ function loadMineralSitesToMap() {
             layer.bindPopup(popup);
             
             if (prop.mineral_site_ids.indexOf('mrdata') > -1) {
-                src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`;
+                src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`.replaceAll('"','').replaceAll(']');
             //https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}
             }
         
@@ -1725,7 +1725,7 @@ function loadMineralSitesToMap() {
                 <br>
                 <span class='label'>Rank:</span> <b>${maybeArrToStr(prop.rank)}</b>
                 <br>
-                <span class='label'>Source(s):</span> <b><a href='${src}' target='_blank'>${src}</a></b>
+                <span class='label'>Source(s):</span> <b><a href='${src}' target='_blank'>${prop.mineral_site_ids}</a></b>
         
                 <br><br>
                 <span class='label'>Commodity:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
