@@ -1980,6 +1980,20 @@ select#sites_display_select {
     margin-right: 6px;
     
 }
+
+#show_sites .modal {
+    width: 90%;
+    height: 90%;
+    top: 2.5%;
+    left: 2.5%;
+}
+
+#sites_table tbody td {
+    overflow-x: hidden;
+    max-width: 100px;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

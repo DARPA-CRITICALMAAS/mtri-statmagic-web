@@ -258,7 +258,7 @@ def upload_datalayer(request):
     mapfile.write_mapfile()
     
     # Send layer entry to GUI 
-    dl = util.get_datalayers_for_gui(data_source_id=dsid)['datalayers_lookup']
+    dl = util.get_datalayers_for_gui(data_source_ids=[dsid])['datalayers_lookup']
     
     print(dsid,dl)
     

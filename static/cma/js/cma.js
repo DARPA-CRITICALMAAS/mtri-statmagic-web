@@ -1529,6 +1529,9 @@ function loadMineralSites() {
             // Add points to map
             loadMineralSitesToMap();
             
+            // Load mineral sites to table
+            loadMineralSitesToTable();
+            
             // Remove 'clear sites' button disabled class
             $('#clear_sites_button').removeClass('disabled');
             
@@ -1557,7 +1560,7 @@ function setLoadingLoadSitesButton() {
 
 function enableLoadSitesButton(btn_id,label) {
     $('.loading_sites').hide();
-    resetButton('load_sites_button','Load/refresh sites');
+    resetButton('load_sites_button','Load/refresh');
 }
 
 function setLoadingButton(btn_id) {
@@ -1667,7 +1670,33 @@ function getCommodityAndDTsFromSite(site_prop) {
 }
 
 function maybeArrToStr(n) {
+    if (!n) {return '';}
     return n.indexOf('[') > -1 ? JSON.parse(n) : n;
+}
+
+function loadMineralSitesToTable() {
+
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,mobj) {
+        var m  = mobj.properties;
+        tr = `
+        <tr>
+            <td>${m.id}</td>
+            <td>${maybeArrToStr(m.names)}</td>
+            <td>${m.commodity}</td>
+            <td>${maybeArrToStr(m.type)}</td>
+            <td>${maybeArrToStr(m.mineral_site_ids)}</td>
+            <td>${m.top1_deposit_type}</td>
+            <td>${m.top1_deposit_group}</td>
+            <td>${m.top1_deposit_environment}</td>
+            <td>${m.top1_deposit_classification_confidence}</td>
+            <td>${m.top1_deposit_classification_source}</td>
+        </tr>
+        `;
+        
+        $('#sites_table tbody').append(tr);
+        
+    });
+        
 }
 
 function loadMineralSitesToMap() {
@@ -2020,7 +2049,7 @@ function createMineralSitesControl() {
                     </tr>
                     <tr>
                         <td colspan=2>
-                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load/refresh sites</div>
+                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
                         </td>
                     </tr>
                 </table>

@@ -901,21 +901,21 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
     # map of fields to be truncated b/c the way shapefile does this
     # automatically kind of sucks
     trunc_fields = {
-        'burnedarea_id': 'id',
-        'consumption_mg': 'cons_mg',
-        'fuel_available_total_mg': 'fuel_mg',
-        'heat_release_smoldering_kbtu': 'hr_s_kbtu',
-        'heat_release_residual_kbtu': 'hr_r_kbtu',
-        'heat_release_flaming_kbtu': 'hr_f_kbtu',
-        'heat_release_total_kbtu': 'hr_t_kbtu',
-        'fuel_moisture_1000hr_pct': 'fm_1khr_pc',
-        'fuel_moisture_litter_pct': 'fm_litt_pc',
-        'fuel_moisture_duff_pct': 'fm_duff_pc',
+        'mineral_sites_ids': 'minsiteids',
+        'tonnage_unit': 'tonn_unit',
+        'top1_deposit_type': 't1_deptype',
+        'top1_deposit_group': 't1_depgrp',
+        'top1_deposit_environment': 't1_depenv',
+        'top1_deposit_classification_confidence': 't1_depconf',
+        'top1_deposit_classification_source': 't1_depsrc',
+        'centroid_epsg_4326': 'cntrd_4326',
+        'contained_metal': 'cont_metal',
+        'contained_metal_unit': 'cont_mt_un'
     }
 
     shp_tempfile = os.path.join('/tmp', '{}.shp'.format(shp_name))
 
-    # "4" = ESRI Shapefil
+    # "4" = ESRI Shapefile
     #driver = ogr.GetDriver(6)
     driver = ogr.GetDriverByName('ESRI Shapefile')
 
@@ -957,6 +957,7 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
 
 
         # Now add data
+        print(len(data))
         for row in data:
             feature = ogr.Feature(layer.GetLayerDefn())
             for p, v in row['properties'].items():
@@ -975,10 +976,16 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
                     #tmp2 = str(p2)
                     #tmp3 = [feature.GetField(x) for x in range(len(fields))]
                     #blerg
-
-            poly = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
-            feature.SetGeometry(poly)
-            layer.CreateFeature(feature)
+            if row['geometry']['type'] == 'GeometryCollection':
+                for point in row['geometry']['geometries']:
+                    point = ogr.CreateGeometryFromJson(json.dumps(point))
+                    feature.SetGeometry(point)
+                    layer.CreateFeature(feature)
+                    
+            else:
+                point = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
+                feature.SetGeometry(point)
+                layer.CreateFeature(feature)
 
             feature = None
             poly = None
