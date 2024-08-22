@@ -1,0 +1,31 @@
+{% load static %}
+<div id='show_sites' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#show_sites').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='parameters_form_title'>Known deposit sites</span></b></div>
+        <div class='content'>
+            <table class='model_parameters_table cmamodelrun' id='sites_table'>
+                <thead>
+                    <td>ID</td>
+                    <td>Names</td>
+                    <td>Commodity</td>
+                    <td>Type</td>
+                    <td>Mineral site IDs</td>
+                    <td>Primary dep. type</td>
+                    <td>Primary dep. group</td>
+                    <td>Primary dep. env.</td>
+                    <td>Primary dep. conf.</td>
+                    <td>Primary dep. source</td>
+
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

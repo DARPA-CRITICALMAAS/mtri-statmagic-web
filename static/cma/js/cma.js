@@ -1007,7 +1007,7 @@ function createLayerControl() {
     var images2 = {Layers:{}};
     
 
-    
+    TA1_SYSTEMS = {};
     $.each(TA1_SYSTEMS,function(system, versions) {
         $.each(versions, function(i,version) {
             // Create a popup 
