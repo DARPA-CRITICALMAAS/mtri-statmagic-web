@@ -1359,7 +1359,7 @@ function getWMSLayer(
     
     var data = {
         layers: wms_layer_name,
-        map: '/var/www/mapfiles/statmagic.map',
+        map: '/var/www/mapfiles2/statmagic.map',
         format: 'image/png',
         crs: L.CRS.EPSG4269,
         transparent: true,

@@ -43,7 +43,7 @@ def write_mapfile(
     
     projection = 'AUTO'
     
-    mapfile_production_dir = '/net/{}/var/www/mapfiles'.format(settings.MAPSERVER_SERVER)
+    mapfile_production_dir = '/net/{}/var/www/mapfiles2'.format(settings.MAPSERVER_SERVER)
     mapfile_name = os.path.join(mapfile_production_dir, mapfile_filename)
     mapfile_path = mapfile_name.replace(
         '/net/{}'.format(settings.MAPSERVER_SERVER),
