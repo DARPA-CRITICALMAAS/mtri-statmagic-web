@@ -1,7 +1,8 @@
 // Interactive JS code for the CMA viewer/modeler
 // const WMS_URL = `http://${MAPSERVER_SERVER}.mtri.org/cgi-bin/mapserv?`;
-const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
-const MAPFILE = '/var/www/mapfiles/statmagic.map';
+// const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
+const WMS_URL = `http://per440c.mtri.org/cgi-bin/mapserv/wms?`;
+const MAPFILE = '/var/www/mapfiles2/statmagic.map';
 var COMMODITIES;
 const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
