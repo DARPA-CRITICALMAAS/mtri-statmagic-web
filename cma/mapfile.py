@@ -133,7 +133,7 @@ def write_mapfile(
             td = None
             tif_path2 = tif_path
             if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
-                tif_path2 = f'/net/vm-apps2/{tif_path}'
+                tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
             if ' ' in tif_path:
                 #print(r['download_url'])
                 td = tempfile.TemporaryDirectory()
@@ -164,8 +164,8 @@ def write_mapfile(
         # This just needs to be an approximation for setting templates
         if r['spatial_resolution_m'] is None:
             tif_path2 = tif_path
-            if 'cdr' not in tif_path and 'vm-apps2' not in tif_path:
-                tif_path2 = f'/net/vm-apps2/{tif_path}'
+            if 'cdr' not in tif_path and util.settings.MAPSERVER_SERVER not in tif_path:
+                tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
 
             xres = util.get_tif_resolution(tif_path2)
             

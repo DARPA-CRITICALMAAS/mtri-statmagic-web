@@ -3,7 +3,7 @@ import dm_util
 
 
 dd = '/home/mgbillmi/PROCESSING/statmagic_datalayer_download/'
-dd = f'/net/vm-apps2{dm_util.util.settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+dd = f'/net/{dm_util.util.settings.MAPSERVER_SERVER}{dm_util.util.settings.TILESERVER_LOCAL_SYNC_FOLDER}'
 
 # for datalayer in dm_util.getDataLayers():
 for datalayer in dm_util.getOutputLayers():
