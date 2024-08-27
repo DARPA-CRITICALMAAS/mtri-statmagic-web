@@ -1552,7 +1552,6 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
 }
 .parameters_form .close-top {
     top: -4px;
-    
 }
 
 .parameters_form .button {
@@ -1992,6 +1991,12 @@ select#sites_display_select {
     overflow-x: hidden;
     max-width: 100px;
     
+}
+
+.close-top.layer_legend_close {
+    top: -4px;
+    right:-8px;
+    background-color: transparent;
 }
 
 @keyframes spin {

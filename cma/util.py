@@ -654,7 +654,7 @@ def getOutputLayers():
 
 
 def sync_remote_outputs_to_local():
-    dd = f'/net/vm-apps2{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+    dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
 
     # for datalayer in dm_util.getDataLayers():
     for datalayer in getOutputLayers():

@@ -1,8 +1,19 @@
 // Interactive JS code for the CMA viewer/modeler
-// const WMS_URL = `http://${MAPSERVER_SERVER}.mtri.org/cgi-bin/mapserv?`;
-// const WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
-const WMS_URL = `http://per440c.mtri.org/cgi-bin/mapserv/wms?`;
-const MAPFILE = '/var/www/mapfiles2/statmagic.map';
+
+var WMS_URL;
+var MAPFILE;
+
+if (MAPSERVER_SERVER == 'vm-apps2') {
+    console.log(MAPSERVER_SERVER);
+    WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
+    MAPFILE = '/var/www/mapfiles/statmagic.map';
+}
+
+
+if (MAPSERVER_SERVER == 'per440c') {
+    WMS_URL = `http://opg.mtri.org/mapserver_opg/wms?`;
+    MAPFILE = '/var/www/mapfiles2/statmagic.map';
+}
 var COMMODITIES;
 const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
@@ -2224,6 +2235,11 @@ function showDataLayerInfo(layer_name,model_output) {
     $('#datalayer_info').show();
 }
 
+function hideLayer(cmp_id) {
+    $(`tr[data-path='${cmp_id}'] td.show_chk input`).trigger('click');
+    
+}
+
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
@@ -2249,6 +2265,12 @@ function onToggleLayerClick(target,layer_name) {
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
                 ${datalayer.name_pretty}
+                <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name_scrubbed}')">
+                    <img class="close-top-img" height=24 
+                        src="/static/cma/img/close-dark.png" 
+                        onmouseover="this.src='/static/cma/img/close-light.png'"
+                        onmouseout="this.src='/static/cma/img/close-dark.png'">
+                </div>
                 <table>
                     <tr>
                         <td>${lmin.toPrecision(precision)}</td>

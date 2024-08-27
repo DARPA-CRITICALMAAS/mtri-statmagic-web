@@ -43,7 +43,9 @@ def write_mapfile(
     
     projection = 'AUTO'
     
-    mapfile_production_dir = '/net/{}/var/www/mapfiles2'.format(settings.MAPSERVER_SERVER)
+    mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
+    
+    mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/var/www/mapfiles{mfmod}'
     mapfile_name = os.path.join(mapfile_production_dir, mapfile_filename)
     mapfile_path = mapfile_name.replace(
         '/net/{}'.format(settings.MAPSERVER_SERVER),
