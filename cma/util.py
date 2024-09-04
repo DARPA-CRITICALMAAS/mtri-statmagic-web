@@ -126,6 +126,12 @@ def convertVectorToGeoJSONresponse(vector_filepath,params):
     
 
 def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
+    '''
+    geometry :  (dict) geojson dict
+    s_srs :     (int) spatial reference system (PostGIS ID) of the geojson geom
+    t_srs:      (int) spatial reference system (PostGIS ID) to transform to
+        
+    '''
     simplify = 0.002 if t_srs == 4326 else 200
     sql = f'''
         SELECT ST_AsGeoJSON(
@@ -146,6 +152,9 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     precision = 4
     if int(t_srs) == 102008:
         precision = 0
+
+    print(sql[:])
+    #blerg
 
     return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
     #return json.loads(runSQL(sql)[0])
@@ -480,6 +489,16 @@ def runSQL(sql):
         
     return res
         
+        
+def get_tif_srs(ds):
+    '''
+    ds : Python gdal dataset object (i.e. what you get from: ds = gdal.Open(tif_path))
+    '''
+    prj = ds.GetProjection()
+    srs = osr.SpatialReference(prj.title())
+    
+    return srs
+
 def get_tif_resolution(tif_path):
     td = None
     if ' ' in tif_path:
@@ -493,10 +512,11 @@ def get_tif_resolution(tif_path):
     
    # ds = gdal.Open(tif_path)
     _, xres, _, _, _, yres  = ds.GetGeoTransform()
-    prj = ds.GetProjection()
-    srs = osr.SpatialReference(prj.title())
+    srs = get_tif_srs(ds)
+    #prj = ds.GetProjection()
+    #srs = osr.SpatialReference(prj.title())
     units = srs.GetLinearUnitsName()
-    #print(tif_path, units, xres)
+
     # If units are in degrees, do a rough approximation of
     # resolution in meters w/ assumption that 1 degree ~= 100km
     # Some projections appear incorrectly set too, so if resolution is
@@ -704,7 +724,14 @@ def get_datalayers_for_gui(data_source_ids=[]):
                 data['publication_date'] = str(data['publication_date'])[:-9]
             name_pretty = d.name
             if d.name_alt:
-                name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1] 
+                name_pretty = d.name_alt if ': ' not in d.name_alt else d.name_alt.split(': ')[1]
+            if data['extent_geom'] is not None and data['extent_geom'].empty:
+                data['extent_geom'] = None
+            if data['extent_geom']:
+          
+                data['extent_geom'] = data['extent_geom'].json
+    
+            #print(data['extent_geom'], data['extent_geom'])
             data['name_pretty'] = name_pretty
             datalayers[cat][subcat].append(data)
             datalayers_lookup[d.data_source_id] = data
@@ -1006,3 +1033,112 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
     response['Content-Disposition'] = 'attachment; filename="{}.zip"'.format(shp_name)
     
     return response
+
+def get_extent_geom_of_raster(ds):
+    '''
+    ds : (obj) return of gdal.Open(tif_path)
+    
+    returns : (dict) geojson spec
+    
+    '''
+
+    # Open raster, pull out metadata and data
+   # ds = gdal.Open(tif)
+
+    band1 = ds.GetRasterBand(1)
+    rows = ds.RasterYSize
+    cols = ds.RasterXSize
+    gt = ds.GetGeoTransform()
+    nodata = band1.GetNoDataValue()
+    srs = get_tif_srs(ds)
+    
+    # If no SRS, just send back a polygon w/ the extent
+    #if not srs.GetAuthorityCode(None):
+    minx = gt[0]
+    maxy = gt[3]
+    maxx = minx + gt[1] * ds.RasterXSize
+    miny = maxy + gt[5] * ds.RasterYSize
+    #print [minx, miny, maxx, maxy]
+
+    del ds
+    
+    geom = ogr.CreateGeometryFromJson(json.dumps({
+        'type': 'Polygon',
+        'coordinates': [[
+            [minx,miny],
+            [minx,maxy],
+            [maxx,maxy],
+            [maxx,miny],
+            [minx,miny]
+        ]]
+    }))
+    t_srs = osr.SpatialReference()
+    t_srs.ImportFromEPSG(4326)
+    transform = osr.CoordinateTransformation(
+        srs,
+        t_srs
+    )
+    geom.Transform(transform)
+    
+    return json.loads(geom.ExportToJson())
+
+    # NOTE: The code below was trying to create an extent for the raster that
+    #       delineated the boundary of non-nodata pixels. This works okay for 
+    #       some data layers, but for many, the process either (a) failed, or 
+    #       (b) took 24 hours+ to process. So that's why we're defaulting to
+    #       just showing the BBOX only as coded above.
+
+    #arr = band1.ReadAsArray(0, 0, cols, rows)
+
+    ## Create in-memory version that is reclassified to binary
+    #driver = gdal.GetDriverByName('MEM')
+    #ds_reclass = driver.Create('', cols, rows, 1, band1.DataType)
+
+    ## Set metadata on the temp file
+    #ds_reclass.SetGeoTransform(gt)
+    #ds_reclass.SetProjection(ds.GetProjection())
+    #band_reclass = ds_reclass.GetRasterBand(1)
+    #band_reclass.SetNoDataValue(0)
+    #outData = np.copy(arr)
+
+    ## Reclassify so that everything that is not nodata = 1
+    #outData[arr!=nodata] = 1
+    #outData[arr==nodata] = 0
+
+    ## Write reclassed data
+    #band_reclass.WriteArray(outData,0,0)
+    #band_reclass.FlushCache()
+
+    #del ds
+    #del outData
+
+    ## Now convert to vector
+    #drv = ogr.GetDriverByName("Memory")
+    #shp = f'/vsimem/cvshp_{getUniqueID()}.shp'
+    #dst_ds = drv.CreateDataSource(shp)
+    #dst_layer = dst_ds.CreateLayer(shp, srs=srs)
+
+    #gdal.Polygonize(band_reclass,band_reclass, dst_layer, -1)
+
+
+    ## Finally, simplify/transform and convert to geojson
+    ## For these brief visualization extents, set to a pretty coarse simplification
+    ## level: 5km
+    #simplify_prec = 0.05 if srs.GetAuthorityCode(None) in ('4269','4326','3857') else 5000
+
+    #multi = ogr.Geometry(ogr.wkbMultiPolygon)
+    #for feature in dst_layer:
+        #geom = feature.geometry().Simplify(simplify_prec)
+        #multi.AddGeometry(geom)
+
+    #t_srs = osr.SpatialReference()
+    #t_srs.ImportFromEPSG(4326)
+    #transform = osr.CoordinateTransformation(
+        #srs,
+        #t_srs
+    #)
+    #multi.Transform(transform)
+    #multi.FlattenTo2D()
+    #gj = json.loads(multi.UnionCascaded().ExportToJson())
+    
+    #return gj

@@ -1999,6 +1999,11 @@ select#sites_display_select {
     background-color: transparent;
 }
 
+a.site_src_link {
+    font-size: 0.7rem;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

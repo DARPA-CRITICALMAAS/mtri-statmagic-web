@@ -1,7 +1,9 @@
 import codecs, copy, os, sys, tempfile
+import json
 from itertools import chain
 from django.conf import settings
 from django.forms.models import model_to_dict
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from osgeo import gdal, osr
 from . import util
 import numpy as np
@@ -26,6 +28,24 @@ def getCLASS(cmap,attribute='pixel'):
         '''
         for k in sorted(cmap)
     ])
+
+
+def openRaster(tif_path):
+    td = None
+    tif_path2 = tif_path
+    if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
+        tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
+        
+    if ' ' in tif_path:
+        td = tempfile.TemporaryDirectory()
+        url = r['download_url'].replace('/vsicurl_streaming/','')
+        os.system(f'wget -P {td.name} "{url}"')
+        tp = os.path.join(td.name,os.path.basename(tif_path))
+        ds = gdal.Open(tp)
+    else:
+        ds = gdal.Open(tif_path2)
+        
+    return ds
 
 
 def write_mapfile(
@@ -74,7 +94,7 @@ def write_mapfile(
     #########
     # Build rasters dict from database
 
-    datalayers = DataLayer.objects.filter(data_format='tif').order_by('category','subcategory','name')
+    datalayers = DataLayer.objects.filter(data_format='tif',disabled=False).order_by('category','subcategory','name')
     outputlayers = OutputLayer.objects.filter(data_format='tif').order_by('category','subcategory','name')
     datasets = list(chain(datalayers, outputlayers))
     #.values(
@@ -129,31 +149,43 @@ def write_mapfile(
             connection_type = 'CONNECTIONTYPE OGR'
             connection = f'CONNECTION "{r["path"]}"'
 
+        # Retrieve extent_geom if not already loaded
+        if r['extent_geom'] is None:
+            print('getting extent_geom for:',tif_path)
+            
+            ds = openRaster(tif_path)
+            gj = util.get_extent_geom_of_raster(ds)
+
+            if gj:
+                gj = json.dumps(gj)
+                print(gj)
+                geom = GEOSGeometry(gj)
+
+            dataset.extent_geom = geom#GEOSGeometry(gj)
+            dataset.save()
+
         # Retrieve data range if not already loaded
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
             print('extracting stats for:',tif_path)
-            td = None
-            tif_path2 = tif_path
-            if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
-                tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
-            if ' ' in tif_path:
-                #print(r['download_url'])
-                td = tempfile.TemporaryDirectory()
-                url = r['download_url'].replace('/vsicurl_streaming/','')
-                os.system(f'wget -P {td.name} "{url}"')
-                tp = os.path.join(td.name,os.path.basename(tif_path))
-                #print(tp)
-                ds = gdal.Open(tp)
-            else:
-                #print(tif_path)
-                ds = gdal.Open(tif_path2)
-                
-           
+            #td = None
+            #tif_path2 = tif_path
+            #if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
+                #tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
+            #if ' ' in tif_path:
+                #td = tempfile.TemporaryDirectory()
+                #url = r['download_url'].replace('/vsicurl_streaming/','')
+                #os.system(f'wget -P {td.name} "{url}"')
+                #tp = os.path.join(td.name,os.path.basename(tif_path))
+                #ds = gdal.Open(tp)
+            #else:
+                #ds = gdal.Open(tif_path2)
             
+            ds = openRaster(tif_path)
+                
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
             del ds
-            if td:
-                td.cleanup()
+            #if td:
+                #td.cleanup()
             dr = [stats[0],stats[1]]
             dataset.stats_minimum = stats[0]
             dataset.stats_maximum = stats[1]
@@ -179,7 +211,6 @@ def write_mapfile(
             color = colors[i % len(colors)]
             dataset.color = ','.join([str(c) for c in color])
             dataset.save()
-
 
         # Set custom color
         color = dataset.color.replace(',',' ') 

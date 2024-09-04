@@ -1683,7 +1683,7 @@ function getCommodityAndDTsFromSite(site_prop) {
 
 function maybeArrToStr(n) {
     if (!n) {return '';}
-    return n.indexOf('[') > -1 ? JSON.parse(n) : n;
+    return n.indexOf('[') > -1 ? JSON.parse(n) : [n];
 }
 
 function loadMineralSitesToTable() {
@@ -1738,40 +1738,51 @@ function loadMineralSitesToMap() {
                 autoPan: false,
             });
             var prop = feature.properties;//e.layer.feature.properties;      
-            var src = '';
+//             var src = '';
             var msids = maybeArrToStr(prop.mineral_site_ids);
+            var ranks = maybeArrToStr(prop.rank);
+            var types = maybeArrToStr(prop.type);
             
+//             console.log(maybeArrToStr(prop.rank));
 //             var source_id = prop.mineral_site_ids.split('__')[0];
-            var record_id = prop.mineral_site_ids.split('__').slice(-1)[0];
+//             var record_id = prop.mineral_site_ids.split('__').slice(-1)[0];
             
             layer.bindPopup(popup);
             
-            if (prop.mineral_site_ids.indexOf('mrdata') > -1) {
-                src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`.replaceAll('"','').replaceAll(']');
-            //https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}
-            }
+//             if (prop.mineral_site_ids.indexOf('mrdata') > -1) {
+//                 src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`.replaceAll('"','').replaceAll(']');
+//             //https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}
+//             }
         
             var commdts = getCommodityAndDTsFromSite(prop);
             
             var dtcs_html = '';
             $.each(commdts.dtcs_w_conf, function(i,d) {
                 var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
-                dtcs_html += `<div class='emri_keyword'>${d.name} ${conf}</div>`;
+                dtcs_html += `<br>${d.name} ${conf}`;
+            });
+            
+            var src = '';
+            $.each(msids, function(i,msid) {
+                if (msid.indexOf('mrdata') > -1) {
+                    var record_id = msid.split('__').slice(-1)[0];
+                    var type = types[i] ? types[i] : 'NotSpecified';
+                    src += `<br>${types[i]} (${ranks[i]}): <a class='site_src_link' href='https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}' target='_blank'>${msid}</a>`.replaceAll('"','').replaceAll(']');
+                }
+                
             });
             
             popup.setContent(`
-                <b>${maybeArrToStr(prop.names)}</b>
-                <br><br>
-                <span class='label'>Site type:</span> <b>${maybeArrToStr(prop.type)}</b>
-                <br>
-                <span class='label'>Rank:</span> <b>${maybeArrToStr(prop.rank)}</b>
-                <br>
-                <span class='label'>Source(s):</span> <b><a href='${src}' target='_blank'>${prop.mineral_site_ids}</a></b>
-        
+                <b>${maybeArrToStr(prop.names).join(' /<br>')}</b>
                 <br><br>
                 <span class='label'>Commodity:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+                <br>
+                <span class='label'>Primary deposit type:</span> ${dtcs_html}
                 <br><br>
-                <span class='label'>Deposit type:</span> ${dtcs_html}
+                <span class='label'>Source(s):</span><b>${src}</b>
+        
+                <br><br>
+                
 
                 
             `);
@@ -2950,7 +2961,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
         </div>
     `;
     table.append(`
-        <tr data-path="${dl.data_source_id}">
+        <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}")';>
             <td class='name'>${name_pretty}</td>
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${model_output});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
@@ -2960,6 +2971,16 @@ function addRowToDataLayersTable(table, dl, model_output) {
             <td>${radiocube}</td>
         </tr>
     `);
+    
+}
+
+function showLayerExtentPreview(dsid) {
+//     console.log(dsid);
+    var dl = DATALAYERS_LOOKUP[dsid];
+    var extent_geom = dl.extent_geom;
+    console.log(extent_geom);
+    
+    
     
 }
     

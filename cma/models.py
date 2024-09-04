@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.gis.db.models import MultiPolygonField, PolygonField
 from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
@@ -35,6 +36,7 @@ class DisplayLayer(models.Model):
     spatial_resolution_m = models.FloatField(null=True,blank=True)
     color = models.CharField(max_length=20,null=True, blank=True)
     disabled = models.BooleanField(default=False)
+    extent_geom = PolygonField(null=True, blank=True)
 
 class OutputLayer(DisplayLayer):
     class Meta:
