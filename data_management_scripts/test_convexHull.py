@@ -1,13 +1,36 @@
 import json
 
-import osr
-
+import ogr, osr, rasterio, xarray, rioxarray, pyproj
+from shapely.geometry import box
 import dm_util
 from osgeo import gdal, ogr
 import numpy as np
 
+dm_util.util.sync_cdr_prospectivity_datasources_to_datalayer()
+blerg
+
 tif = '/home/mgbillmi/Downloads/3ef30a39eab34cc2a305f7b6771467e6.tif'
 shp = '/vsimem/test_convexhull.geojson'
+
+
+tif = 'https://s3.amazonaws.com/public.cdr.land/prospectivity/inputs/b4050056d38a449fa3d940008e277145.tif'
+
+gj = dm_util.util.get_extent_geom_of_raster(tif)
+print(gj)
+blerg
+
+xds = xarray.open_dataarray(tif)
+#transformer = pyproj.Transformer.from_crs(xds.rio.crs, "EPSG:4326", always_xy=True)
+transform_bounds_box = box(*xds.rio.transform_bounds("EPSG:4326"))
+
+gj = ogr.CreateGeometryFromWkt(str(transform_bounds_box)).ExportToJson()
+print(gj)
+
+#print(transform_bounds_box)
+#with rasterio.open(tif) as ds:
+#    print(ds.bounds)
+
+blerg
 
 # Open raster, pull out metadata and data
 ds = gdal.Open(tif)

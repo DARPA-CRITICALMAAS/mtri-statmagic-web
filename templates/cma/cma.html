@@ -57,7 +57,7 @@
                     <div class='collapse sub'>
                         <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites</div>
                         <div class='content'>
-                            <table class='datalayer_table'>
+                            <table class='datalayer_table known_deposit_sites'>
                                 <tr>
                                     <td class='label'>Commodity:</td>
                                     <td align='right'>
@@ -176,7 +176,7 @@
 
                                 </tr>
                                 {% for layer in layers %}
-                                    <tr data-path="{{layer.data_source_id}}"  onmouseover='showLayerExtentPreview("{{layer.data_source_id}}");'>
+                                    <tr data-path="{{layer.data_source_id}}"  onmouseover='showLayerExtentPreview("{{layer.data_source_id}}");' onmouseout='hideLayerExtentPreview();'>
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
                                         <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>

@@ -19,6 +19,7 @@ const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
 var images;
 var drawnItems = new L.FeatureGroup();
 var drawnLayer;
+var extentPreviewLayer;
 var DATACUBE_CONFIG = [];
 var GET_MINERAL_SITES_RESPONSE_MOST_RECENT;
 var MINERAL_SITES_LAYER;
@@ -152,6 +153,9 @@ function onLoad() {
     
     toggleHeader($('.header.modeling'));
     toggleHeader($('.header.datacube'));
+    
+    // Add listeners for KNOWN DEPOSIT SITES form
+    $('.datalayer_table.known_deposit_sites input').on('change',validateLoadSitesButton);
     
     // Load extent specification tools to KNOWN DEPOSIT SITES
     $('#mineral_sites_extent_tr').html(SPECIFY_EXTENT_TR);
@@ -1838,13 +1842,20 @@ function loadMineralSitesToMap() {
         <option value="top1_deposit_classification_confidence">Primary dep. type conf.</option>
     `;
     
-    $.each(all_opts.commodities.sort(), function(i,m) {
-        if (!m) {return;}
-        opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
+    // ranks
+    $.each(['A','B','C','D','E','U'], function(i,d) {
+        opts += `<option value='rank__${d}'>rec. quality: ${d}</option>`;
     });
+    // vvv not needed anymore b/c only a single commodity per site
+//     $.each(all_opts.commodities.sort(), function(i,m) {
+//         if (!m) {return;}
+//         opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
+//     });
     $.each(all_opts.dtcs.sort(), function(i,d) {
         opts += `<option value='deposit_type__${d}'>Prim. deposit type: ${d}</option>`;
     });
+    
+
     
     // Show the "display by" selector <- only needed if 'display by' dropdown is moved under the KNOWN DEPOSIT SITES filter form
 //     $('#mineral_sites_display_by').show();
@@ -1995,6 +2006,13 @@ function onMineralSitesDisplayByChange() {
                     strokeWeight = 0.5;
                 }
             }
+            if (display_cat == 'rank') {
+                if (maybeArrToStr(prop.rank).indexOf(display_filter) > -1) {
+                    fillColor = fillColor_filterYes;
+                    fillOpacity = fillOpacity_filterYes;
+                    strokeWeight = 0.5;
+                }
+            }
             
             flayer.setStyle({
                 weight: strokeWeight,
@@ -2025,12 +2043,12 @@ function onMineralSitesDisplayByChange() {
     $('#sites_legend').html(lhtml);
     
 }
-
+/*
 function createMineralSitesControl() {
     
-    // Create "Load Mineral Sites" control
+    Create "Load Mineral Sites" control
     
-    // Create html *select* options list of commodities
+    Create html *select* options list of commodities
     var opts_html = '<option value="" disabled selected hidden>Select...</option>';
     $.each(COMMODITIES, function(i, name) {
         opts_html += `<option value="${name}">${name}</option>`;
@@ -2082,7 +2100,7 @@ function createMineralSitesControl() {
         }
     });
     MAP.addControl(new controlPanel());
-}
+}*/
 
 function createLegendControl(element_id,position) {
     position = position || 'topleft';
@@ -2109,9 +2127,12 @@ function validateLoadSitesButton() {
     var v = $('#commodity').val();
     if (v != undefined && drawnLayer) {
         $('#load_sites_button').removeClass('disabled');
+        loadMineralSites();
     } else {
         $('#load_sites_button').addClass('disabled');
     }
+    
+    
 }
 
 function drawStart(layerType) {
@@ -2932,7 +2953,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
                onChange='onToggleLayerClick(this,"${dl.data_source_id}");' />
     `;
     var ext = dl.download_url.split('.').slice(-1)[0];
-    console.log(ext);
+//     console.log(ext);
     if (dl.data_format != 'tif') {
         console.log(dl);
         show_chk = `${dl.download_url.split('.').slice(-1)[0]}`;
@@ -2961,7 +2982,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
         </div>
     `;
     table.append(`
-        <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}")';>
+        <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
             <td class='name'>${name_pretty}</td>
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${model_output});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
@@ -2974,15 +2995,43 @@ function addRowToDataLayersTable(table, dl, model_output) {
     
 }
 
+
 function showLayerExtentPreview(dsid) {
-//     console.log(dsid);
     var dl = DATALAYERS_LOOKUP[dsid];
     var extent_geom = dl.extent_geom;
-    console.log(extent_geom);
     
+    // Remove existing drawings before starting new one
+    if (extentPreviewLayer && MAP.hasLayer(extentPreviewLayer)) {
+        MAP.removeLayer(extentPreviewLayer);
+    }
     
+    extentPreviewLayer = L.geoJSON({
+            properties: {},
+            geometry: JSON.parse(extent_geom),
+            type: 'Feature',
+        }, {
+            style: {
+                color: `rgb(${dl.color})`,
+                weight: 6,
+                opacity: 0.5,
+                fillOpacity: 0.00,
+                pointerEvents: 'None'
+            }
+        }
+    );
+
+    MAP.addLayer(extentPreviewLayer);
+}
+
+
+function hideLayerExtentPreview() {
+     // Remove existing drawings before starting new one
+    if (extentPreviewLayer && MAP.hasLayer(extentPreviewLayer)) {
+        MAP.removeLayer(extentPreviewLayer);
+    }
     
 }
+    
     
 function uploadDataLayer() {
     var formData = new FormData();

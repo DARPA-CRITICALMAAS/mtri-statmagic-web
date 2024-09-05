@@ -2,11 +2,13 @@
 Backend utility code.
 '''
 
-import json, math, os, random, re, requests, string, tempfile, zipfile
+import json, math, os, random, re, requests, shutil, string, tempfile, zipfile
 from pathlib import Path
 from io import BytesIO
 from numbers import Number
 import geopandas as gpd
+from shapely.geometry import box
+import xarray, pyproj
 from datetime import datetime as dt
 from osgeo import gdal, ogr, osr
 import numpy as np
@@ -27,6 +29,7 @@ from rasterio.transform import from_origin
 from rasterio.features import rasterize
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
+
 
 def process_params(req,params,post=False,post_json=False):
     r = req.GET if not post else req.POST
@@ -153,9 +156,6 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     if int(t_srs) == 102008:
         precision = 0
 
-    print(sql[:])
-    #blerg
-
     return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
     #return json.loads(runSQL(sql)[0])
     
@@ -163,6 +163,7 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
 def convert_wkt_to_geojson(wkt_string):
     shape = wkt.loads(wkt_string)
     return mapping(shape)
+    
     
 def reduce_geojson_precision(data, remove_zeroes=False, precision=4):
     '''
@@ -531,20 +532,34 @@ def get_tif_resolution(tif_path):
     return xres
 
 
-def sync_cdr_prospectivity_datasources_to_datalayer(data_source_id=None):
+def sync_cdr_prospectivity_datasources_to_datalayer(
+        data_source_id=None,
+        update_all=False
+    ):
     '''
     data_source_id: (optional) filter by data source ID if needed
+    update_all:     if False, only absent layers will be added; if True, all 
+                    attributes of all layers will be updated
     '''
     
     ### Pull layers from CDR
     cdr = cdr_utils.CDR()
     res = cdr.get_prospectivity_data_sources()
 
-    #print(json.dumps(res[0],indent=4))
+    ### Pull dsids from the GUI DB
+    existing_dsids = [
+        x[0] for x in 
+        models.DataLayer.objects.all().values_list('data_source_id')
+    ]
+    #print(existing_dsids)
     #blerg
 
     for ds in res:
+
         if data_source_id and ds['data_source_id'] != data_source_id:
+            continue
+        
+        if not update_all and ds['data_source_id'] in existing_dsids:
             continue
         
         if 'user_upload_example' in ds['data_source_id']:
@@ -589,6 +604,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
         layer_id=None,
         cma_id=None,
         sync_remote_to_local=True, # <- downloads files to local disk to speed rendering
+        update_all=False,
     ):
     '''
     data_source_id: (optional) filter by data source ID if needed
@@ -598,15 +614,21 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
     cdr = cdr_utils.CDR()
     res = cdr.get_prospectivity_output_layers()
 
-    #print(json.dumps(res[0],indent=4))
-    #blerg
+    ### Pull dsids from the GUI DB
+    existing_dsids = [
+        x[0] for x in 
+        models.DataLayer.objects.all().values_list('data_source_id')
+    ]
+
     dsids = []
     for i,ds in enumerate(res):
-        #print('here')
+        #print(ds)
         if layer_id and ds['layer_id'] != layer_id:
             continue
         
-        #print('woop')
+        if not update_all and ds['layer_id'] in existing_dsids:
+            continue
+        
         if ds['download_url'].split('.')[-1] != 'tif':
             continue
         
@@ -673,15 +695,17 @@ def getOutputLayers():
     return models.OutputLayer.objects.all().order_by('category','subcategory','name')
 
 
-def sync_remote_outputs_to_local():
+def sync_remote_outputs_to_local(dsid=None):
     dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
 
     # for datalayer in dm_util.getDataLayers():
     for datalayer in getOutputLayers():
         #print(datalayer.download_url)
 
-        ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
+        if dsid and datalayer.data_source_id != dsid:
+            continue
 
+        ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
         if not os.path.exists(ofile):
             print('syncing to local:',datalayer.download_url)
             bn = os.path.basename(datalayer.download_url)
@@ -711,6 +735,10 @@ def get_datalayers_for_gui(data_source_ids=[]):
         for d in Obj.objects.filter(**filters).order_by(
                 'category','subcategory','name'
             ):
+            
+            if '12m_hack' in d.description or '12mhack' in d.description or '20240905' in d.description:
+                continue
+            
             cat = d.category if d.subcategory != 'User upload' else 'User uploads'
             subcat = d.subcategory if d.subcategory != 'User upload' else d.category
             
@@ -730,6 +758,9 @@ def get_datalayers_for_gui(data_source_ids=[]):
             if data['extent_geom']:
           
                 data['extent_geom'] = data['extent_geom'].json
+    
+            if 'b4050056d38a449fa3d940008e277145' in data['download_url']:
+                data['extent_geom'] = '{ "type": "Polygon", "coordinates": [[[-180,86.3], [-180,16.8], [-12.1,16.8], [-12.1,86.3], [-180,86.3]]]}'
     
             #print(data['extent_geom'], data['extent_geom'])
             data['name_pretty'] = name_pretty
@@ -760,16 +791,18 @@ def cogify_from_buffer(data):
         File path to the COG that was created and/or overwritten.
     """
     
-    cog_filename = '/home/mgbillmi/PROCESSING/cogify_test.tif'
+    #cog_filename = '/home/mgbillmi/PROCESSING/cogify_test.tif'
     
     #with open(cog_filename,'wb') as f:
     #    f.write(data)
     
     #output_memfile = MemoryFile()
+    td = tempfile.TemporaryDirectory()
     output_memfile = os.path.join(
-        settings.BASE_DIR,
-        'cma',
-        'temp',
+        #settings.BASE_DIR,
+        #'cma',
+        #'temp',
+        td.name,
         f'{getUniqueID()}.tif'
     )
     
@@ -788,7 +821,7 @@ def cogify_from_buffer(data):
             overview_resampling="cubic"
         )
 
-    return output_memfile#open(output_memfile,'rb')#.read()
+    return open(output_memfile,'rb')
 
 def process_cma(cma):
     #print(cma)
@@ -818,8 +851,8 @@ def create_template_raster_from_bounds_and_resolution(
         pixel_size,
         clipping_gdf
     ):
-    print('bounds',bounds)
-    print('pixel size',pixel_size)
+    #print('bounds',bounds)
+    #print('pixel size',pixel_size)
 
     raster_width, raster_height, coord_west, coord_north = get_array_shape_from_bounds_and_res(
         bounds,
@@ -1034,53 +1067,75 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
     
     return response
 
-def get_extent_geom_of_raster(ds):
+def get_extent_geom_of_raster(tif):
     '''
-    ds : (obj) return of gdal.Open(tif_path)
+    tif : (str) path to geotiff
     
     returns : (dict) geojson spec
     
     '''
-
-    # Open raster, pull out metadata and data
-   # ds = gdal.Open(tif)
-
-    band1 = ds.GetRasterBand(1)
-    rows = ds.RasterYSize
-    cols = ds.RasterXSize
-    gt = ds.GetGeoTransform()
-    nodata = band1.GetNoDataValue()
-    srs = get_tif_srs(ds)
     
-    # If no SRS, just send back a polygon w/ the extent
-    #if not srs.GetAuthorityCode(None):
-    minx = gt[0]
-    maxy = gt[3]
-    maxx = minx + gt[1] * ds.RasterXSize
-    miny = maxy + gt[5] * ds.RasterYSize
-    #print [minx, miny, maxx, maxy]
+    xds = xarray.open_dataarray(tif,engine='rasterio')
+    coords = []
+    if xds.rio.crs:
+        transform_bounds_box = box(*xds.rio.transform_bounds("EPSG:4326"))
 
-    del ds
+        # Loop through coords and change any large longitudes (~W of Alaska) to 
+        # -180 so that the geometry does not draw the wrong way around the world
+        xx, yy = transform_bounds_box.exterior.coords.xy
+
+        for i,x in enumerate(xx):
+            x0 = x if x < 160 else -180
+            coords.append([x0,yy[i]])
+        
+    else:
+        print('No valid CRS for file: ',tif)
     
-    geom = ogr.CreateGeometryFromJson(json.dumps({
+    return {
         'type': 'Polygon',
-        'coordinates': [[
-            [minx,miny],
-            [minx,maxy],
-            [maxx,maxy],
-            [maxx,miny],
-            [minx,miny]
-        ]]
-    }))
-    t_srs = osr.SpatialReference()
-    t_srs.ImportFromEPSG(4326)
-    transform = osr.CoordinateTransformation(
-        srs,
-        t_srs
-    )
-    geom.Transform(transform)
+        'coordinates': [coords]
+    }
     
-    return json.loads(geom.ExportToJson())
+
+    ## Open raster, pull out metadata and data
+   ## ds = gdal.Open(tif)
+
+    #band1 = ds.GetRasterBand(1)
+    #rows = ds.RasterYSize
+    #cols = ds.RasterXSize
+    #gt = ds.GetGeoTransform()
+    #nodata = band1.GetNoDataValue()
+    #srs = get_tif_srs(ds)
+    
+    ## If no SRS, just send back a polygon w/ the extent
+    ##if not srs.GetAuthorityCode(None):
+    #minx = gt[0]
+    #maxy = gt[3]
+    #maxx = minx + gt[1] * ds.RasterXSize
+    #miny = maxy + gt[5] * ds.RasterYSize
+    ##print [minx, miny, maxx, maxy]
+
+    #del ds
+    
+    #geom = ogr.CreateGeometryFromJson(json.dumps({
+        #'type': 'Polygon',
+        #'coordinates': [[
+            #[minx,miny],
+            #[minx,maxy],
+            #[maxx,maxy],
+            #[maxx,miny],
+            #[minx,miny]
+        #]]
+    #}))
+    #t_srs = osr.SpatialReference()
+    #t_srs.ImportFromEPSG(4326)
+    #transform = osr.CoordinateTransformation(
+        #srs,
+        #t_srs
+    #)
+    #geom.Transform(transform)
+    
+    #return json.loads(geom.ExportToJson())
 
     # NOTE: The code below was trying to create an extent for the raster that
     #       delineated the boundary of non-nodata pixels. This works okay for 

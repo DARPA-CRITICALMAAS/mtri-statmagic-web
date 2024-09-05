@@ -24,7 +24,8 @@ class DisplayLayer(models.Model):
         choices=(
             ('tif','tif',),
             ('shp','shp',)
-        )
+        ),
+        blank=True, null=True
     )
     
     category = models.CharField(max_length=40,null=True,blank=True)

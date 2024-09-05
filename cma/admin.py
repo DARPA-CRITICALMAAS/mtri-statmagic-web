@@ -18,7 +18,7 @@ class CRSAdmin(admin.ModelAdmin):
     list_display = ('name','units','default_resolution')
 
 class DataLayerAdmin(admin.ModelAdmin):
-    list_display = ('name','data_format','download_url','category','disabled')
+    list_display = ('id','name','data_format','download_url','category','disabled')
 
 class OutputLayerAdmin(admin.ModelAdmin):
     list_display = ('id','data_format','data_source_id','cma_id','model','download_url','category','disabled')

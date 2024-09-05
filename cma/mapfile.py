@@ -145,6 +145,16 @@ def write_mapfile(
         connection_type = ''
         connection = ''
     
+        tif_path2 = tif_path
+        if 'cdr' not in tif_path and util.settings.MAPSERVER_SERVER not in tif_path:
+            tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
+            
+        # Run sync script if one of the outputlayers has not been locally
+        # downloaded
+        if '/net/' in tif_path2 and not os.path.exists(tif_path2):
+            util.sync_cdr_prospectivity_outputs_to_outputlayer(rkey)
+            util.sync_remote_outputs_to_local(rkey)
+    
         if ext in ('js','json','geojson'):
             connection_type = 'CONNECTIONTYPE OGR'
             connection = f'CONNECTION "{r["path"]}"'
@@ -153,12 +163,11 @@ def write_mapfile(
         if r['extent_geom'] is None:
             print('getting extent_geom for:',tif_path)
             
-            ds = openRaster(tif_path)
-            gj = util.get_extent_geom_of_raster(ds)
+            #ds = openRaster(tif_path)
+            gj = util.get_extent_geom_of_raster(tif_path2)
 
             if gj:
                 gj = json.dumps(gj)
-                print(gj)
                 geom = GEOSGeometry(gj)
 
             dataset.extent_geom = geom#GEOSGeometry(gj)
@@ -167,19 +176,6 @@ def write_mapfile(
         # Retrieve data range if not already loaded
         if r['stats_minimum'] is None and r['stats_maximum'] is None:
             print('extracting stats for:',tif_path)
-            #td = None
-            #tif_path2 = tif_path
-            #if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
-                #tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
-            #if ' ' in tif_path:
-                #td = tempfile.TemporaryDirectory()
-                #url = r['download_url'].replace('/vsicurl_streaming/','')
-                #os.system(f'wget -P {td.name} "{url}"')
-                #tp = os.path.join(td.name,os.path.basename(tif_path))
-                #ds = gdal.Open(tp)
-            #else:
-                #ds = gdal.Open(tif_path2)
-            
             ds = openRaster(tif_path)
                 
             stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
@@ -197,12 +193,7 @@ def write_mapfile(
         # Retrieve spatial resolution if not already loaded
         # This just needs to be an approximation for setting templates
         if r['spatial_resolution_m'] is None:
-            tif_path2 = tif_path
-            if 'cdr' not in tif_path and util.settings.MAPSERVER_SERVER not in tif_path:
-                tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
-
             xres = util.get_tif_resolution(tif_path2)
-            
             dataset.spatial_resolution_m = int(xres)
             dataset.save()
     

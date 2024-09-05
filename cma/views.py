@@ -237,17 +237,18 @@ def upload_datalayer(request):
         evidence_layer_raster_prefix = params['description'],
     )
 
-    #print(ds.model_dump_json(exclude_none=True))
-    #print(params)
-    #blerg
+
     # Post to CDR
+    print('Posting to CDR...')
     cdr = cdr_utils.CDR()
     res = cdr.post_prospectivity_data_source(
-        input_file=open(cogfile_bytes,'rb'),#open(cogfile,'rb').read(),#fread,#f.read(),
+        input_file=cogfile_bytes.read(),#open(cogfile_bytes,'rb'),#open(cogfile,'rb').read(),#fread,#f.read(),
         metadata=ds.model_dump_json(exclude_none=True)
     )
+    #os.remove(cogfile_bytes)
 
     dsid = res['data_source_id']
+    print('data_source_id from CDR: ',dsid)
     
     # Sync to GUI db:
     util.sync_cdr_prospectivity_datasources_to_datalayer(
