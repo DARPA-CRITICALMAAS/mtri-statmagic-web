@@ -645,12 +645,12 @@ def submit_model_run(request):
     # Build TA3 models metadata instance
     model_run = prospectivity_input.CreateProspectModelMetaData(
         cma_id=params['cma_id'],
-        system="",
+        system="statmagic",
         system_version="",
         author=model.author,
         date=str(dt.now().date()),
         organization=model.organization,
-        model_type=model.model_type,
+        model_type=model.name,#,model.model_type,
         train_config=model_map[model.name](**train_config),
         evidence_layers=evidence_layers
     )
