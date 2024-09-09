@@ -35,6 +35,8 @@ const DRAW_STYLE = {
 }
 var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
+// Cache for storing saved model parameters
+var MODELS_CACHE = JSON.parse(JSON.stringify(MODELS)) 
 
 const SPECIFY_EXTENT_TR = `
     <td class='label'>Extent:</td>
@@ -49,6 +51,10 @@ const SPECIFY_EXTENT_TR = `
             id="draw_rectangle_icon" ></a>
     </td>
 `;
+
+function resetModelCache() {
+    MODELS_CACHE = JSON.parse(JSON.stringify(MODELS)) 
+}
 
 // Stuff to do when the page loads
 function onLoad() {
@@ -343,7 +349,6 @@ function capitalizeFirstLetter(string) {
 function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
-//     console.log(mobj);
     var range_double_params = {};
     $.each(['required','optional'], function(r,reqopt) {
         var obj = mobj.parameters[reqopt];
@@ -362,7 +367,6 @@ function buildParametersTable(mobj, table_selector, dobj) {
         }
         
         var group_current;
-
         $.each(Object.keys(obj).sort(), function(g,group_name) {
             if (group_name != '_') {
                 ptable_html += `
@@ -477,6 +481,10 @@ function buildParametersTable(mobj, table_selector, dobj) {
     // Insert double sliders as needed
 //     console.log(range_double_params);
     $('.range_double').each(function(i,cmp) {
+//         console.log(i,cmp,range_double_params);
+        if (Object.keys(range_double_params).length == 0) {
+            return;
+        }
         var pname = cmp.id.split('__')[1];
         var p = range_double_params[pname];
         var start_vals = p.html_attributes.value;
@@ -511,33 +519,9 @@ function buildParametersTable(mobj, table_selector, dobj) {
             $('#range_diff-1').html(values[1] - values[0]);
             
             var prec = 2; // TODO: determine precision from scale
-//             console.log(values[0]);
             $(cmp).next('input').val(Number(values[1]).toFixed(prec));
             $(cmp).prev('input').val(Number(values[0]).toFixed(prec));
-            
-//             valuesDivs[handle].innerHTML = values[handle];
-//             diffDivs[0].innerHTML = values[1] - values[0];
-//             diffDivs[1].innerHTML = values[2] - values[1];
-//             diffDivs[2].innerHTML = values[3] - values[2];
         });
-        
-//         var reqopt = cmp.id.split('__')[1];
-//         var grp = cmp.id.split('__')[2];
-       
-//         console.log(pname,p);
-// //         var p = mobj.parameters[reqopt][grp][pname];
-//         $(cmp).slider({
-//             range: true,
-//             min: p.html_attributes.min,
-//             max: p.html_attributes.max,
-//             step: p.html_attributes.step,
-//             values: [p.value,p.value+0.5],
-//             slide: function(e, ui) {
-//                 console.log(ui.values);
-//             }
-//         });
-        
-//         console.log(cmp.id);
     });
     
     // Add listeners for type='range' to update the adjacent labels
@@ -553,7 +537,20 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
 }
 
-function resetModelUI() {
+function clearModelUIselections(){ 
+    $('#model_select').val('');
+    
+    // Clear datacube
+    resetDataCube();
+    
+    // Reset model cache which returns the model parameter configurations to
+    // default values
+    resetModelCache();
+    
+    
+}
+
+function resetModelUI(clear) {
     $('.selected_model_config').hide();
     $('.collapse_datacube').hide();
     $('.collapse_training').hide();
@@ -562,20 +559,17 @@ function resetModelUI() {
     $('#modeling_buttons_table').hide();
     $('.radiocube').hide();
     
+    if (clear) {
+        clearModelUIselections();
+    }
 }
 
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
-//     console.log(model, $('#model_select').val(), model.uses_training);
 
-    
     // First hide everything
     resetModelUI();
-    
 
-//     $('.collapse_parameters').hide();
-//     $('.collapse_training').hide();
-//     $('.collapse_model_run').hide();
     
     // Then build everything back up
 //     $('.selected_model_description').html(model.description);
@@ -590,7 +584,6 @@ function onModelSelect() {
     }
     
     if (model.uses_training == true) {
-//         console.log("YES");
         $('.collapse_training').show();
     }
     
@@ -605,7 +598,6 @@ function onModelSelect() {
     // Build buttons
     var button_html = '';
     $.each(model.buttons.buttons, function(i,button) {
-//         console.log(i,button);
         var onclick = button.onclick ? button.onclick : '';
         
         button_html += `
@@ -619,10 +611,9 @@ function onModelSelect() {
     
     // Show all sections
     $('.collapse_parameters').show();
-//     $('.collapse_training').show();
     $('.collapse_model_run').show();
     $('#modeling_buttons_table').show();
-//     toggleHeader($('.header.datacube'));
+
     
 }
 
@@ -868,6 +859,14 @@ function processModelRunsFromCDR(model_runs) {
 
 }
 
+function resetDataCube() {
+    DATACUBE_CONFIG = [];
+    $.each(DATALAYERS_LOOKUP, function(dsid,obj) {
+        onRadioCubeClick($(`label[for='radiocube_${dsid}'][class='no']`)[0]);
+    });
+    updateDataCubeLabelInfo();
+}
+
 function loadModelRun(cma_id,model_run_id) {
     // Loads model run to model UI
     $('#load_model_run').hide();
@@ -902,21 +901,12 @@ function loadModelRun(cma_id,model_run_id) {
         $(`#${mtype}__${p}`).val(v);
     });
     
-    
     // Populate data cube
     // First clear existing datacube
-    DATACUBE_CONFIG = [];
-    $.each(DATALAYERS_LOOKUP, function(dsid,obj) {
-        onRadioCubeClick($(`label[for='radiocube_${dsid}'][class='no']`)[0]);
-    });
-    
-//     $('#datacube_layers tbody').empty();
-    
+    resetDataCube();
     
     var layers = model_run.event.payload.evidence_layers;
-//     console.log(layers);
     $.each(layers, function(i,layer) {
-//         console.log(layer);
         var dsid = layer.data_source.data_source_id;
         var dl = DATALAYERS_LOOKUP[dsid];
         // TODO: current workaround for there not being non-tif data sources
@@ -1790,18 +1780,10 @@ function loadMineralSitesToMap() {
 
                 
             `);
-            
-//         });
-            
         }
     });
     
     // Create a popup to use in the macrostrat layer
-//     var popup = L.popup({
-//         minWidth: 260,
-//         autoPan: false,
-//     });
-//     MINERAL_SITES_LAYER.bindPopup(popup);
     MINERAL_SITES_LAYER.on('mouseover', function(e) {
         e.layer.setStyle({radius: 10});
     });
@@ -1815,11 +1797,7 @@ function loadMineralSitesToMap() {
 //         e.layer.openPopup();
     });
     MINERAL_SITES_LAYER.on('click', function(e) {
-//         console.log(e.layer,e.layer.feature);
-   
-        
         e.layer.openPopup();
-//         popup.setLatLng(e.layer.feature.geometry.coordinates);
     });
     MINERAL_SITES_LAYER.addTo(MAP);
     
@@ -2043,65 +2021,9 @@ function onMineralSitesDisplayByChange() {
     $('#sites_legend').html(lhtml);
     
 }
-/*
-function createMineralSitesControl() {
-    
-    Create "Load Mineral Sites" control
-    
-    Create html *select* options list of commodities
-    var opts_html = '<option value="" disabled selected hidden>Select...</option>';
-    $.each(COMMODITIES, function(i, name) {
-        opts_html += `<option value="${name}">${name}</option>`;
-    });
-    
-    var controlPanel = L.Control.extend({
-        options: {
-            position: 'topleft'
-        },
 
-        onAdd: function () {
-            var c = L.DomUtil.create('div', 'controlPanel');
-            
-            c.innerHTML = `
-                <table>
-                    <tr class='title'>
-                        <td colspan=2>Load mineral sites</td>
-                    </tr>
-                    <tr>
-                        <td class='label'>Commodity:</td>
-                        <td>
-                            <select id='commodity' onChange="validateLoadSitesButton();">
-                                ${opts_html}
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class='label'>AOI:</td>
-                        <td><div id='query_instructions'><span class="highlight">
-                            (draw) poly <a onClick=drawStart("polygon")>
-                            <img src="/static/cma/img/draw-polygon-icon.png" 
-                                 height="17"
-                                 id="draw_polygon_icon" /></a> | 
-                            rect <a onClick=drawStart("rectangle")>
-                            <img src="/static/cma/img/draw-rectangle-icon.png"
-                                 height="17"
-                                 id="draw_rectangle_icon" ></a>
-                        </div></td>
-                    </tr>
-                    <tr>
-                        <td colspan=2>
-                            <div id="load_sites_button" class='button load_sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
-                        </td>
-                    </tr>
-                </table>
-            `;
-
-            return c;
-        }
-    });
-    MAP.addControl(new controlPanel());
-}*/
-
+// Create map control for populating layer legend elements when a layer is 
+// selected.
 function createLegendControl(element_id,position) {
     position = position || 'topleft';
     
@@ -2121,7 +2043,9 @@ function createLegendControl(element_id,position) {
     MAP.addControl(new legendControl());
 }
 
-
+ 
+// Checks that, at minimum, a *commodity* and *extent* is selected in order to
+// send the sites query.
 
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
@@ -2131,14 +2055,14 @@ function validateLoadSitesButton() {
     } else {
         $('#load_sites_button').addClass('disabled');
     }
-    
-    
 }
 
 function drawStart(layerType) {
     $('.leaflet-draw-draw-' + layerType)[0].click();
 }
 
+// Get the WKT version of the layer on the map that is drawn
+// (for sending extent geometries via URL)
 function getWKT() {
     
     // Convert the drawn layer to WKT so that it can be sent as a URL parameter
@@ -2159,14 +2083,14 @@ function getWKT() {
     });
 
     coords = [new_coords];
-//     gj.geometry.coordinates = [new_coords];
+
     var wkt = new Wkt.Wkt();
     wkt.read(JSON.stringify(gj));
     
     // replace spaces w/ + bc can't put spaces in URL
     return wkt.write().replace(/ /g,'+'); 
-    
 }
+
 // Returns a stringified number w/ commas added as appropriate
 function addCommas(x) {
     if (parseInt(x) >= 1000) {
@@ -2175,6 +2099,8 @@ function addCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+// Handles clicks on the (i) icon next to 'Select model type' in the MODELING
+// section
 function showModelInfo(layer_name) {
     var selmod = $('#model_select').val();
     var model = MODELS[$('#model_select').val()];
@@ -2182,57 +2108,44 @@ function showModelInfo(layer_name) {
     $('#model_info .parameters_form_title').html(model.name_pretty);
     $('#model_info .content').html(model.description);
     $('#model_info').show();
-    
 }
 
+// Send POST request to backend
 function submitModelRun() {
-
-//     if (AJAX_GET_FISHNET) {
-//         AJAX_GET_FISHNET.abort();
-//     }
-//     $('.loading_fishnet').show();
-//     FISHNET_LAYER.clearLayers();
-//     AJAX_GET_FISHNET = 
     var model = $('#model_select').val();
     var train_config = {};
-    $.each(MODELS[model].parameters, function(reqopt,groups) {
+    $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
         $.each(groups, function(group,parr) {
             $.each(parr, function(i,p) {
                 train_config[p.name] = p.html_attributes.value;
                 
-                // range_double types require a different way of getting the val
+                // TODO: range_double types require a different way of getting the val
                 if (p.input_type == 'range_double') {
 //                     var vmin = $(`${model}__`).val()
-                    
                 }
             });
         });
     });
-//     console.log(train_config);
+
     var data = {
         cma_id: $('#cma_loaded').attr('data-cma_id'),
         model: model,
         train_config: train_config,
         evidence_layers : DATACUBE_CONFIG,
-//             srid: CRS_OPTIONS[crs].srid,
-//             extent_wkt: getWKT()
     };
     
     $.ajax('submit_model_run', {
         data: JSON.stringify(data),
         type: 'POST',
         dataType: 'json',
-//         processData: true,
         contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
             alert(`Model run submitted successfully! Run id: ${response.model_run_id}`);
-//             $('.loading_fishnet').hide();
         },
         error: function(response) {
             console.log(response);
             alert(response.responseText);
-//             $('.loading_fishnet').hide()
         },
     });
 }
@@ -2516,14 +2429,18 @@ function showProcessingStepParameters(el) {
     
 }
 
+// Triggers when user clicks 'CONFIGURE MODEL PARAMETERS' in the MODELING
+// section
 function showModelParameters(el) {
 
     var tr = $(el).closest('tr')
     var pstep = tr.attr('data-value');
     var psid = tr.attr('data-index');
     var psobj = PROCESSING_STEPS[pstep];
+    var model_name = $('#model_select').val();
     
-    var model = MODELS[$('#model_select').val()];
+    // Build from cache so that any user modifications are shown
+    var model = MODELS_CACHE[model_name];
 
     // Update form title
     $('.parameters_form_title').html(model.name_pretty.split('(')[0]);
@@ -2892,13 +2809,16 @@ function saveParametersForm() {
         $.each(mobj.parameters, function(reqopt,groups) {
             $.each(groups, function(g,parr) {
                 $.each(parr, function(i,p) {
+                    var p_cache = MODELS_CACHE[parent_id].parameters[reqopt][g][i];
                     var v = $(`#${mobj.name}__${p.name}`).val();
-                    p.html_attributes.value = v;
+                    p_cache.html_attributes.value = v;
+//                     p.html_attributes.value = v;
                     
                     if (p.input_type == 'range_double') {
                         var vmin = $(`#${mobj.name}__${p.name}__min`).val();
                         var vmax = $(`#${mobj.name}__${p.name}__max`).val();
-                        p.html_attributes.value = [vmin,vmax];
+//                         p.html_attributes.value = [vmin,vmax];
+                        p_cache.html_attributes.value = [vmin,vmax];
                         
                     }
                 });

@@ -39,8 +39,12 @@ post_data_intersect_sources = {
 
 #res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 
-#res = cdr.get_model_run('ba7010d52a8744c1b6e36df69922d5b0')
-# #print(res)
+res = cdr.get_model_run('56da45b9bb6f4137b3b6679c0c91f617')
+#print(x for x in list(res['event']['payload']['train_config'].keys()))
+
+for p in res['event']['payload']['evidence_layers']:#.items():
+    print(p)
+blerg
 # res = cdr.get_prospectivity_output_layers()
 # for r in res:
 #     print()
