@@ -42,8 +42,8 @@ post_data_intersect_sources = {
 res = cdr.get_model_run('56da45b9bb6f4137b3b6679c0c91f617')
 #print(x for x in list(res['event']['payload']['train_config'].keys()))
 
-for p in res['event']['payload']['evidence_layers']:#.items():
-    print(p)
+for p,v in res['event']['payload']['train_config'].items():
+    print(p,v)
 blerg
 # res = cdr.get_prospectivity_output_layers()
 # for r in res:

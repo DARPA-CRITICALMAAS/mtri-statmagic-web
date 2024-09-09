@@ -4,11 +4,9 @@ var WMS_URL;
 var MAPFILE;
 
 if (MAPSERVER_SERVER == 'vm-apps2') {
-    console.log(MAPSERVER_SERVER);
     WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
     MAPFILE = '/var/www/mapfiles/statmagic.map';
 }
-
 
 if (MAPSERVER_SERVER == 'per440c') {
     WMS_URL = `http://opg.mtri.org/mapserver_opg/wms?`;
@@ -883,11 +881,8 @@ function loadModelRun(cma_id,model_run_id) {
         beak_som: 'beak_som',
         som: 'beak_som',
         SOM: 'beak_som',
-        
         sri_NN: 'sri_NN',
         'Neural Net': 'sri_NN',
-        
-        
     }
     var mtype = mtypemap[model_run.model_type];
     
@@ -897,8 +892,19 @@ function loadModelRun(cma_id,model_run_id) {
     // Populate model config
     var train_config = model_run.event.payload.train_config;
     
+    // Set any currently visible values
     $.each(train_config, function(p,v) {
+        console.log($(`#${mtype}__${p}`),v);
         $(`#${mtype}__${p}`).val(v);
+    });
+    
+    // Update model cache
+    $.each(MODELS_CACHE[mtype].parameters, function(reqopt,groups) {
+        $.each(groups, function(group,parr) {
+            $.each(parr, function(i,p) {
+                p.html_attributes.value = train_config[p.name];
+            });
+        });
     });
     
     // Populate data cube
@@ -2019,7 +2025,6 @@ function onMineralSitesDisplayByChange() {
         `;
     }
     $('#sites_legend').html(lhtml);
-    
 }
 
 // Create map control for populating layer legend elements when a layer is 
