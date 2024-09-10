@@ -553,15 +553,16 @@ function resetModelUI(clear) {
     $('.collapse_model_run').hide();
     $('#modeling_buttons_table').hide();
     $('.radiocube').hide();
-    $('#model_select').val('');
+//     $('#model_select').val('');
     
-//     if (clear) {
-    clearModelUIselections();
-//     }
+    if (clear) {
+        clearModelUIselections();
+    }
 }
 
 function clearModelUIselections(){ 
-
+     $('#model_select').val('');
+    
     // Clear datacube
     resetDataCube();
     
@@ -2140,8 +2141,9 @@ function submitModelRun() {
         });
     });
 
+    var cma_id = $('#cma_loaded').attr('data-cma_id');
     var data = {
-        cma_id: $('#cma_loaded').attr('data-cma_id'),
+        cma_id: cma_id,
         model: model,
         train_config: train_config,
         evidence_layers : DATACUBE_CONFIG,
@@ -2155,6 +2157,9 @@ function submitModelRun() {
         success: function(response) {
             console.log(this.url,response);
             alert(`Model run submitted successfully! Run id: ${response.model_run_id}`);
+            
+            // Now re-query the CDR so the new model run shows up in the table
+            loadModelRuns(cma_id)
         },
         error: function(response) {
             console.log(response);
