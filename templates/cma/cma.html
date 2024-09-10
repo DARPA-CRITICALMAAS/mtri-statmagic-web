@@ -180,7 +180,14 @@
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
                                         <td class='name'>{{layer.name_pretty}}</td>
                                         <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
-                                        <td class='show_chk'><input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.data_source_id}}");' /></td>
+                                        <td class='show_chk'>
+                                            {% if layer.data_format == 'tif' %}
+                                            
+                                            <input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.data_source_id}}");' />
+                                            {% else %}
+                                                <a href='{{layer.download_url}}' target='_blank'>{{ layer.data_format }}</a>
+                                            {% endif %}
+                                        </td>
                                         <td class='download'>
                                             <a href='{{layer.download_url}}' target='_blank'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
                                         </td>

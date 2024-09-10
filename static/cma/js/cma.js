@@ -294,7 +294,7 @@ function addCMAControl() {
 function loadCMAresolutionFromLayers() {
     var minres = 100000000;
     $.each(DATALAYERS_LOOKUP, function(l,obj) {
-        console.log(l,obj.spatial_resolution_m);
+//         console.log(l,obj.spatial_resolution_m);
         if (obj.spatial_resolution_m != null) {
             minres = Math.min(minres, obj.spatial_resolution_m);
         }
@@ -304,6 +304,7 @@ function loadCMAresolutionFromLayers() {
     
 }
 
+// Removes any queried KNOWN DEPOSIT SITES
 function clearMineralSites() {
     // Remove map legend
     $('#legend_content_sites').html('');
@@ -322,6 +323,7 @@ function clearMineralSites() {
     
 }
 
+// Adds loading spinner control to map
 function addLoadingSpinnerControl(div_class,message) {
     var Title = L.Control.extend({
         options: {
@@ -340,10 +342,14 @@ function addLoadingSpinnerControl(div_class,message) {
     c.addTo(MAP);
 }
 
+// Capitalizes first letter of the given string
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+
+// Builds the form that pops up when user clicks CONFIGURE MODEL PARAMETERS
+// or when a user wants to edit processing step parameters
 function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
     ptable_html = '<table class="model_parameters_table">';
@@ -424,15 +430,12 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     if (p.options) {
                         $.each(p.options, function(j,opt) {
                             var selected = '';
-                            
-                           
                             if (
                                  // If default has been modified, use that value
                                 (dobj && opt == dobj[p.name]) ||
                                 
                                 // ...OR... if html_attributes has a default val 
                                 (p.html_attributes && p.html_attributes.value == opt)
-                                
                             ) {
                                 selected = ' selected';
                             }
@@ -463,7 +466,6 @@ function buildParametersTable(mobj, table_selector, dobj) {
     $(table_selector).html(ptable_html);
     
      // Toggle to hide advanced options
-//     toggleHeader($('.model_parameters_table tr.subcategory_label.optional')[0],0);
     $('tr[data-reqopt="optional"]').hide();
     
     // Create listeners for show/hide checkboxes
@@ -535,19 +537,14 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
 }
 
-function clearModelUIselections(){ 
-    $('#model_select').val('');
-    
-    // Clear datacube
-    resetDataCube();
-    
-    // Reset model cache which returns the model parameter configurations to
-    // default values
-    resetModelCache();
-    
-    
-}
 
+
+
+// Resets model UI to starting point
+// NOTE: the 'clear' arg was added to control whether or not to totally wipe
+//       out the data cube selections and model config changes, BUT I'm not
+//       sure there's a use-case for preserving these, so for now, everything
+//       is cleared regardless and setting 'clear' has no effect.
 function resetModelUI(clear) {
     $('.selected_model_config').hide();
     $('.collapse_datacube').hide();
@@ -556,18 +553,29 @@ function resetModelUI(clear) {
     $('.collapse_model_run').hide();
     $('#modeling_buttons_table').hide();
     $('.radiocube').hide();
+    $('#model_select').val('');
     
-    if (clear) {
-        clearModelUIselections();
-    }
+//     if (clear) {
+    clearModelUIselections();
+//     }
 }
 
+function clearModelUIselections(){ 
+
+    // Clear datacube
+    resetDataCube();
+    
+    // Reset model cache which returns the model parameter configurations to
+    // default values
+    resetModelCache();
+}
+
+// What happens when 'Select model type' changes
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
 
     // First hide everything
     resetModelUI();
-
     
     // Then build everything back up
 //     $('.selected_model_description').html(model.description);
@@ -619,6 +627,7 @@ function onModelParameterCheckboxChange(cmp) {
     console.log(cmp);
 }
 
+
 function clearCMA() {
     $('#cma_loaded').addClass('notactive');
     $('#cma_loaded').attr('data-cma_id','');
@@ -635,12 +644,13 @@ function clearCMA() {
     // Hide "Choose existing MPM" modal
     $('#load_cma_modal').hide();
     
-    resetModelUI();
+    resetModelUI(true);
     
     // Clear mineral sites
     clearMineralSites();
 }
 
+// Performs various tasks to load a selected CMA into the GUI
 function loadCMA(cma_id) {
     var cma = CMAS_EXISTING[cma_id];
 //     console.log(cma);
@@ -707,6 +717,10 @@ function loadModelOutputs(cma_id,model_run_id) {
     });
 }
 
+// Retrieves GUI metadata (e.g. list of existing CMAs/MPMs, commodity list)
+// This does not get run until AFTER the page loads b/c it relies on queries to 
+// CDR, and so even if the CDR is down or unresponsive, the page will still 
+// load.
 function getMetadata() {
     $.ajax(`/get_metadata`, {
         data: {},
@@ -744,43 +758,33 @@ function getMetadata() {
     
 }
 
+// Requests list of model runs for a given CMA_id from backend
 function loadModelRuns(cma_id) {
-//     if (!CMAS_EXISTING[cma_id].model_runs) {
-//         $('#model_runs_table tbody').html('');
-//         return;
-//     }
-//     setLoadingButton('load_model_run');
-    
     $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
     $.ajax(`/get_model_runs`, {
         data: {
             cma_id: cma_id,
-//             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
         },
         success: function(response) {
             console.log(response);
             
             // Load outputs
             loadModelOutputs(cma_id);
-            
             processModelRunsFromCDR(response.model_runs);
-            
-//             resetButton('load_model_run','Load model run');
         },
         error: function(response) {
             console.log(response);
-//             resetButton('load_model_run','Load model run');
         }
     });
 }
 
-
+// Requests backend to check for any output layers that have not yet been
+// sync'd w/ the GUI's PG database.
 function syncModelOutputs(cma_id) {
 
     $.ajax(`/sync_model_outputs`, {
         data: {
             cma_id: cma_id,
-//             model_runs: CMAS_EXISTING[cma_id].model_runs.join(','),
         },
         success: function(response) {
             console.log(response);
@@ -809,6 +813,8 @@ function syncModelOutputs(cma_id) {
     });
 }
 
+// From the return of the 'get_model_runs' endpoint, populates the 
+// table that shows when "load an existing model run" is clicked
 function processModelRunsFromCDR(model_runs) {
     
     trs = '';
@@ -857,6 +863,7 @@ function processModelRunsFromCDR(model_runs) {
 
 }
 
+// Empties the DATA CUBE
 function resetDataCube() {
     DATACUBE_CONFIG = [];
     $.each(DATALAYERS_LOOKUP, function(dsid,obj) {
@@ -865,8 +872,9 @@ function resetDataCube() {
     updateDataCubeLabelInfo();
 }
 
+// Loads model run to model UI and model cache
 function loadModelRun(cma_id,model_run_id) {
-    // Loads model run to model UI
+
     $('#load_model_run').hide();
     $('#datalayer_info').hide();
     $('#modeling_initial_message2').hide();
@@ -894,7 +902,7 @@ function loadModelRun(cma_id,model_run_id) {
     
     // Set any currently visible values
     $.each(train_config, function(p,v) {
-        console.log($(`#${mtype}__${p}`),v);
+//         console.log($(`#${mtype}__${p}`),v);
         $(`#${mtype}__${p}`).val(v);
     });
     
@@ -2158,6 +2166,12 @@ function submitModelRun() {
 function showDataLayerInfo(layer_name,model_output) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
+    if (dl.data_format == 'shp') {
+        sr = '[vector]';
+    } else {
+        sr += ' m';
+        
+    }
     var src = `<span class='label'>Source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`;
     
     if (model_output) {
@@ -2174,7 +2188,11 @@ function showDataLayerInfo(layer_name,model_output) {
         <span class='label'>Description:</span><br>
         ${dl.description}
     `);
-    $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr} m`);
+    $('#dl_data_format').html(`
+        <span class='label'>Data format:</span><br>
+        ${dl.data_format}
+    `);
+    $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr}`);
     $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.download_url}' target='_blank'>${dl.download_url}</a>`);
     $('#dl_source').html(`${src}`);
     
@@ -3047,7 +3065,7 @@ function onStartedCMA(cma) {
     $('#load_cma_modal').hide();
     
     // Reset model UI
-    resetModelUI();
+    resetModelUI(true);
 }
 
 
