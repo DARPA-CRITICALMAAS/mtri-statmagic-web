@@ -1024,10 +1024,8 @@ function showMessage(title,content) {
 }
 
 function createLayerControl() {
-    
     var images2 = {Layers:{}};
     
-
     TA1_SYSTEMS = {};
     $.each(TA1_SYSTEMS,function(system, versions) {
         $.each(versions, function(i,version) {
@@ -1582,6 +1580,7 @@ function setLoadingLoadSitesButton() {
 function enableLoadSitesButton(btn_id,label) {
     $('.loading_sites').hide();
     resetButton('load_sites_button','Load/refresh');
+    resetButton('show_histogram_button','Tonnage histogram');
 }
 
 function setLoadingButton(btn_id) {
@@ -1768,7 +1767,7 @@ function loadMineralSitesToMap() {
             var dtcs_html = '';
             $.each(commdts.dtcs_w_conf, function(i,d) {
                 var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
-                dtcs_html += `<br>${d.name} ${conf}`;
+                dtcs_html += ` ${d.name} ${conf}`;
             });
             
             var src = '';
@@ -1784,9 +1783,25 @@ function loadMineralSitesToMap() {
             popup.setContent(`
                 <b>${maybeArrToStr(prop.names).join(' /<br>')}</b>
                 <br><br>
-                <span class='label'>Commodity:</span> <span class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-                <br>
-                <span class='label'>Primary deposit type:</span> ${dtcs_html}
+                <table class='model_parameters_table mineral_site_info_table'>
+                    <tr>
+                        <td class='label'>Commodity:</td>
+                        <td class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</td>
+                    </tr>
+                    
+                    <tr>
+                        <td class='label'>Primary deposit type:</td>
+                        <td>${dtcs_html[0].name ? dtcd_html[0] : '--'}</td>
+                    </tr>
+                    
+                    <tr>
+                        <td class='label'>Primary deposit type conf.:</td>
+                        <td> ${dtcs_html[0].conf ? dtcs_html[0].conf.toFixed(2) : '--'}</td>
+                    </tr>
+                    <tr><td class='label'>Grade:</td><td>${prop.grade ? prop.grade.toFixed(2) : '--'}</td></tr>
+                    <tr><td class='label'>Tonnage (Mt):</td><td>${prop.tonnage ? prop.tonnage.toFixed(1) : '--'}</td></tr>
+                
+                </table>
                 <br><br>
                 <span class='label'>Source(s):</span><b>${src}</b>
         
@@ -1833,6 +1848,8 @@ function loadMineralSitesToMap() {
     var opts = `
         <option value="site_type" selected>Site type</option>
         <option value="top1_deposit_classification_confidence">Primary dep. type conf.</option>
+        <option value="tonnage">Tonnage</option>
+        <option value="grade">Grade</option>
     `;
     
     // ranks
@@ -1882,6 +1899,25 @@ function loadMineralSitesToMap() {
     // Trigger display by change to style the markers
     onMineralSitesDisplayByChange();
     
+}
+
+function getMineralSiteValsByProperty(prop) {
+    var d = [];
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,site) {
+        var v = site.properties[prop];
+        if (v == undefined) {return;} // skip sites w/out data
+        d.push(v);
+    });
+    return d;
+}
+
+function getColorBreaksForArray(arr, colormap_template) {
+    var tmin = Math.min(...arr);
+    var tmax = Math.max(...arr);
+    var breaks = colormap_template.map(function(c) {
+        return {thresh: tmin + ((tmax-tmin) * c.thresh), color: c.color};
+    });
+    return breaks
 }
 
 function onMineralSitesDisplayByChange() {
@@ -1936,6 +1972,18 @@ function onMineralSitesDisplayByChange() {
         {thresh: .9, color: '#00441b'},
     ];
     
+    // Tonnage breaks
+    var tonnages = getMineralSiteValsByProperty('tonnage');
+    
+    // Grade breaks
+    var grades = getMineralSiteValsByProperty('grade'); 
+    
+    var colormaps = {
+        top1_deposit_classification_confidence: confidence_colormap,
+        tonnage: getColorBreaksForArray(tonnages,confidence_colormap),
+        grade: getColorBreaksForArray(grades,confidence_colormap),
+    }
+    
     MINERAL_SITES_LAYER.eachLayer(function(flayer) {
         prop = flayer.feature.properties;
         var fillColor = fillColor_default;
@@ -1963,21 +2011,28 @@ function onMineralSitesDisplayByChange() {
                 fillOpacity: 0.9,
                 weight: strokeWeight_default,
             });
-        } else if (display_by == 'top1_deposit_classification_confidence') {
-            var conf = Number(prop.top1_deposit_classification_confidence);
-            var fillColor = '#fff';
-            $.each(confidence_colormap, function(i,cm) {
-                if (conf >= cm.thresh) {
-                    fillColor = cm.color;
-                }
-            });
+        } else if (colormaps[display_by]) {
+            var conf = prop[display_by];
+            
+            if (conf == undefined) {
+                fillColor = fillColor_default;
+                fillOpacity = 0.1;
+                strokeWeight = 0.1;
+            } else {
+                fillColor = '#fff';
+                $.each(colormaps[display_by], function(i,cm) {
+                    if (conf >= cm.thresh) {
+                        fillColor = cm.color;
+                    }
+                });
+            }
             
             flayer.setStyle({
                 fillColor: fillColor,
                 fillOpacity: 0.8,
                 weight: strokeWeight_default,
-            });
-        
+            });            
+            
         } else {
             var strokeWeight = 0.2;
             var display_cat = display_by.split('__')[0];
@@ -2007,15 +2062,25 @@ function onMineralSitesDisplayByChange() {
                 }
             }
             
+//             if (display_cat == 'tonnage') {
+//                 if (prop.tonnage) {
+//                     fillColor = fillColor_filterYes;
+//                     fillOpacity = fillOpacity_filterYes;
+//                     strokeWeight = 0.5;
+//                 }
+//             }
+            
             flayer.setStyle({
                 weight: strokeWeight,
                 fillColor: fillColor,
-                fillOpacity: fillOpacity
+                fillOpacity: fillOpacity,
+//                 opacity: strokeOpacity
             });
             
           
         }
     });
+    console.log(colormaps);
     
     // Create legend
     var lhtml = '';
@@ -2023,9 +2088,11 @@ function onMineralSitesDisplayByChange() {
         $.each(site_types, function(label,obj) {
             lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${label}</div>`;
         });
-    } else if (display_by == 'top1_deposit_classification_confidence') {
-        $.each(confidence_colormap, function(i,obj) {
-            lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${obj.thresh.toFixed(1)}</div>`;
+    } else if (colormaps[display_by]) {
+        var prec = display_by == 'grade' ? 3 : 1;
+        lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${fillColor_default};'></div> Undefined</div>`
+        $.each(colormaps[display_by], function(i,obj) {
+            lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${obj.thresh.toFixed(prec)}</div>`;
         });
     } else {
         lhtml = `
@@ -3073,6 +3140,87 @@ function onStartedCMA(cma) {
     resetModelUI(true);
 }
 
+
+function createTonnageHistogram() {
+    var elid = '#graph_modal_content';
+    $(elid).empty();
+    
+    var data = [];
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,site) {
+        var tonnage = site.properties.tonnage;
+        if (!tonnage) {return;} // skip sites w/out tonnage data
+        data.push({tonnage: tonnage});
+    });
+    console.log(data);
+    
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 30, bottom: 50, left: 40},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select(elid)
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`);
+        
+    // X axis: scale and draw:
+    var x = d3.scaleLinear()
+        .domain([
+            d3.min(data, function(d) { return +d.tonnage }),
+            d3.max(data, function(d) { return +d.tonnage})
+        ])
+        .range([0, width]);
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+    // set the parameters for the histogram
+    var histogram = d3.histogram()
+        .value(function(d) { return d.tonnage; })   // I need to give the vector of value
+        .domain(x.domain())  // then the domain of the graphic
+        .thresholds(x.ticks(10)); // then the numbers of bins
+
+    // And apply this function to data to get the bins
+    var bins = histogram(data);
+    
+    // Y axis: scale and draw:
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+        y.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    // append the bar rectangles to the svg element
+    svg.selectAll("rect")
+        .data(bins)
+        .enter()
+        .append("rect")
+            .attr("x", 1)
+            .attr("transform", function(d) { return `translate(${x(d.x0)},${y(d.length)})`; })
+            .attr("width", function(d) { return x(d.x1) - x(d.x0) -1 ; })
+            .attr("height", function(d) { return height - y(d.length); })
+            .style("fill", "#69b3a2")
+    
+    // x-axis label
+    svg.append('text')
+        .style('fill', '#999')
+        .attr('text-anchor','middle')
+//             .attr('dy',30)
+        .attr('class','camera_header')
+        .attr('transform', `translate(${width/2},${height+40})`)
+        .text('million tonnes');
+        
+        
+    $('#graph_modal_header').html('Site tonnage histogram');
+    $('#graph_modal').show();
+        
+    
+}
 
 $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('click',function() {
 

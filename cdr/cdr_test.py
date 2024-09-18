@@ -37,14 +37,18 @@ post_data_intersect_sources = {
 #res = cdr.get_cmas()
 #print(res)
 
+
 #res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 
-res = cdr.get_model_run('56da45b9bb6f4137b3b6679c0c91f617')
+#res = cdr.get_model_run("f2294cfa42cd48128f3f9ddcfb15237a")
 #print(x for x in list(res['event']['payload']['train_config'].keys()))
 
-for p,v in res['event']['payload']['train_config'].items():
-    print(p,v)
-blerg
+# for p,v in res['event']['payload']['train_config'].items():
+#     print(p,v)
+# for el in res['event']['payload']['evidence_layers']:
+#     print(el['data_source']['description'],el['data_source']['format'])
+# print(len(res['event']['payload']['evidence_layers']))
+# blerg
 # res = cdr.get_prospectivity_output_layers()
 # for r in res:
 #     print()
@@ -85,11 +89,11 @@ res = cdr.get_dedup_sites_search(
 )
 ranks = []
 for r in json.loads(res.to_json(orient='records')):
-    #for k,v in r.items():
-        #print(k,v)
-    ranks.append(r['rank'])
+    for k,v in r.items():
+        print(k,v)
+    #ranks.append(r['rank'])
 
-print(list(set(ranks)))
+#print(list(set(ranks)))
 blerg
 # print(res)
 # commodities = {}

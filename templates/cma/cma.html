@@ -17,6 +17,7 @@
 <script src="https://www.unpkg.com/wicket@1.3.8/wicket.js"></script>
 <!-- <script src="{% static 'cma/js/jquery-ui-1.13.3/jquery-ui.min.js' %}"></script> -->
 <script src="{% static 'cma/js/nouislider.min.js' %}"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
 
 
 {% endblock %}
@@ -43,6 +44,19 @@
         </div>
         <div class='message_modal_header'></div>
         <div class='message_modal_content'></div>
+    </div>
+</div>
+
+<div id='graph_modal' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#graph_modal').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div id='graph_modal_header' class='message_modal_header'></div>
+        <div id='graph_modal_content' class='message_modal_content'></div>
     </div>
 </div>
 
@@ -143,6 +157,7 @@
                                         </div> 
                                         <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
                                         <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
+                                         <div id="show_histogram_button" class='button load_sites sites histogram disabled' onClick='createTonnageHistogram();'>Tonnage histogram</div>
                                         
                                     </td>
                                 </tr>

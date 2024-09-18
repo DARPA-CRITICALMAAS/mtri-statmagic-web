@@ -1980,7 +1980,8 @@ select#sites_display_select {
     
 }
 
-#show_sites .modal {
+#show_sites .modal,
+#graph_modal .modal {
     width: 90%;
     height: 90%;
     top: 2.5%;
@@ -2003,7 +2004,39 @@ a.site_src_link {
     font-size: 0.7rem;
     
 }
+#graph_modal .modal {
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+#graph_modal_content text {
+    fill: #fff;
+    font-size: 0.9rem;
+    
+}
 
+#graph_modal_content line,
+#graph_modal_content path {
+    stroke: #666;
+}
+
+.mineral_site_info_table {
+    width: 100%;
+}
+.mineral_site_info_table td {
+    text-align: right;
+}
+.mineral_site_info_table td.label {
+    text-align: left;
+}
+.button.histogram {
+    background-color: #6a7baf;
+    
+    
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
