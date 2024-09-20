@@ -193,7 +193,7 @@
                                 {% for layer in layers %}
                                     <tr data-path="{{layer.data_source_id}}"  onmouseover='showLayerExtentPreview("{{layer.data_source_id}}");' onmouseout='hideLayerExtentPreview();'>
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
-                                        <td class='name'>{{layer.name_pretty}}</td>
+                                        <td class='name' title='{{layer.name}}'>{{layer.name_pretty}}</td>
                                         <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
                                         <td class='show_chk'>
                                             {% if layer.data_format == 'tif' %}

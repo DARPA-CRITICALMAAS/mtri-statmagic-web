@@ -2256,6 +2256,7 @@ function showDataLayerInfo(layer_name,model_output) {
     }
     
     $('#dl_title').html(dl.name_pretty);
+    $('#dl_name').html(`<span class='label'>Name:</span><br>${dl.name}`);
     $('#dl_description').html(`
         <span class='label'>Description:</span><br>
         ${dl.description}
