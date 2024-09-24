@@ -35,5 +35,6 @@ urlpatterns = [
     path('get_model_runs', cma_views.get_model_runs),
     path('sync_model_outputs', cma_views.sync_model_outputs),
     path('recreate_mapfile', cma_views.recreate_mapfile),
+    path('download_model_outputs', cma_views.download_model_outputs),
     path(r'', cma_views.home),
 ]

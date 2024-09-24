@@ -873,3 +873,14 @@ def get_fishnet(request):
     response['Content-Type'] = 'application/json'
     
     return response
+
+@csrf_exempt
+def download_model_outputs(request):
+    params = {
+        'urls': [],
+        'cma_name': '',
+    }
+    params = util.process_params(request, params, post_json=True)
+
+    return util.download_model_outputs(params['urls'], params['cma_name'])
+
