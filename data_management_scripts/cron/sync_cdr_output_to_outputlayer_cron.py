@@ -1,5 +1,6 @@
 import os, pidfile, sys
-sys.path.append('..')
+current = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.dirname(current))
 import dm_util
 #from data_management_scripts import dm_util
 
