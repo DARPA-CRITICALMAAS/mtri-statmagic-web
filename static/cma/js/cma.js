@@ -2248,7 +2248,7 @@ function submitModelRun() {
         model: model,
         train_config: train_config,
         evidence_layers : DATACUBE_CONFIG,
-        dry_run: true,
+//         dry_run: true,
     };
     
     $.ajax('submit_model_run', {
