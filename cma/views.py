@@ -363,14 +363,14 @@ def check_model_run_status(request):
     
     msg = 'No additional model outputs currently available'
     
+    n_complete = 0
     if len(res) == 0:
         msg = 'No model outputs available...'
     else:
         # Get mapfile content
         with open(mapfile.get_mapfile_path(),'r') as f:
             mapfile_content = f.read()
-            
-        n_complete = 0
+        
         for ol in res:
             #print(ol)
             dsid = ol['layer_id']
