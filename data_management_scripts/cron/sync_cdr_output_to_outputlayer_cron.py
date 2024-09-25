@@ -1,5 +1,7 @@
 import os, pidfile, sys
-from data_management_scripts import dm_util
+sys.path.append('..')
+import dm_util
+#from data_management_scripts import dm_util
 
 
 # First check if there's an existing sync'ing process running; exit if so.
