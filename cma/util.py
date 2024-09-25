@@ -600,6 +600,13 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
             print('NONTIF:',ds)
             
 
+def load_model_outputs(dsids):
+    dls = {'datalayers_lookup': {}}
+    if dsids:
+        dls = get_datalayers_for_gui(data_source_ids = dsids)
+        
+    return dls['datalayers_lookup']
+
 def sync_cdr_prospectivity_outputs_to_outputlayer(
         layer_id=None,
         cma_id=None,
@@ -695,8 +702,14 @@ def getOutputLayers():
     return models.OutputLayer.objects.all().order_by('category','subcategory','name')
 
 
-def sync_remote_outputs_to_local(dsid=None):
+def get_output_layer_local_sync_path(dsid):
     dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+    
+    return os.path.join(dd,f'{dsid}.tif')
+
+
+def sync_remote_outputs_to_local(dsid=None):
+    #dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
 
     # for datalayer in dm_util.getDataLayers():
     for datalayer in getOutputLayers():
@@ -705,7 +718,8 @@ def sync_remote_outputs_to_local(dsid=None):
         if dsid and datalayer.data_source_id != dsid:
             continue
 
-        ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
+        #ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
+        ofile = get_output_layer_local_sync_path(datalayer.data_source_id)
         if not os.path.exists(ofile):
             print('syncing to local:',datalayer.download_url)
             bn = os.path.basename(datalayer.download_url)

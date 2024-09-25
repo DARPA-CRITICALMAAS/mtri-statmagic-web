@@ -516,7 +516,8 @@ select {
 }
 
 .collapse.sub .header.topbar,
-.button.selected_model_config {
+.button.selected_model_config,
+.button.model_type_label {
     margin: 0px 10px;
     background-color: transparent;
     font-size: 1.0rem;
@@ -664,7 +665,8 @@ span.collapse {
     
 }
 .datalayer_table tbody tr:hover,
-.model_parameters_table tbody tr:hover {
+.model_parameters_table tbody tr:hover,
+#modeling_status_pane .model_run_status_table tr:hover {
     background-color: #222;
     
 }
@@ -1497,7 +1499,7 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     padding-top: 6px;
 }
 
-#modeling_initial_message {
+.modeling_message {
     padding: 4px 20px;
     color: #f2f2f2;
     font-size: 1.0rem;
@@ -1575,7 +1577,8 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     width: 100%;
     vertical-align: middle;
 }
-.button.selected_model_config {
+.button.selected_model_config,
+.button.model_type_label {
     display: none;
     text-transform: uppercase;
     font-family: monospace, ui-monospace, Arial; 
@@ -1585,6 +1588,10 @@ _::-webkit-full-page-media, _:future, :root input[type="checkbox"] {
     width: 260px;
     font-size: 1.1rem;
     background-color: #8a8a5c;*/
+}
+.button.model_type_label {
+    display: block;
+    
 }
 .button.selected_model_config:hover {
 /*     background-color: #006600; */
@@ -1838,7 +1845,11 @@ select#sites_display_select {
     font-size: 0.85rem;
     text-align: right;
 }
-
+.mpm_top_options.modeling {
+    text-align: left;
+    padding: 0px 4px 10px 16px;
+    display: none;
+}
 .mpm_top_active {
     margin-top: -12px;
     text-align: left;
@@ -1931,18 +1942,27 @@ select#sites_display_select {
 .model_run_instructions {
     font-size: 0.80rem;
     text-align: left;
-    padding: 8px 0px;
-    
+    padding: 2px 0px 16px 0px;
+}
+#model_run_loaded {
+    padding: 2px 0px 8px 0px;
+}
+
+.model_run_id {
+    color: #90d5c4;
+}
+.model_run_id.disabled {
+    color: #c3c3c3;
 }
 
 #modeling_initial_message2 {
+    margin-top: 10px;
     display: none;
     
 }
 #load_model_run .modal {
     width: 80%;
     left: 7%;
-    
 }
 .datalayer_lowlight {
     color: #999;
@@ -2034,12 +2054,122 @@ a.site_src_link {
 }
 .button.histogram {
     background-color: #6a7baf;
-    
+}
+#model_run_edited {
+    display: none;
+    color: #c3c3c3;
+    font-size: 0.75rem;
+}
+
+#model_run_status {
+/*     color: orange; */
+    /*float: right;
+    position: relative;
+    width: auto;
+    top: -30px;
+    font-size: 0.8rem;*/
+    animation: color-change 4s infinite;
+}
+.collapse.modeling .content.main {
+    margin-top: 2px;
     
 }
+/*#model_select {
+    float:right;
+    margin-right: 20px;
+    
+}*/
+
+.model_run_are_you_sure .modal {
+    color: #f2f2f2;
+    font-size: 1.0rem;
+/*     width: auto; */
+    height: auto;
+    
+}
+
+.new_run_start_label {
+    color: #6aaf7a;
+    font-weight: bold;
+}
+.new_run_cancel_label {
+    color: #a97070;
+    font-weight: bold;
+}
+
+#modeling_status_navigation {
+    display: none;
+}
+.back_arrow {
+    color:#b3b3b3;
+    display: inline-block;
+    font-size: 1.2rem;
+    line-height: 1.2rem;
+/*     font-weight: bold; */
+    margin-left: 14px;
+    cursor: pointer;
+    max-width: 40px;
+}
+.back_arrow:hover {
+    color: white;
+}
+
+.collapse div.model_run_status_title {
+    display: inline-block;
+    text-align: center;
+    width: calc(100% - 80px);
+    color: #c3c3c3;
+    margin-left: 20px;
+    font-size: 0.9rem;
+/*     margin-bottom: 10px; */
+}
+
+
+#modeling_status_pane table thead th,
+#modeling_status_pane table tr {
+    background-color: transparent;
+    color: #f2f2f2;
+}
+
+.collapse div.model_run_status_div {
+    border-top: 1px solid #555;
+    padding-top: 6px;
+    margin: 8px 20px;
+    width: calc(100% - 40px);
+}
+
+.model_run_status_header {
+    color: #999;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+}
+
+.model_run_status_header .model_run_id {
+    font-size: 1.0rem;
+    
+}
+#modeling_status_pane .model_run_status_table {
+    margin-left: 40px;
+    width: calc(100% - 40px);
+}
+
+.model_run_status_table td.status {
+    color: #f2f2a6;
+    
+}
+
+#modeling_status_pane {
+    display:none;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+@keyframes color-change {
+  0% { color: white; }
+  50% { color: orange; }
+  100% { color: white; }
 }
 /*#btn_cma_load {
     color: #ffb366;

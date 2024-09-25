@@ -49,12 +49,12 @@ post_data_intersect_sources = {
 #     print(el['data_source']['description'],el['data_source']['format'])
 # print(len(res['event']['payload']['evidence_layers']))
 # blerg
-# res = cdr.get_prospectivity_output_layers()
-# for r in res:
-#     print()
-#     print(r)
-# print(len(res))
-# blerg
+res = cdr.get_prospectivity_output_layers()
+for r in res:
+    print()
+    print(r)
+print(len(res))
+blerg
 # #
 # res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
 # #res = cdr.get_cmas()

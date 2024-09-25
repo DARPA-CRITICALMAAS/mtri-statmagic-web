@@ -9,6 +9,17 @@ from . import util
 import numpy as np
 
 
+def get_mapfile_path():
+    mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
+    mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/var/www/mapfiles{mfmod}'
+    
+    return os.path.join(mapfile_production_dir, settings.MAPFILE_FILENAME)
+  
+
+def scrub_wms_layername(name):
+    return name.replace('.','')
+
+
 def getCLASS(cmap,attribute='pixel'):
     c = 'COLOR'
     w = ''
@@ -49,7 +60,6 @@ def openRaster(tif_path):
 
 
 def write_mapfile(
-        mapfile_filename = 'statmagic.map',
         mapfile_title = 'StatMAGIC data layers',
         processing_scale_buckets = 100,
     ):
@@ -63,10 +73,7 @@ def write_mapfile(
     
     projection = 'AUTO'
     
-    mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
-    
-    mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/var/www/mapfiles{mfmod}'
-    mapfile_name = os.path.join(mapfile_production_dir, mapfile_filename)
+    mapfile_name = get_mapfile_path()
     mapfile_path = mapfile_name.replace(
         '/net/{}'.format(settings.MAPSERVER_SERVER),
         ''
@@ -306,7 +313,7 @@ def write_mapfile(
             agg_extent[2] = max(te[2], agg_extent[2])
             agg_extent[3] = max(te[3], agg_extent[3])
 
-        wms_layername = robj['wms_layername'].replace('.','')
+        wms_layername = scrub_wms_layername(robj['wms_layername'])
         wms_title = robj['wms_title']
 
         #proc = robj['wmslayerprocessing__processing']

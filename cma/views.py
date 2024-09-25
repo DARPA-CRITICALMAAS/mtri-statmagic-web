@@ -332,20 +332,81 @@ def sync_model_outputs(request):
     dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
         cma_id = params['cma_id']
     )
-
-    dls = {'datalayers_lookup': {}}
-    if dsids:
-        dls = util.get_datalayers_for_gui(data_source_ids = dsids)
-    
+ 
     response = HttpResponse(
         json.dumps({
             'params': params,
-            'DATALAYERS_LOOKUP_UPDATES': dls['datalayers_lookup'],
+            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(dsids),
         })
     )
     response['Content-Type'] = 'application/json'
 
     return response
+
+
+def check_model_run_status(request):
+    params = {
+        'model_run_id': '',
+    }
+    params = util.process_params(request,params)
+    
+    # Get list of outputs associated w/ model_run
+    cdr = cdr_utils.CDR()
+    res = cdr.get_prospectivity_output_layers(**params)
+    
+    # Get local database content 
+    dsids = [x[0] for x in  
+        models.OutputLayer.objects.filter(
+            model_run_id=params['model_run_id']
+        ).values_list('data_source_id')
+    ]
+    
+    msg = 'No additional model outputs currently available'
+    
+    if len(res) == 0:
+        msg = 'No model outputs available...'
+    else:
+        # Get mapfile content
+        with open(mapfile.get_mapfile_path(),'r') as f:
+            mapfile_content = f.read()
+            
+        n_complete = 0
+        for ol in res:
+            #print(ol)
+            dsid = ol['layer_id']
+            
+            # Check if layer is in database
+            if dsid not in dsids:
+                print(dsids)
+                print(dsid)
+                msg = 'Unprocessed outputs available; syncing with GUI...'
+                break
+
+            # Check if layer is sync'd locally 
+            if not os.path.exists(util.get_output_layer_local_sync_path(dsid)):
+                msg = 'Unprocessed model outputs available; optimizing for visualization...'
+                break
+        
+            # Check to see if all layers are in mapfile
+            if mapfile.scrub_wms_layername(dsid) not in mapfile_content:
+                msg = 'Extracting model output stats/extent for map visualization...'
+                break
+
+            # Track layers that made it through all the checks w/out breaking
+            n_complete += 1
+
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'complete': n_complete == len(res),
+            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(dsids),
+            'model_run_status': msg,
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
 
 def get_model_runs(request):
     '''
@@ -566,7 +627,8 @@ def submit_model_run(request):
         'cma_id': None,
         'model': None,
         'train_config': {},
-        'evidence_layers': []
+        'evidence_layers': [],
+        'dry_run': False,
     }
     params = util.process_params(request, params, post_json=True)
     
@@ -658,12 +720,15 @@ def submit_model_run(request):
     print('POSTing model run to CDR:')
     print(model_run)
     
-    # Post to CDR
     cdr = cdr_utils.CDR()
-    res = cdr.post_model_run(
-        model_run.model_dump_json(exclude_none=True)
-    )
-    
+    if params['dry_run']:
+        res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
+    else:
+        # Post to CDR
+        res = cdr.post_model_run(
+            model_run.model_dump_json(exclude_none=True)
+        )
+        
     res2 = cdr.get_model_run(res['model_run_id'])
 
     # Return JSON w/ ID indicating model run

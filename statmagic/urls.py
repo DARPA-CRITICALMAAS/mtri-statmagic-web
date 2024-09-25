@@ -33,6 +33,7 @@ urlpatterns = [
     path('get_model_outputs', cma_views.get_model_outputs),
     path('get_model_run', cma_views.get_model_run),
     path('get_model_runs', cma_views.get_model_runs),
+    path('check_model_run_status', cma_views.check_model_run_status),
     path('sync_model_outputs', cma_views.sync_model_outputs),
     path('recreate_mapfile', cma_views.recreate_mapfile),
     path(r'', cma_views.home),

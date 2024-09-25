@@ -34,7 +34,8 @@ const DRAW_STYLE = {
 var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
 // Cache for storing saved model parameters
-var MODELS_CACHE = JSON.parse(JSON.stringify(MODELS)) 
+var MODELS_CACHE;
+resetModelCache();
 
 const SPECIFY_EXTENT_TR = `
     <td class='label'>Extent:</td>
@@ -50,8 +51,12 @@ const SPECIFY_EXTENT_TR = `
     </td>
 `;
 
+function copyJSON(json) {
+    return JSON.parse(JSON.stringify(json));
+}
+
 function resetModelCache() {
-    MODELS_CACHE = JSON.parse(JSON.stringify(MODELS)) 
+    MODELS_CACHE = copyJSON(MODELS);
 }
 
 // Stuff to do when the page loads
@@ -423,7 +428,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     }
                     if (p.input_type == 'range_double') {
                         range_double_params[p.name] = p;
-                        input_html = `<input type='number' id='${pid}__min' /><div id='range_double__${p.name}' class='range_double'></div><input type='number' id='${pid}__max' />`;
+                        input_html = `<input type='number' id='${pid}__min' value=${p.html_attributes.value[0]}/><div id='range_double__${p.name}' class='range_double'></div><input type='number' id='${pid}__max' value=${p.html_attributes.value[1]} />`;
                     }
                 } else { // for 'select' elements
                     var opts = '';
@@ -481,19 +486,20 @@ function buildParametersTable(mobj, table_selector, dobj) {
     // Insert double sliders as needed
 //     console.log(range_double_params);
     $('.range_double').each(function(i,cmp) {
-//         console.log(i,cmp,range_double_params);
         if (Object.keys(range_double_params).length == 0) {
             return;
         }
         var pname = cmp.id.split('__')[1];
         var p = range_double_params[pname];
         var start_vals = p.html_attributes.value;
+
         if (!start_vals) {
             start_vals = [p.html_attributes.min,p.html_attributes.max];
         }
-        if ($(cmp).is(':empty')) {
+        if (!$(cmp).is(':empty')) {
             return;
         }
+
         noUiSlider.create(cmp, {
             range: {
                 'min': p.html_attributes.min,
@@ -538,8 +544,6 @@ function buildParametersTable(mobj, table_selector, dobj) {
 }
 
 
-
-
 // Resets model UI to starting point
 // NOTE: the 'clear' arg was added to control whether or not to totally wipe
 //       out the data cube selections and model config changes, BUT I'm not
@@ -553,11 +557,24 @@ function resetModelUI(clear) {
     $('.collapse_model_run').hide();
     $('#modeling_buttons_table').hide();
     $('.radiocube').hide();
+    $('#model_run_loaded .model_run_id').addClass('disabled');
+    $('#model_run_loaded').hide();
+    $('#model_run_loaded .model_run_id').html('[none loaded]');
+    $('#model_run_edited').hide();
+
 //     $('#model_select').val('');
     
     if (clear) {
         clearModelUIselections();
     }
+}
+
+function showModelingMainPane() {
+    $('#modeling_status_pane').hide();
+    $('#modeling_main_pane').show();
+    $('.mpm_top_options.modeling').show();
+    
+    
 }
 
 function clearModelUIselections(){ 
@@ -636,6 +653,7 @@ function clearCMA() {
     
     $('#modeling_initial_message').show();
     $('#modeling_initial_message2').hide();
+    $('.mpm_top_options.modeling').hide();
     
     $('.model_select_div').hide();
     
@@ -779,6 +797,28 @@ function loadModelRuns(cma_id) {
     });
 }
 
+// Process updates to datalayers received from backend, e.g. when checking for 
+function processDataLayersUpdates(response) {
+    $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
+        if (!DATALAYERS_LOOKUP[dsid]) {
+            DATALAYERS_LOOKUP[dsid] = dl;
+            
+            alert(`New layer available!: ${dl.name} (${dsid})`);
+            
+            // Create WMS map layer so it can be loaded to map
+            createMapLayer(dl.data_source_id,dl)
+            
+            // Add layer lookup 
+            DATALAYERS_LOOKUP[dl.data_source_id] = dl;
+            
+            // Add the layer to the layer list
+            var table = $('#model_outputs_table');
+            addRowToDataLayersTable(table,dl);
+        }
+    });
+    
+}
+
 // Requests backend to check for any output layers that have not yet been
 // sync'd w/ the GUI's PG database.
 function syncModelOutputs(cma_id) {
@@ -791,22 +831,7 @@ function syncModelOutputs(cma_id) {
             console.log(response);
             
             // Update DATALAYERS_LOOKUP
-            $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
-                if (!DATALAYERS_LOOKUP[dsid]) {
-                    DATALAYERS_LOOKUP[dsid] = dl;
-                    
-                    // Create WMS map layer so it can be loaded to map
-                    createMapLayer(dl.data_source_id,dl)
-                    
-                    // Add layer lookup 
-                    DATALAYERS_LOOKUP[dl.data_source_id] = dl;
-                    
-                    // Add the layer to the layer list
-                    var table = $('#model_outputs_table');
-                    addRowToDataLayersTable(table,dl);
-                }
-            });
-            
+            processDataLayersUpdates(response);
         },
         error: function(response) {
             console.log(response);
@@ -884,6 +909,8 @@ function loadModelRun(cma_id,model_run_id) {
     var model_run = CMAS_EXISTING[cma_id].model_run_objects[model_run_id];
     console.log(model_run);
     
+   
+    
     // Populate model config
     // Map of various model type vars to those listed in GUI
     var mtypemap = {
@@ -897,6 +924,13 @@ function loadModelRun(cma_id,model_run_id) {
     
     $('#model_select').val(mtype);
     onModelSelect();
+    
+     // Update Model run ID label
+    $('#model_run_loaded .model_run_id').html(model_run_id);
+    $('#model_run_loaded .model_run_id').removeClass('disabled');
+    $('#model_run_loaded').show();
+    
+    $('.mpm_top_options.modeling').show();
     
     // Populate model config
     var train_config = model_run.event.payload.train_config;
@@ -2214,6 +2248,7 @@ function submitModelRun() {
         model: model,
         train_config: train_config,
         evidence_layers : DATACUBE_CONFIG,
+        dry_run: true,
     };
     
     $.ajax('submit_model_run', {
@@ -2223,10 +2258,105 @@ function submitModelRun() {
         contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
-            alert(`Model run submitted successfully! Run id: ${response.model_run_id}`);
+            var mrid = response.model_run_id;
+            alert(`Model run submitted successfully! Run id: ${mrid}`);
+            
+            // Load model run ID
+            $('#model_run_loaded .model_run_id').html(mrid);
+            $('#model_run_loaded').show();
+            $('#model_run_edited').hide();
+            
+            // Load model run to status table
+            var ts = getDateAsYYYYMMDD(new Date(),true,true).split(' ');
+            $('#model_run_status_list').append(`
+                <div class='model_run_status_div' data-model_run_id=${mrid}>
+                    <div class='model_run_status_header'>
+                        Status for run ID:
+                        <div class='model_run_id'>${mrid}</div>
+                    </div>
+                    <table class='model_parameters_table model_run_status_table'>
+                        <tr>
+                            <td class='label'>Submitted at:</td>
+                            <td class='timestamp'>
+                                <span class='date'>${ts[0]}</span>
+                                <span class='time'>${ts[1]}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Status:</td>
+                            <td class='status'>Submitted successfully; in progress..</td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Last updated:</td>
+                            <td class='last_updated'>
+                                <span class='date'>${ts[0]}</span>
+                                <span class='time'>${ts[1]}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </tr>
+            `);
             
             // Now re-query the CDR so the new model run shows up in the table
-            loadModelRuns(cma_id)
+            loadModelRuns(cma_id);
+            
+            // Toggle data cube if it is open (to clean up UI);
+            if ($('.header.datacube .collapse').html() == '-') {
+                toggleHeader($('.header.datacube'));
+            }
+            
+            // Show the 'status' option in the MODELING navigation
+            $('#modeling_status_navigation').show();
+            
+            showModelRunStatus();
+            
+            // Start the model run status monitor
+            checkModelRunStatus(response.model_run_id);
+        },
+        error: function(response) {
+            console.log(response);
+            alert(response.responseText);
+        },
+    });
+}
+
+function showModelRunStatus() {
+    
+    $('#modeling_status_pane').show();
+    $('#modeling_main_pane').hide();
+    $('.mpm_top_options.modeling').hide();
+    
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function checkModelRunStatus(model_run_id) {
+    
+    $.ajax('check_model_run_status', {
+        data: {
+            model_run_id: model_run_id,
+        },
+        type: 'GET',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            processDataLayersUpdates(response);
+            
+            // Update model run status message
+            var ts = getDateAsYYYYMMDD(null,true,true).split(' ');
+            var sel0 = `.model_run_status_div[data-model_run_id="${model_run_id}"]`;
+            $(`${sel0} td.status`).html(response.model_run_status);
+            $(`${sel0} td.last_updated`).html(`
+                <span class='date'>${ts[0]}</span>
+                <span class='time'>${ts[1]}</span>
+            `);
+            
+            // Wait 3 seconds and then check again
+            sleep(60000).then(() => {
+                checkModelRunStatus(response.model_run_id);
+            });
         },
         error: function(response) {
             console.log(response);
@@ -2613,11 +2743,15 @@ function getParametersFromHTMLattrs(el) {
     return params;
 }
 
+
 function onSaveProcessingSteps() {
     $('#datacube_processingsteps').hide();
     
     var dsid = $('#processingsteps_layername').attr('data-data_source_id');
     var dcid = $('#processingsteps_layername').attr('data-datacubeindex');
+    
+    // Save copy of previous methods to check against new for changes
+    var tms_cache = copyJSON(DATACUBE_CONFIG[dcid].transform_methods);
     
     // Reset everything
     DATACUBE_CONFIG[dcid].transform_methods = [];
@@ -2642,6 +2776,11 @@ function onSaveProcessingSteps() {
         step_html += '</table>';
     }
     $(`tr[data-layername='${dsid}'] span.processingsteps_list`).html(step_html);
+    
+    // Indicate 'edited' if changes were made
+    if (!_.isEqual(tms_cache,DATACUBE_CONFIG[dcid].transform_methods)) {
+        setModelRunEdited();
+    }
 }
 
 
@@ -2657,6 +2796,7 @@ function updateSHPlabel(shp,el_id,msg) {
         c.html(msg);
     }
 }
+
 
 // detect a change in a file input with an id of “the-file-input”
 $("#file_shp").change(function() {
@@ -2856,11 +2996,17 @@ function zeroPad(num, places) {
     return Array(+(zero > 0 && zero)).join("0") + num;
 }
 
-function getDateAsYYYYMMDD(dt,hhmm) {
+function getDateAsYYYYMMDD(dt,hhmm,hhmm_pretty) {
     dt = dt || new Date();
     var dtstr = `${dt.getFullYear()}-${zeroPad(dt.getMonth()+1,2)}-${zeroPad(dt.getDate(),2)}`;
     if (hhmm) {
-        dtstr += `_${zeroPad(dt.getHours(),2)}${zeroPad(dt.getMinutes(),2)}`;
+        var hmstr;
+        if (hhmm_pretty) {
+            hmstr = ` ${zeroPad(dt.getHours(),2)}:${zeroPad(dt.getMinutes(),2)}`;
+        } else {
+            hmstr = `_${zeroPad(dt.getHours(),2)}${zeroPad(dt.getMinutes(),2)}`;
+        }
+        dtstr += hmstr;
     }
     return dtstr;
 }
@@ -2880,6 +3026,8 @@ function saveParametersForm() {
     
     var parent_type = $('.parameters_form_title').attr('data-parent_type');
     var parent_id = $('.parameters_form_title').attr('data-parent_id');
+    
+    var changes = false;
     
     if (parent_type == 'processingstep') {
         // TODO: get layer
@@ -2902,11 +3050,15 @@ function saveParametersForm() {
     if (parent_type == 'model') {
         // Save any values to the model metadata var
         var mobj = MODELS[parent_id];
+        var changes = false;
         $.each(mobj.parameters, function(reqopt,groups) {
             $.each(groups, function(g,parr) {
                 $.each(parr, function(i,p) {
                     var p_cache = MODELS_CACHE[parent_id].parameters[reqopt][g][i];
                     var v = $(`#${mobj.name}__${p.name}`).val();
+                    if (p.input_type != 'range_double' && v != p_cache.html_attributes.value) {
+                        changes = true;
+                    }
                     p_cache.html_attributes.value = v;
 //                     p.html_attributes.value = v;
                     
@@ -2914,21 +3066,34 @@ function saveParametersForm() {
                         var vmin = $(`#${mobj.name}__${p.name}__min`).val();
                         var vmax = $(`#${mobj.name}__${p.name}__max`).val();
 //                         p.html_attributes.value = [vmin,vmax];
+                        var v = [vmin,vmax];
+                        if (v == p_cache.html_attributes.value) {
+                            changes = true;
+                        }
                         p_cache.html_attributes.value = [vmin,vmax];
                         
                     }
                 });
             });
         });
+        
+        // If changes were made from a previously loaded model, indicate edited 
+        if (changes) {
+            setModelRunEdited();
+        }
     }
     
     $('.parameters_form').hide();
     
 }
 
+function setModelRunEdited() {
+    if ($('#model_run_loaded .model_run_id').html() != '[none loaded]') {
+        $('#model_run_edited').show();
+    }
+}
+
 function initiateCMA() {
-//     console.log('initiating CMA eventually...');
-    
     data = {};
     $.each(['resolution','mineral','description','crs'], function(i,p) {
         data[p] = $(`#cma_${p}`).val();
@@ -3116,9 +3281,18 @@ function uploadDataLayer() {
     });
 }
     
-function startNewModelRun() {
-    $('#modeling_initial_message2').hide();
-    $('.model_select_div').show();
+function startNewModelRun(are_you_sure) {
+    $('.model_run_are_you_sure').hide();
+    $('.mpm_top_options.modeling').show();
+    
+    // If things have changed, make sure user has a chance to cancel first
+    if (are_you_sure && $('#model_select').val()) {
+        $('.overlay.model_run_are_you_sure').show();
+    } else {
+        resetModelUI(true);
+        $('#modeling_initial_message2').hide();
+        $('.model_select_div').show();
+    }
 }
 
 function onStartedCMA(cma) {

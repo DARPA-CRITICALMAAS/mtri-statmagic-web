@@ -165,6 +165,8 @@ STATIC_ROOT = BASE_DIR / "assets"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+MAPFILE_FILENAME = 'statmagic.map'
+
 MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
