@@ -980,8 +980,13 @@ def download_model_outputs(request):
     params = {
         'urls': [],
         'cma_name': '',
+        'model_run_id': '',
     }
     params = util.process_params(request, params, post_json=True)
 
-    return util.download_model_outputs(params['urls'], params['cma_name'])
+    return util.download_model_outputs(
+        params['urls'],
+        params['cma_name'],
+        params['model_run_id']
+    )
 

@@ -737,7 +737,7 @@ function loadModelOutputs(cma_id,model_run_id) {
             <td></td>
             <td></td>
             <td></td>
-            <td class="colname">Download All</td>
+            <td class="colname">Download ALL</td>
         </tr>
         <tr>
             <td></td>
@@ -766,9 +766,12 @@ function downloadModelOutputsBulk() {
     });
     let cma_name = $("#cma_loaded")[0].innerText;
 
+    var model_run_id = $('#model_output_layers_filter select').val();
+    
     data = {
         urls: dl_urls,
-        cma_name: cma_name
+        cma_name: cma_name,
+        model_run_id: model_run_id,
     }
 
     // Use XMLHttpRequest instead of Jquery $ajax
@@ -780,7 +783,7 @@ function downloadModelOutputsBulk() {
             a = document.createElement('a');
             a.href = window.URL.createObjectURL(xhttp.response);
             // Give filename you wish to download
-            a.download = `${cma_name}_model_outputs.zip`;
+            a.download = `${cma_name}_${model_run_id}_model_outputs.zip`;
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();

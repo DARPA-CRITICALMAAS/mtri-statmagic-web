@@ -1110,7 +1110,7 @@ def get_extent_geom_of_raster(tif):
         'coordinates': [coords]
     }
 
-def download_model_outputs(urls_to_download, cma_name):
+def download_model_outputs(urls_to_download, cma_name, model_run_id):
     from zipfile import ZipFile, ZIP_DEFLATED
     from io import BytesIO, StringIO
     import requests
@@ -1129,7 +1129,9 @@ def download_model_outputs(urls_to_download, cma_name):
     bytes_io.seek(0)
     response = HttpResponse(bytes_io.read(), content_type='application/zip')
     bytes_io.close()
-    response['Content-Disposition'] = f'attachment; filename="{cma_name}.zip"'
+    zipname = f'{cma_name}.zip' if not model_run_id else f'{cma_name}_{model_run_id}.zip'
+    print(model_run_id);
+    response['Content-Disposition'] = f'attachment; filename="{zipname}"'
 
     return response
     
