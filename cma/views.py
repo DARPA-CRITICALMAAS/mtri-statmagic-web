@@ -656,16 +656,45 @@ def submit_model_run(request):
         #  identical specifications (e.g. if both transform and scaling had
         #  'mean' option, that would confuse things)
         
+         #for tm in el['transform_methods']:
+            #dfs = processing_steps[tm['name']]['parameter_defaults']
+            #vs = {}
+            #for p,default_v in dfs.items():
+                #v = default_v
+                #if p in tm['parameters']:
+                    #v = tm['parameters'][p]
+                #vs[p] = v
+                
+            #if tm['name'] == 'impute':
+                #vs = json.loads(prospectivity_input.Impute(
+                    #impute_method=vs['method'],
+                    #window_size=[vs['window_size']]*2
+                #).model_dump_json())
+
+            #tms.append({'name': tm['name'], 'parameters': vs})
+        
         tms = []
         for tm in el['transform_methods']:
             
             # For transform/scale, the only param is 'method'; if not set, 
             # get the default value
+            if tm['name'] == 'scale':
+                continue
             if tm['name'] in ('transform','scale'):
-                if 'method' in tm['parameters']:
-                    v = tm['method']
-                else:
-                    v = processing_steps[tm['name']]['parameter_defaults']['method']
+                dfs = processing_steps[tm['name']]['parameter_defaults']
+                vs = {}
+                for p,default_v in dfs.items():
+                    v = default_v
+                    if p in tm['parameters']:
+                        v = tm['parameters'][p]
+                    vs[p] = v
+                    tms.append(v)
+                
+                #if 'method' in tm['parameters']:
+                    #v = tm['method']
+                #else:
+                    #v = processing_steps[tm['name']]['parameter_defaults']['method']
+                    
                 
             if tm['name'] == 'impute':
                 dfs = processing_steps[tm['name']]['parameter_defaults']
@@ -681,9 +710,10 @@ def submit_model_run(request):
                     window_size=[vs['window_size']]*2
                 )
 
-            tms.append(v)
+                tms.append(v)
 
-        print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
+        #print(tms)
+        #print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
         l = prospectivity_input.DefineProcessDataLayer(
             cma_id = params['cma_id'],
             data_source_id = el["data_source_id"],
@@ -695,6 +725,8 @@ def submit_model_run(request):
             #]
         )
         evidence_layers.append(l)
+        #print(l.
+        #blerg
    
     train_config = params['train_config']
    
@@ -719,6 +751,10 @@ def submit_model_run(request):
     
     print('POSTing model run to CDR:')
     print(model_run)
+    #for el in json.loads(model_run.model_dump_json(exclude_none=True))['evidence_layers']:
+        #print('')
+        #print(el)
+    #blerg
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:
