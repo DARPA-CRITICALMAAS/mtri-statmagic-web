@@ -9,7 +9,7 @@ import dm_util
 pid_current = int(os.getpid())
 pids = []
 for line in os.popen(f'ps aux | grep {__file__}'):
-   if 'grep' in line or 'aux' in line:
+   if 'grep' in line or 'aux' in line or '.log' in line:
       continue
    pid = int(line.split()[1])
    if pid != pid_current:
