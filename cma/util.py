@@ -1109,6 +1109,29 @@ def get_extent_geom_of_raster(tif):
         'type': 'Polygon',
         'coordinates': [coords]
     }
+
+def download_model_outputs(urls_to_download, cma_name):
+    from zipfile import ZipFile, ZIP_DEFLATED
+    from io import BytesIO, StringIO
+    import requests
+
+    # Now write the files to zip
+    bytes_io = BytesIO()
+
+    with ZipFile(bytes_io, 'w', ZIP_DEFLATED) as archive:
+        for url in urls_to_download:
+            print(url)
+            print(os.path.basename(url))
+            file_contents = requests.get(url).content
+            archive.writestr(os.path.basename(url), file_contents)
+            # archive.write(file_contents, os.path.basename(url))
+
+    bytes_io.seek(0)
+    response = HttpResponse(bytes_io.read(), content_type='application/zip')
+    bytes_io.close()
+    response['Content-Disposition'] = f'attachment; filename="{cma_name}.zip"'
+
+    return response
     
 
     ## Open raster, pull out metadata and data

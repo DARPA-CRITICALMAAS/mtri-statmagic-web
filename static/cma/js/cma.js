@@ -732,6 +732,22 @@ function loadModelOutputs(cma_id,model_run_id) {
     
     var table = $('#model_outputs_table');
     table.empty();
+    table.append(`
+        <tr class="subcategory_label">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="colname">Download All</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class='download'>
+                <img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk()" height=12 width=12 />
+            </td>
+        </tr>
+    `);
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
         if (d.cma_id && d.cma_id == cma_id &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
@@ -739,6 +755,43 @@ function loadModelOutputs(cma_id,model_run_id) {
             addRowToDataLayersTable(table,d,true);
         }
     });
+}
+
+function downloadModelOutputsBulk() {
+    console.log("in bulk download function")
+
+    let dl_urls = [];
+    $("#model_outputs_table .download a").each(function() {
+        dl_urls.push($(this).attr('href'));
+    });
+    let cma_name = $("#cma_loaded")[0].innerText;
+
+    data = {
+        urls: dl_urls,
+        cma_name: cma_name
+    }
+
+    // Use XMLHttpRequest instead of Jquery $ajax
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        var a;
+        if (xhttp.readyState === 4 && xhttp.status === 200) {
+            // Trick for making downloadable link
+            a = document.createElement('a');
+            a.href = window.URL.createObjectURL(xhttp.response);
+            // Give filename you wish to download
+            a.download = `${cma_name}_model_outputs.zip`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+        }
+    };
+    // Post data to URL which handles post request
+    xhttp.open("POST", `/download_model_outputs`);
+    xhttp.setRequestHeader("Content-Type", "application/json");
+    // You should set responseType as blob for binary responses
+    xhttp.responseType = 'blob';
+    xhttp.send(JSON.stringify(data));
 }
 
 // Retrieves GUI metadata (e.g. list of existing CMAs/MPMs, commodity list)
