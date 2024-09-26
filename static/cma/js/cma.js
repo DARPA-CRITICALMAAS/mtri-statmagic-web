@@ -19,7 +19,8 @@ var drawnItems = new L.FeatureGroup();
 var drawnLayer;
 var extentPreviewLayer;
 var DATACUBE_CONFIG = [];
-var GET_MINERAL_SITES_RESPONSE_MOST_RECENT;
+var GET_MINERAL_SITES_RESPONSE_MOST_RECENT
+var GET_MODEL_RUNS_MOST_RECENT;
 var MINERAL_SITES_LAYER;
 var CMAS_EXISTING;
 var FISHNET_LAYER = new L.FeatureGroup();
@@ -712,15 +713,19 @@ function loadCMA(cma_id) {
      // Load known deposit sites
      loadMineralSites();
      
+     // Reset model outputs filter 
+     $('#model_output_layers_filter select').val('all');
      // NOTE: vvv inititally load outputs; then check for others via "sync
 //      Load outputs
-      loadModelOutputs(cma_id);
+      loadModelOutputs(cma_id,'all');
       
       syncModelOutputs(cma_id);
     
 }
 
 function loadModelOutputs(cma_id,model_run_id) {
+    cma_id = cma_id || getActiveCMAID();
+    model_run_id = model_run_id || $('#model_output_layers_filter select').val();
     
     // Check for outputs that are not sync'ed to the GUI yet
     // PUT THIS IN LOADMOELRUNS
@@ -729,7 +734,7 @@ function loadModelOutputs(cma_id,model_run_id) {
     table.empty();
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
         if (d.cma_id && d.cma_id == cma_id &&
-            (!model_run_id || (d.model_run_id && d.model_run_id == model_run_id))
+            (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
         ) {
             addRowToDataLayersTable(table,d,true);
         }
@@ -787,6 +792,8 @@ function loadModelRuns(cma_id) {
         success: function(response) {
             console.log(response);
             
+            GET_MODEL_RUNS_MOST_RECENT = response.model_runs;
+            
             // Load outputs
             loadModelOutputs(cma_id);
             processModelRunsFromCDR(response.model_runs);
@@ -842,8 +849,10 @@ function syncModelOutputs(cma_id) {
 // From the return of the 'get_model_runs' endpoint, populates the 
 // table that shows when "load an existing model run" is clicked
 function processModelRunsFromCDR(model_runs) {
+    model_runs = model_runs || GET_MODEL_RUNS_MOST_RECENT;
     
-    trs = '';
+    var trs = '';
+    var opts = `<option value="all" selected}>all</option>`;
     $.each(model_runs, function(mrid, mobj) {
         
         // Skip model runs w/ zero evidence layers
@@ -873,6 +882,8 @@ function processModelRunsFromCDR(model_runs) {
         
         var sys = mobj.system || '--';
         var sysv = mobj.system_version || '--';
+//         console.log(opts_filter,mrid,opts_filter == 'all',opts_filter == mrid,opts_filter == 'all' || opts_filter == mrid);
+//         if (opts_filter == 'all' || opts_filter == mrid) {
         trs += `
             <tr onclick="loadModelRun('${mobj.cma_id}','${mrid}')";>
                 <td>${mrid}</td>
@@ -884,8 +895,18 @@ function processModelRunsFromCDR(model_runs) {
                 <td>${n_outputs}</td>
             </tr>
         `;
+//         }
+        //var sel = opts_filter == mrid ? ' selected' : '';
+        var sel = '';
+        opts += `
+            <option value='${mrid}'${sel}>Model run: ${mrid} (${mobj.model_type},${cleanTimestamp(mobj.event.timestamp)}, ${n_outputs} outputs)</option>
+        `;
+        
     });
+//     console.log(opts);
+//     console.log(model_runs);
     $('#model_runs_table tbody').html(trs);
+    $('#model_output_layers_filter select').html(opts);
 
 }
 
@@ -2225,6 +2246,11 @@ function showModelInfo(layer_name) {
     $('#model_info').show();
 }
 
+function getActiveCMAID() {
+    return $('#cma_loaded').attr('data-cma_id');
+    
+}
+
 // Send POST request to backend
 function submitModelRun() {
     var model = $('#model_select').val();
@@ -2242,7 +2268,7 @@ function submitModelRun() {
         });
     });
 
-    var cma_id = $('#cma_loaded').attr('data-cma_id');
+    var cma_id = getActiveCMAID();
     var data = {
         cma_id: cma_id,
         model: model,
@@ -2284,7 +2310,7 @@ function submitModelRun() {
                         </tr>
                         <tr>
                             <td class='label'>Status:</td>
-                            <td class='status'>Submitted successfully; in progress..</td>
+                            <td class='status'>Submitted successfully; in progress...</td>
                         </tr>
                         <tr>
                             <td class='label'>Last updated:</td>
@@ -2311,7 +2337,7 @@ function submitModelRun() {
             showModelRunStatus();
             
             // Start the model run status monitor
-            checkModelRunStatus(response.model_run_id);
+            checkModelRunStatus(mrid);
         },
         error: function(response) {
             console.log(response);
@@ -2355,7 +2381,7 @@ function checkModelRunStatus(model_run_id) {
             
             // Wait 3 seconds and then check again
             sleep(60000).then(() => {
-                checkModelRunStatus(response.model_run_id);
+                checkModelRunStatus(model_run_id);
             });
         },
         error: function(response) {

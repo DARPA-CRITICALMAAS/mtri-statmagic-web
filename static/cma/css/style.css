@@ -2162,6 +2162,15 @@ a.site_src_link {
     display:none;
 }
 
+#model_output_layers_filter {
+    margin: 0px 20px;
+    width: calc(100% - 40px);
+    color: #bfbfbf;
+    font-size: 0.8rem;
+    text-align: center;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

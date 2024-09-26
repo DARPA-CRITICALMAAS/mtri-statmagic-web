@@ -178,6 +178,13 @@
                     <div class='collapse sub'>
                         <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}{% if category == "User uploads" %}<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div>{% endif %}</div>
                         <div class='content'>
+                            {% if category == "model outputs" %} 
+                                <div id='model_output_layers_filter'>
+                                    Filter MPM outputs: <select onchange='loadModelOutputs();'>
+                                        <option value='all'>all</option>
+                                    </select>
+                                </div>
+                            {% endif %}
                             <table class='datalayer_table'
                                 {% if category == "User uploads" %} id='user_upload_layers_table'{% endif %}
                                 {% if category == "model outputs" %} id='model_outputs_table'{% endif %}
