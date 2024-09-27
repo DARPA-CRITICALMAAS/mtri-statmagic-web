@@ -1983,7 +1983,9 @@ select#sites_display_select {
     padding: 3px 6px;
     
 }
-.header.topbar.toptop {
+.header.topbar.toptop,
+.header.topbar.deposit_sites,
+.header.topbar.modeling {
     margin-bottom: 8px;
     
 }
@@ -2168,6 +2170,9 @@ a.site_src_link {
     color: #bfbfbf;
     font-size: 0.8rem;
     text-align: center;
+}
+#model_output_layers_filter select {
+    width: 280px;
     
 }
 

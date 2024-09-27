@@ -60,7 +60,7 @@ def home(request):
         util.load_parameters(model_opts[modelname]['parameters'],mp)
 
     # Get data layers
-    dls = util.get_datalayers_for_gui()
+    dls = util.get_datalayers_for_gui(include_outputlayers=False)
     
     # Put any data/info you want available on front-end in this dict
     context = {
@@ -302,7 +302,6 @@ def get_model_runs_for_cma(request):
     for mr in cdr.get_model_runs(params['cma_id']):
         mrs.append(mr['model_run_id'])
         
-        
     # While we're at it, check CDR and sync any outputs not yet present
     dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
         cma_id = params['cma_id']
@@ -328,15 +327,21 @@ def sync_model_outputs(request):
     }
     params = util.process_params(request,params)
     
-    # Check CDR and sync any outputs not yet present
-    dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
-        cma_id = params['cma_id']
-    )
+    # NOTE: commenting out the sync step now b/c much better to let the cron
+    #       take care of this detached from front-end. Instead just do a fresh
+    #       database check for any new model outputs for the given CMA ID
+    ## Check CDR and sync any outputs not yet present
+    #dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
+        #cma_id = params['cma_id']
+    #)
  
     response = HttpResponse(
         json.dumps({
             'params': params,
-            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(dsids),
+            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(
+                #dsids,
+                cma_id=params['cma_id']
+            ),
         })
     )
     response['Content-Type'] = 'application/json'
@@ -751,10 +756,7 @@ def submit_model_run(request):
     
     print('POSTing model run to CDR:')
     print(model_run)
-    #for el in json.loads(model_run.model_dump_json(exclude_none=True))['evidence_layers']:
-        #print('')
-        #print(el)
-    #blerg
+    #print(model_run.model_dump_json(exclude_none=True))
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:
@@ -793,6 +795,7 @@ def get_mineral_sites(request):
         'top1_deposit_type': None,
         'top1_deposit_group': None,
         'top1_deposit_classification_confidence__gte': 0.0,
+        'only_gradetonnage': False,
         
         # this will be converted to bbox_polygon for CDR
         'wkt': '', # WKT polygon indicating AOI
@@ -875,6 +878,13 @@ def get_mineral_sites(request):
     #   * TODO: also trim out unncessary properties
     sites_gj = []
     for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
+        # Apply grade/tonnage data filter
+        #print(params['only_gradetonnage'])
+        if params['only_gradetonnage'] in ('true',True,'True','t','T') and not site['grade']:
+           # print('skipping!')
+            continue
+        
+        # Apply primary deposit site confidence threshold filter
         conf_thresh = params['top1_deposit_classification_confidence__gte']
         conf = site['top1_deposit_classification_confidence']
         if conf_thresh and conf:

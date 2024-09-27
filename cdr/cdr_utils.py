@@ -261,7 +261,7 @@ class CDR():
             f'prospectivity/model_run?model_run_id={model_run_id}'
         )
 
-    def get_model_runs(self, cma_id, size=100):
+    def get_model_runs(self, cma_id, size=10000):
         return self.run_query(
             f'prospectivity/model_runs?cma_id={cma_id}&size={size}'
         )

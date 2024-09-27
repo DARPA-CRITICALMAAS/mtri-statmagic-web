@@ -2,11 +2,12 @@
 Backend utility code.
 '''
 
-import json, math, os, random, re, requests, shutil, string, tempfile, zipfile
+import glob, json, math, os, random, re, requests, shutil, string, tempfile, zipfile
 from pathlib import Path
 from io import BytesIO
 from numbers import Number
 import geopandas as gpd
+from urllib.request import urlopen
 from shapely.geometry import box
 import xarray, pyproj
 from datetime import datetime as dt
@@ -600,10 +601,13 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
             print('NONTIF:',ds)
             
 
-def load_model_outputs(dsids):
+def load_model_outputs(dsids=None,cma_id=None):
     dls = {'datalayers_lookup': {}}
-    if dsids:
-        dls = get_datalayers_for_gui(data_source_ids = dsids)
+    
+    # NOTE: commenting this filter out for now since we're no longer grabbing
+    #       model outputs by default on get_metadata
+    #if dsids:
+    dls = get_datalayers_for_gui(include_datalayers=False,cma_id=cma_id)#data_source_ids = dsids)
         
     return dls['datalayers_lookup']
 
@@ -702,10 +706,10 @@ def getOutputLayers():
     return models.OutputLayer.objects.all().order_by('category','subcategory','name')
 
 
-def get_output_layer_local_sync_path(dsid):
+def get_output_layer_local_sync_path(dsid,ext='tif'):
     dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
     
-    return os.path.join(dd,f'{dsid}.tif')
+    return os.path.join(dd,f'{dsid}.{ext}')
 
 
 def sync_remote_outputs_to_local(dsid=None):
@@ -737,15 +741,27 @@ def sync_remote_outputs_to_local(dsid=None):
             os.system(f'gdaladdo {ofile} 2 4 8 16')
 
     
-def get_datalayers_for_gui(data_source_ids=[]):
+def get_datalayers_for_gui(
+        data_source_ids=[],
+        include_datalayers=True,
+        include_outputlayers=True,
+        cma_id=None
+    ):
     datalayers = {'User uploads':{}} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
     filters = {'disabled': False}
     if data_source_ids:
         filters['data_source_id__in'] = data_source_ids
-    
-    print(filters)
-    for Obj in (models.DataLayer, models.OutputLayer):
+    if cma_id:
+        filters['cma_id'] = cma_id
+
+    mods = []
+    if include_datalayers:
+        mods.append(models.DataLayer)
+    if include_outputlayers:
+        mods.append(models.OutputLayer)
+    print(filters, mods)
+    for Obj in mods:#(models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
                 'category','subcategory','name'
             ):
@@ -1109,6 +1125,85 @@ def get_extent_geom_of_raster(tif):
         'type': 'Polygon',
         'coordinates': [coords]
     }
+
+def process_vector_for_mapfile(download_url):
+    '''
+        dataset: models.DisplayLayer instance (OutputLayer or DataLayer)
+    '''
+    
+    # Get datasource ID from the download URL
+    dsid = Path(download_url).stem
+    
+    # Check if already downloaded
+    path_base = get_output_layer_local_sync_path(dsid,ext='')
+    if len(glob.glob(f'{path_base}*')) == 0:
+        print('downloading to local sync dir:',download_url)
+    
+        # If not, download the file
+        resp = urlopen(download_url)
+        
+        # Open zipfile
+        myzip = zipfile.ZipFile(BytesIO(resp.read()))
+        
+        # Extract contents to temporary directory
+        with tempfile.TemporaryDirectory() as tempdir:
+            myzip.extractall(tempdir)
+            
+            # Now find the dir w/ the .shp and move all those files to the local
+            # sync folder 
+            
+            # Identify the dir with the shapes
+            td = glob.glob(f'{tempdir}/*')[0]
+            for f in glob.glob(f'{td}/*'):
+                # Extract local sync path
+                stem = Path(f).stem
+                exts = f.split('/')[-1].split(stem)[1].lstrip('.')
+                sync_path = get_output_layer_local_sync_path(dsid,ext=exts)
+                
+                # And copy to local sync dir
+                print(f"\tsyncing {f} to: {sync_path}")
+                shutil.move(f, sync_path)
+                #print('\n',f, exts, stem, sync_path)
+
+    # Open shapefile 
+    shp = f'{path_base}shp'
+    print('extracting metadata for:',shp)
+    gdf = gpd.read_file(shp)
+    
+    # Get attribute stats
+    stats = {}
+    for colname in gdf.columns:
+        if colname in ('geometry',):
+            continue
+        
+        print(colname)
+        stats[colname] = {
+            'min': gdf[colname].min(),
+            'max': gdf[colname].max()
+        }
+        
+    # Get bounds
+    [xmin,ymin,xmax,ymax] = gdf.total_bounds
+    coords = [
+        [xmin,ymin],
+        [xmin,ymax],
+        [xmax,ymax],
+        [xmax,ymin],
+        [xmin,ymin]
+    ]
+    
+    
+        
+    print(stats)
+    print(coords)
+    
+     #return {
+        #'type': 'Polygon',
+        #'coordinates': [coords]
+    #}
+    
+    
+    
 
 def download_model_outputs(urls_to_download, cma_name, model_run_id):
     from zipfile import ZipFile, ZIP_DEFLATED

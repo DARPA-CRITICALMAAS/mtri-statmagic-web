@@ -34,6 +34,7 @@ class DisplayLayer(models.Model):
     download_url = models.CharField(max_length=1000)
     stats_minimum = models.FloatField(null=True,blank=True)
     stats_maximum = models.FloatField(null=True, blank=True)
+    attribute_stats = models.JSONField(null=True,blank=True,help_text='This field is for vector files; it maps the attribute table columns to min/max values to use for tile server display')
     spatial_resolution_m = models.FloatField(null=True,blank=True)
     color = models.CharField(max_length=20,null=True, blank=True)
     disabled = models.BooleanField(default=False)

@@ -159,10 +159,12 @@ function onLoad() {
     
     // Toggle open the DATA LAYERS panel by default
     toggleHeader($('#datalayer_container .header.toptop'));
-    toggleHeader($('#datalayer_container .header.Geophysics'));
+//     toggleHeader($('#datalayer_container .header.Geophysics'));
     
     toggleHeader($('.header.modeling'));
     toggleHeader($('.header.datacube'));
+    
+    toggleHeader($('.header.model_outputs'));
     
     // Add listeners for KNOWN DEPOSIT SITES form
     $('.datalayer_table.known_deposit_sites input').on('change',validateLoadSitesButton);
@@ -564,6 +566,8 @@ function resetModelUI(clear) {
     $('#model_run_edited').hide();
 
 //     $('#model_select').val('');
+    // Collapse results pane 
+    closeCollapse('.header.model_results')
     
     if (clear) {
         clearModelUIselections();
@@ -659,7 +663,17 @@ function clearCMA() {
     $('.model_select_div').hide();
     
     // Clear any model outputs associated w/ CMA 
+    // ...but first remove any visible map layers
+    $(`#model_outputs_table tr td.show_chk input:checked`).trigger('click');
     $('#model_outputs_table').empty();
+    
+    // Reset the Filter MPM outputs drop down
+    $('#model_output_layers_filter select').html(
+        '<option value="all" selected}>all</option>'
+    );
+    
+    // Close any model outputs currently in the viewer
+    
 
     // Hide "Choose existing MPM" modal
     $('#load_cma_modal').hide();
@@ -866,7 +880,7 @@ function processDataLayersUpdates(response) {
         if (!DATALAYERS_LOOKUP[dsid]) {
             DATALAYERS_LOOKUP[dsid] = dl;
             
-            alert(`New layer available!: ${dl.name} (${dsid})`);
+//             alert(`New layer available!: ${dl.name} (${dsid})`);
             
             // Create WMS map layer so it can be loaded to map
             createMapLayer(dl.data_source_id,dl)
@@ -978,15 +992,17 @@ function resetDataCube() {
 // Loads model run to model UI and model cache
 function loadModelRun(cma_id,model_run_id) {
 
+    // Collapse deposit sites and prospectivity layers
+    closeCollapse('.header.deposit_sites');
+    closeCollapse('.header.toptop');
+    
     $('#load_model_run').hide();
     $('#datalayer_info').hide();
     $('#modeling_initial_message2').hide();
     $('.model_select_div').show();
     
     var model_run = CMAS_EXISTING[cma_id].model_run_objects[model_run_id];
-    console.log(model_run);
-    
-   
+//     console.log(model_run);
     
     // Populate model config
     // Map of various model type vars to those listed in GUI
@@ -1047,6 +1063,10 @@ function loadModelRun(cma_id,model_run_id) {
     
     // Update the 'xx layers added' label
     updateDataCubeLabelInfo();
+    
+    // Change the Filter MPM outputs filter to that of the selected model_run_id
+    $('#model_output_layers_filter select').val(model_run_id);
+    loadModelOutputs();
     
 }
 
@@ -1644,6 +1664,7 @@ function loadMineralSites() {
             top1_deposit_type: $('#top1_deposit_type').val(),
             top1_deposit_classification_confidence__gte: $('#top1_deposit_classification_confidence__gte').val(),
             commodity: $('#commodity').val(),
+            only_gradetonnage: $('#only_gradetonnage').is(':checked'),
             rank: rank.join(','),
             type: types.join(','),
             limit: $('#mineral_sites_limit').val(),
@@ -2383,9 +2404,10 @@ function submitModelRun() {
             loadModelRuns(cma_id);
             
             // Toggle data cube if it is open (to clean up UI);
-            if ($('.header.datacube .collapse').html() == '-') {
-                toggleHeader($('.header.datacube'));
-            }
+            closeCollapse('.header.datacube');
+//             if ($('.header.datacube .collapse').html() == '-') {
+//                 toggleHeader($('.header.datacube'));
+//             }
             
             // Show the 'status' option in the MODELING navigation
             $('#modeling_status_navigation').show();
@@ -2400,6 +2422,12 @@ function submitModelRun() {
             alert(response.responseText);
         },
     });
+}
+
+function closeCollapse(header_sel) {
+    if ($(`${header_sel} .collapse`).html() == '-') {
+        toggleHeader($(header_sel));
+    }
 }
 
 function showModelRunStatus() {
@@ -2488,9 +2516,28 @@ function showDataLayerInfo(layer_name,model_output) {
     $('#datalayer_info').show();
 }
 
+
 function hideLayer(cmp_id) {
     $(`tr[data-path='${cmp_id}'] td.show_chk input`).trigger('click');
     
+    // Do a separate call to remove layer from map
+    // - this is needed for cases where the datalayer tr has been removed
+    //   already (e.g. if model outputs are cleared) 
+    removeLayerFromMap(cmp_id);
+    
+}
+
+
+function removeLayerFromMap(layer_name) {
+    var layer_name_scrubbed = layer_name.replaceAll('.','');    
+    var datalayer =  DATALAYERS_LOOKUP[layer_name];
+    var layer = datalayer.maplayer;
+    
+    // Remove layer from map
+    MAP.removeLayer(layer);
+
+    // Remove legend content
+    $(`#legendcontent_${layer_name_scrubbed}`).remove();
 }
 
 function onToggleLayerClick(target,layer_name) {
@@ -2518,7 +2565,7 @@ function onToggleLayerClick(target,layer_name) {
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
                 ${datalayer.name_pretty}
-                <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name_scrubbed}')">
+                <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name}')">
                     <img class="close-top-img" height=24 
                         src="/static/cma/img/close-dark.png" 
                         onmouseover="this.src='/static/cma/img/close-light.png'"

@@ -66,106 +66,114 @@
     <div class='flex-child control_panel'>
         <div id='control_panel'>
             <div id='sidebar_collapse_button'>&#11207;</div>
+            <div class='collapse deposit_sites'>
+                <div class='header topbar deposit_sites'><span class="collapse">+ </span> Known deposit sites</div>
+                <div class='content main'>
+                    <table class='datalayer_table known_deposit_sites'>
+                        <tr>
+                            <td class='label'>Commodity:</td>
+                            <td align='right'>
+                                <select id='commodity' onChange="validateLoadSitesButton();">
+                                    <option value="" disabled selected hidden>Select...</option>
+                                    <!--{% for commodity in commodities %}
+                                        <option value="{{commodity}}">{{commodity}}</option>
+                                    {% endfor %}-->
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Primary deposit type:</td>
+                            <td align='right'>
+                                <select id='top1_deposit_type' onChange="validateLoadSitesButton();">
+                                    <option value="" disabled selected hidden>Select...</option>
+                                    <!--{% for commodity in commodities %}
+                                        <option value="{{commodity}}">{{commodity}}</option>
+                                    {% endfor %}-->
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Primary deposit type confidence:</td>
+                            <td align='right'>
+                                >=<input id='top1_deposit_classification_confidence__gte' onChange="validateLoadSitesButton();" type='number' min=0, max=1 value=0.50 step=0.1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Only sites w/ grade/tonnage data:</td>
+                            <td align='right'>
+                                <input id='only_gradetonnage' onChange="validateLoadSitesButton();" type='checkbox'>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td class='label'>Record quality rank:</td>
+                            <td align='right'>
+                                <label>A <input class='dedup_chk rank' type='checkbox' id='rank__A' checked /></label>
+                                <label>B <input class='dedup_chk rank' type='checkbox' id='rank__B' checked /></label>
+                                <label>C <input class='dedup_chk rank' type='checkbox' id='rank__C' checked /></label>
+                                <label>D <input class='dedup_chk rank' type='checkbox' id='rank__D' /></label>
+                                <label>E <input class='dedup_chk rank' type='checkbox' id='rank__E' /></label>
+                                <label>U <input class='dedup_chk rank' type='checkbox' id='rank__U' checked /></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Type:</td>
+                            <td align='right'>
+                                <label>Occurrence <input class='dedup_chk type' type='checkbox' id='type__Occurrence'  /></label><br>
+                                <label>Prospect <input class='dedup_chk type' type='checkbox' id='type__Prospect' checked /></label><br>
+                                <label>Past producer <input class='dedup_chk type' type='checkbox' id='type__Past_Producer' checked /></label><br>
+                                <label>Producer <input class='dedup_chk type' type='checkbox' id='type__Producer' checked /></label><br>
+                                <label>Plant <input class='dedup_chk type' type='checkbox' id='type__Plant' /></label><br>
+                                <label>Unknown/Not Specified <input class='dedup_chk type' type='checkbox' id='type__NotSpecified' checked /></label>
+                            </td>
+                        </tr>
+                        <tr title='Limits the number of results returned for the query; lower values will load faster. For no limit, use -1.'>
+                            <td class='label'>Results limit:</td>
+                            <td align='right'><input id='mineral_sites_limit' type='number' min='-100' value=-1 step=100 /></td>
+                        </tr>
+                        <tr id='mineral_sites_extent_tr'> 
+                            
+                        </tr>
+                        <!-- <tr id='mineral_sites_display_by' title='Choose how sites are displayed'>
+                            <td class='label'>Display by:</td>
+                            <td align='right'><select id='sites_display_select'>
+                                <option title='Color sites by whether they are a producer, past producer, prospect, etc.' value='site_type' selected>Site type</option>
+                            </select></td>
+                        </tr>-->
+                        <!--   <tr>
+                            <td class='label'>AOI:</td>
+                            <td align='right'><div id='query_instructions'><span class="highlight">
+                                (draw) poly <a onClick=drawStart("polygon")>
+                                <img src="/static/cma/img/draw-polygon-icon.png" 
+                                    height="17"
+                                    id="draw_polygon_icon" /></a> | 
+                                rect <a onClick=drawStart("rectangle")>
+                                <img src="/static/cma/img/draw-rectangle-icon.png"
+                                    height="17"
+                                    id="draw_rectangle_icon" ></a>
+                            </div></td>
+                        </tr>-->
+                        <tr>
+                            <td colspan=2 align='center'>
+                                <div class='mineral_sites_results_message'>
+                                # query results: <span id='mineral_sites_n_results'>--</span>
+                                    <br><span class='link mineral_sites_download_link' onclick='downloadMineralSites();'>download shp</span>
+                                </div> 
+                                <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
+                                <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
+                                    <div id="show_histogram_button" class='button load_sites sites histogram disabled' onClick='createTonnageHistogram();'>Tonnage histogram</div>
+                                
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
             <div class='collapse' id='datalayer_container'>
-                <div class='header topbar toptop'><span class="collapse">+ </span> Data layers
+               
+                <div class='header topbar toptop'><span class="collapse">+ </span> Prospectivity layers
                 </div>
                 <div class='content main'>
-                    <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Known deposit sites</div>
-                        <div class='content'>
-                            <table class='datalayer_table known_deposit_sites'>
-                                <tr>
-                                    <td class='label'>Commodity:</td>
-                                    <td align='right'>
-                                        <select id='commodity' onChange="validateLoadSitesButton();">
-                                            <option value="" disabled selected hidden>Select...</option>
-                                            <!--{% for commodity in commodities %}
-                                                <option value="{{commodity}}">{{commodity}}</option>
-                                            {% endfor %}-->
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class='label'>Primary deposit type:</td>
-                                    <td align='right'>
-                                        <select id='top1_deposit_type' onChange="validateLoadSitesButton();">
-                                            <option value="" disabled selected hidden>Select...</option>
-                                            <!--{% for commodity in commodities %}
-                                                <option value="{{commodity}}">{{commodity}}</option>
-                                            {% endfor %}-->
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class='label'>Primary deposit type confidence:</td>
-                                    <td align='right'>
-                                        >=<input id='top1_deposit_classification_confidence__gte' onChange="validateLoadSitesButton();" type='number' min=0, max=1 value=0.50 step=0.1>
-                                    </td>
-                                </tr>
-                                
-                                <tr>
-                                    <td class='label'>Record quality rank:</td>
-                                    <td align='right'>
-                                        <label>A <input class='dedup_chk rank' type='checkbox' id='rank__A' checked /></label>
-                                        <label>B <input class='dedup_chk rank' type='checkbox' id='rank__B' checked /></label>
-                                        <label>C <input class='dedup_chk rank' type='checkbox' id='rank__C' checked /></label>
-                                        <label>D <input class='dedup_chk rank' type='checkbox' id='rank__D' /></label>
-                                        <label>E <input class='dedup_chk rank' type='checkbox' id='rank__E' /></label>
-                                        <label>U <input class='dedup_chk rank' type='checkbox' id='rank__U' checked /></label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class='label'>Type:</td>
-                                    <td align='right'>
-                                        <label>Occurrence <input class='dedup_chk type' type='checkbox' id='type__Occurrence'  /></label><br>
-                                        <label>Prospect <input class='dedup_chk type' type='checkbox' id='type__Prospect' checked /></label><br>
-                                        <label>Past producer <input class='dedup_chk type' type='checkbox' id='type__Past_Producer' checked /></label><br>
-                                        <label>Producer <input class='dedup_chk type' type='checkbox' id='type__Producer' checked /></label><br>
-                                        <label>Plant <input class='dedup_chk type' type='checkbox' id='type__Plant' /></label><br>
-                                        <label>Unknown/Not Specified <input class='dedup_chk type' type='checkbox' id='type__NotSpecified' checked /></label>
-                                    </td>
-                                </tr>
-                                <tr title='Limits the number of results returned for the query; lower values will load faster. For no limit, use -1.'>
-                                    <td class='label'>Results limit:</td>
-                                    <td align='right'><input id='mineral_sites_limit' type='number' min='-100' value=-1 step=100 /></td>
-                                </tr>
-                                <tr id='mineral_sites_extent_tr'> 
-                                    
-                                </tr>
-                               <!-- <tr id='mineral_sites_display_by' title='Choose how sites are displayed'>
-                                    <td class='label'>Display by:</td>
-                                    <td align='right'><select id='sites_display_select'>
-                                        <option title='Color sites by whether they are a producer, past producer, prospect, etc.' value='site_type' selected>Site type</option>
-                                    </select></td>
-                                </tr>-->
-                             <!--   <tr>
-                                    <td class='label'>AOI:</td>
-                                    <td align='right'><div id='query_instructions'><span class="highlight">
-                                        (draw) poly <a onClick=drawStart("polygon")>
-                                        <img src="/static/cma/img/draw-polygon-icon.png" 
-                                            height="17"
-                                            id="draw_polygon_icon" /></a> | 
-                                        rect <a onClick=drawStart("rectangle")>
-                                        <img src="/static/cma/img/draw-rectangle-icon.png"
-                                            height="17"
-                                            id="draw_rectangle_icon" ></a>
-                                    </div></td>
-                                </tr>-->
-                                <tr>
-                                    <td colspan=2 align='center'>
-                                        <div class='mineral_sites_results_message'>
-                                        # query results: <span id='mineral_sites_n_results'>--</span>
-                                            <br><span class='link mineral_sites_download_link' onclick='downloadMineralSites();'>download shp</span>
-                                        </div> 
-                                        <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
-                                        <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
-                                         <div id="show_histogram_button" class='button load_sites sites histogram disabled' onClick='createTonnageHistogram();'>Tonnage histogram</div>
-                                        
-                                    </td>
-                                </tr>
-                            </table>
-                        </div> <!--content-->
-                    </div> <!--collapse_sub-->
+    
                    <!-- <div class='collapse sub'>
                         <div class='header topbar sub'><span class="collapse">+ </span> User layers</div>
                         <div class='content'>
@@ -354,6 +362,24 @@
                 </div> <!--modeling_main_pane-->
                 </div> <!--content main-->
             </div> <!--collapse (Modeling)-->
+            
+            <div class='collapse model_results'>
+                <div class='header topbar model_results'><span class="collapse">+ </span> Model results</div>
+                <div class='content main'>
+                    <div class='collapse sub'>
+                        <div class='header topbar sub model_outputs'><span class="collapse">+ </span> Outputs</div>
+                        <div class='content'>
+                            <div id='model_output_layers_filter'>
+                                Filter MPM outputs: <select onchange='loadModelOutputs();'>
+                                    <option value='all'>all</option>
+                                </select>
+                            </div>
+                            <table class='datalayer_table' id='model_outputs_table'>
+                            </table>
+                        </div> <!--content-->
+                    </div>  <!--collapse sub-->
+                </div> <!--content main-->
+            </div> <!--collapse model_results-->
         </div><!--control_panel-->
     </div><!--flex-child control_panel -->
     <div class='flex-child map'>

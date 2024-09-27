@@ -37,11 +37,22 @@ post_data_intersect_sources = {
 #res = cdr.get_cmas()
 #print(res)
 
-
 #res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
+# res = cdr.get_model_runs('')
+#
+# for r in res:
+#     print(r)
+# blerg
 
-#res = cdr.get_model_run("f2294cfa42cd48128f3f9ddcfb15237a")
-#print(x for x in list(res['event']['payload']['train_config'].keys()))
+res = cdr.get_cma('ESRI:102008_dd3d7552701c9c08e8019eef6ee42db15777a33d85b44f00ab019161306f27f1__res0_10000_res1_10000_Nickel')
+print(res)
+blerg
+
+#
+# res = cdr.get_model_run("acce401ee598467a8a9db766c4514bd3")
+# print(res['event']['payload']['evidence_layers'])#.keys()))
+# print(res)
+# blerg
 
 # for p,v in res['event']['payload']['train_config'].items():
 #     print(p,v)
