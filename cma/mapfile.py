@@ -41,20 +41,20 @@ def getCLASS(cmap,attribute='pixel'):
     ])
 
 
-def openRaster(tif_path):
+def openRaster(ds_path):
     td = None
-    tif_path2 = tif_path
-    if settings.TILESERVER_LOCAL_SYNC_FOLDER in tif_path:
-        tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
+    ds_path2 = ds_path
+    if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path:
+        ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
         
-    if ' ' in tif_path:
+    if ' ' in ds_path:
         td = tempfile.TemporaryDirectory()
         url = r['download_url'].replace('/vsicurl_streaming/','')
         os.system(f'wget -P {td.name} "{url}"')
-        tp = os.path.join(td.name,os.path.basename(tif_path))
+        tp = os.path.join(td.name,os.path.basename(ds_path))
         ds = gdal.Open(tp)
     else:
-        ds = gdal.Open(tif_path2)
+        ds = gdal.Open(ds_path2)
         
     return ds
 
@@ -101,8 +101,8 @@ def write_mapfile(
     #########
     # Build rasters dict from database
 
-    datalayers = DataLayer.objects.filter(data_format='tif',disabled=False).order_by('category','subcategory','name')
-    outputlayers = OutputLayer.objects.filter(data_format='tif').order_by('category','subcategory','name')
+    datalayers = DataLayer.objects.filter(disabled=False).order_by('category','subcategory','name')
+    outputlayers = OutputLayer.objects.filter().order_by('category','subcategory','name')
     datasets = list(chain(datalayers, outputlayers))
     #.values(
         #'name',
@@ -116,34 +116,47 @@ def write_mapfile(
         r = model_to_dict(dataset)
         
         # Ignore any non-rasters for now
-        if not r['download_url'] or r['data_format'] != 'tif':
+        if not r['download_url']:# or r['data_format'] != 'tif':
             continue
 
         # Processing path to raster
         #   (replace spaces with '+' or URLs won't work)
-        tif_path = r['download_url'].replace(' ','+')
-        
-        if 'http' in tif_path:
+        ds_path = r['download_url'].replace(' ','+')
+        ext = ds_path.split('.')[-1]
+        #print(ext)
+        if 'http' in ds_path:
             # WARNING: temporarily, model outputs are sync'd locally
-            if '.cdr.' in tif_path and 'model' not in r: 
-                tif_path = f'/vsicurl_streaming/{tif_path}'
+            if '.cdr.' in ds_path and 'model' not in r and ext not in ('zip',): 
+                ds_path = f'/vsicurl_streaming/{ds_path}'
             else:
+               
+                if ext == 'zip': # assume .zip data sources are shapefiles
+                    ext = 'shp'
+                
                 # NOTE: for now sync'ing these locally '
-                tif_path = os.path.join(
+                ds_path = os.path.join(
                     settings.TILESERVER_LOCAL_SYNC_FOLDER,
-                    f'{r["data_source_id"]}.tif'#os.path.basename(tif_path)
+                    f'{r["data_source_id"]}.{ext}'#os.path.basename(ds_path)
                 )
 
         # Load required params
         rkey = r['data_source_id']
-        bn = os.path.basename(tif_path)
+        bn = os.path.basename(ds_path)
         ext = bn.split('.')[-1]
         
         rasters[rkey] = r
-        rasters[rkey]['download_url'] = tif_path
+        rasters[rkey]['download_url'] = ds_path
         rasters[rkey]['wms_layername'] = r['data_source_id']
-        rasters[rkey]['layer_type'] = 'POLYGON' if ext in ('shp','SHP','js') else 'RASTER'
+        rasters[rkey]['layer_type'] = dataset.vector_format if ext in ('shp','SHP','js') else 'RASTER'
         rasters[rkey]['wms_title'] = rkey
+        
+         # Add color is not already set 
+        if not dataset.color:
+            color = colors[i % len(colors)]
+            dataset.color = ','.join([str(c) for c in color])
+            dataset.save()
+        color = dataset.color.replace(',',' ') 
+
         
         # Assume all LOS rasters are scaled 0-1
         dr = None
@@ -151,14 +164,15 @@ def write_mapfile(
         classification = ''
         connection_type = ''
         connection = ''
+        layer_type = 'RASTER'
     
-        tif_path2 = tif_path
-        if 'cdr' not in tif_path and util.settings.MAPSERVER_SERVER not in tif_path:
-            tif_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{tif_path}'
+        ds_path2 = ds_path
+        if 'cdr' not in ds_path and util.settings.MAPSERVER_SERVER not in ds_path:
+            ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
             
         # Run sync script if one of the outputlayers has not been locally
         # downloaded
-        if '/net/' in tif_path2 and not os.path.exists(tif_path2):
+        if '/net/' in ds_path2 and not os.path.exists(ds_path2):
             util.sync_cdr_prospectivity_outputs_to_outputlayer(rkey)
             util.sync_remote_outputs_to_local(rkey)
     
@@ -166,116 +180,106 @@ def write_mapfile(
             connection_type = 'CONNECTIONTYPE OGR'
             connection = f'CONNECTION "{r["path"]}"'
 
-        # Retrieve extent_geom if not already loaded
-        if r['extent_geom'] is None:
-            print('getting extent_geom for:',tif_path)
-            
-            #ds = openRaster(tif_path)
-            gj = util.get_extent_geom_of_raster(tif_path2)
-
-            if gj:
-                gj = json.dumps(gj)
-                geom = GEOSGeometry(gj)
-
-            dataset.extent_geom = geom#GEOSGeometry(gj)
-            dataset.save()
-
-        # Retrieve data range if not already loaded
-        if r['stats_minimum'] is None and r['stats_maximum'] is None:
-            print('extracting stats for:',tif_path)
-            ds = openRaster(tif_path)
-                
-            stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
-            del ds
-            #if td:
-                #td.cleanup()
-            dr = [stats[0],stats[1]]
-            dataset.stats_minimum = stats[0]
-            dataset.stats_maximum = stats[1]
-            dataset.save()
-                        
-        else:
+        if ext == 'shp':
+            util.process_vector_for_mapfile(dataset)
             dr = [r['stats_minimum'], r['stats_maximum']]
             
-        # Retrieve spatial resolution if not already loaded
-        # This just needs to be an approximation for setting templates
-        if r['spatial_resolution_m'] is None:
-            xres = util.get_tif_resolution(tif_path2)
-            dataset.spatial_resolution_m = int(xres)
-            dataset.save()
-    
-        # Add color is not already set 
-        if not dataset.color:
-            color = colors[i % len(colors)]
-            dataset.color = ','.join([str(c) for c in color])
-            dataset.save()
+            if dataset.vector_format == 'POINT':
+                classification = f'''
+                    CLASS
+                        STYLE
+                            OUTLINECOLOR {color} 
+                            SIZE 1
+                            SYMBOL "circle"
+                            WIDTH 1.0
+                        END
+                    END
+                '''
+            if dataset.vector_format == 'LINE':
+                classification = f'''
+                    CLASS
+                        STYLE
+                            OUTLINECOLOR {color} 
+                            COLOR {color}
+                            WIDTH 5.0
+                        END
+                    END
+                '''
+            if dataset.vector_format == 'POLYGON':
+                classification = f'''
+                    CLASS
+                        STYLE
+                            OUTLINECOLOR {color}
+                            COLOR {color}
+                            OPACITY 30
+                            WIDTH 3.0
+                        END
+                    END
+                '''
+            
+        else:
 
-        # Set custom color
-        color = dataset.color.replace(',',' ') 
-        classification = f'''
-            CLASS
-                NAME "Color"
-                EXPRESSION ([pixel] >= {dr[0]} AND [pixel] < {dr[1]})
-                STYLE
-                        COLORRANGE 256 256 256 {color}
-                        DATARANGE {dr[0]} {dr[1]}
-                        RANGEITEM "pixel"
-                        COLOR 256 256 256
+            # Retrieve extent_geom if not already loaded
+            if r['extent_geom'] is None:
+                print('getting extent_geom for:',ds_path)
+                
+                #ds = openRaster(ds_path)
+                gj = util.get_extent_geom_of_raster(ds_path2)
+
+                if gj:
+                    gj = json.dumps(gj)
+                    geom = GEOSGeometry(gj)
+
+                dataset.extent_geom = geom#GEOSGeometry(gj)
+                dataset.save()
+
+            # Retrieve data range if not already loaded
+            if r['stats_minimum'] is None and r['stats_maximum'] is None:
+                print('extracting stats for:',ds_path)
+                ds = openRaster(ds_path)
+                    
+                stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
+                del ds
+                #if td:
+                    #td.cleanup()
+                dr = [stats[0],stats[1]]
+                dataset.stats_minimum = stats[0]
+                dataset.stats_maximum = stats[1]
+                dataset.save()
+                            
+            else:
+                dr = [r['stats_minimum'], r['stats_maximum']]
+                
+            # Retrieve spatial resolution if not already loaded
+            # This just needs to be an approximation for setting templates
+            if r['spatial_resolution_m'] is None:
+                xres = util.get_tif_resolution(ds_path2)
+                dataset.spatial_resolution_m = int(xres)
+                dataset.save()
+    
+       
+            # For rastesr, color scale is the assigned color stretched b/t
+            # the min/max pixel values.
+
+            classification = f'''
+                CLASS
+                    NAME "Color"
+                    EXPRESSION ([pixel] >= {dr[0]} AND [pixel] < {dr[1]})
+                    STYLE
+                            COLORRANGE 256 256 256 {color}
+                            DATARANGE {dr[0]} {dr[1]}
+                            RANGEITEM "pixel"
+                            COLOR 256 256 256
+                    END
                 END
-            END
-        '''
-
-
-        #if 'illshade' in rasters[rkey]['wms_title']:
-            #group = '{}_{}_DEM_HILLSHADE'.format(r['sites__name'],r['name'])
-            #dr = [0,254]
-            
-        #if 'lood_predict' in r['name']:
-            #classification = '''
-                #CLASS
-                    #EXPRESSION ([pixel] > 0)
-                    #STYLE
-                        #COLOR 0 153 254
-                    #END
-                #END'''
-            #dr = [0,1]
-           
-        #if 'oughness' in r['name']:
-            #r['layer_type'] = 'LINE'
-            #width = 6.0
-            
-            #classification = f'''
-                #CLASS
-                    #EXPRESSION ([rr] = 1)
-                    #STYLE
-                        #COLOR 69 117 180
-                        #WIDTH {width}
-                    #END
-                #END
-                #CLASS
-                    #EXPRESSION ([rr] = 2)
-                    #STYLE
-                        #COLOR 255 255 191
-                        #WIDTH {width}
-                    #END
-                #END
-                #CLASS
-                    #EXPRESSION ([rr] = 3)
-                    #STYLE
-                        #COLOR 215 48 39
-                        #WIDTH {width}
-                    #END
-                #END
-            #'''
-    
-      
-
+            '''
             
         rasters[rkey]['data_range'] = dr
         rasters[rkey]['processing'] = proc
         rasters[rkey]['connection'] = connection
         rasters[rkey]['connection_type'] = connection_type
         rasters[rkey]['extent'] = [-180,0,180,90]
+        rasters[rkey][layer_type] = layer_type
         
         if classification:
             rasters[rkey]['classification'] = classification
@@ -447,6 +451,7 @@ def write_mapfile(
         PROJECTION
             "init=epsg:4326"
         END
+        SYMBOLSET "symbols.sym"
         UNITS METERS
         IMAGECOLOR 0 0 0
         TRANSPARENT ON

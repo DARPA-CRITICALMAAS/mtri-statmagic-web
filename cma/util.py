@@ -19,6 +19,7 @@ from django.forms.models import model_to_dict
 from django.core.exceptions import BadRequest
 from django.http import HttpResponse
 from django.db import connection
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from . import models
 from . import mapfile
 from shapely import geometry, wkt
@@ -1126,21 +1127,22 @@ def get_extent_geom_of_raster(tif):
         'coordinates': [coords]
     }
 
-def process_vector_for_mapfile(download_url):
+def process_vector_for_mapfile(dataset):
     '''
         dataset: models.DisplayLayer instance (OutputLayer or DataLayer)
     '''
     
     # Get datasource ID from the download URL
-    dsid = Path(download_url).stem
+    #dsid = Path(dataset.download_url).stem
+    dsid = dataset.data_source_id
     
     # Check if already downloaded
     path_base = get_output_layer_local_sync_path(dsid,ext='')
     if len(glob.glob(f'{path_base}*')) == 0:
-        print('downloading to local sync dir:',download_url)
+        print('downloading to local sync dir:',dataset.download_url)
     
         # If not, download the file
-        resp = urlopen(download_url)
+        resp = urlopen(dataset.download_url)
         
         # Open zipfile
         myzip = zipfile.ZipFile(BytesIO(resp.read()))
@@ -1153,54 +1155,88 @@ def process_vector_for_mapfile(download_url):
             # sync folder 
             
             # Identify the dir with the shapes
-            td = glob.glob(f'{tempdir}/*')[0]
-            for f in glob.glob(f'{td}/*'):
-                # Extract local sync path
-                stem = Path(f).stem
-                exts = f.split('/')[-1].split(stem)[1].lstrip('.')
-                sync_path = get_output_layer_local_sync_path(dsid,ext=exts)
-                
-                # And copy to local sync dir
-                print(f"\tsyncing {f} to: {sync_path}")
-                shutil.move(f, sync_path)
-                #print('\n',f, exts, stem, sync_path)
+            #td = glob.glob(f'{tempdir}/*')[0]
+            #for f in glob.glob(f'{td}/*'):
+            for root, dirs, files in os.walk(tempdir):
+                for f in files:
+                    #print(root,dirs,f)
+                    # Extract local sync path
+                    stem = Path(f).stem
+                    exts = f.split('/')[-1].split(stem)[1].lstrip('.')
+                    sync_path = get_output_layer_local_sync_path(dsid,ext=exts)
+                    
+                    # And copy to local sync dir
+                    print(f"\tsyncing {f} to: {sync_path}")
+                    shutil.move(os.path.join(root,f), sync_path)
+                    #print('\n',f, exts, stem, sync_path)
 
-    # Open shapefile 
-    shp = f'{path_base}shp'
-    print('extracting metadata for:',shp)
-    gdf = gpd.read_file(shp)
-    
-    # Get attribute stats
-    stats = {}
-    for colname in gdf.columns:
-        if colname in ('geometry',):
-            continue
+    # If missing, metadata, get:
+    if (dataset.extent_geom is None or 
+        dataset.attribute_stats is None or 
+        dataset.vector_format is None):
+
+        # Open shapefile 
+        shp = f'{path_base}shp'
+        print('extracting metadata for:',shp)
+        gdf = gpd.read_file(shp)
         
-        print(colname)
-        stats[colname] = {
-            'min': gdf[colname].min(),
-            'max': gdf[colname].max()
-        }
+        if dataset.vector_format is None:
+            # NOTE: Assuming here that the type of first feature represents the 
+            #       type of ALL features, which may not be the case
+            gt = gdf.geom_type[0].upper()
+            if gt == 'LINESTRING':
+                gt = 'LINE'
+            dataset.vector_format = gt 
         
-    # Get bounds
-    [xmin,ymin,xmax,ymax] = gdf.total_bounds
-    coords = [
-        [xmin,ymin],
-        [xmin,ymax],
-        [xmax,ymax],
-        [xmax,ymin],
-        [xmin,ymin]
-    ]
-    
-    
+        if dataset.attribute_stats is None:
         
-    print(stats)
-    print(coords)
-    
-     #return {
-        #'type': 'Polygon',
-        #'coordinates': [coords]
-    #}
+            # Get attribute stats
+            stats = {}
+            for colname in gdf.columns:
+                if colname in ('geometry',):
+                    continue
+                
+                #print(colname)
+                dtype = gdf.dtypes[colname]
+                s = {}
+                if dtype in ('float','float64','int','int64'):
+                    s = {
+                        'min': float(gdf[colname].min()),
+                        'max': float(gdf[colname].max())
+                    }
+                if dtype in ('datetime',):
+                    s = {
+                        'min': gdf[colname].min(),
+                        'max': gdf[colname].max()
+                    }
+                if dtype in ('string','object'):
+                    s = {
+                        'unique_values': list(gdf[colname].unique())
+                    }
+                stats[colname] = s
+                #print(colname,dtype)
+            #print(dtype,stats)
+            dataset.attribute_stats = stats
+            
+        if dataset.extent_geom is None:
+            # Get bounds
+            [xmin,ymin,xmax,ymax] = gdf.to_crs(4326).total_bounds
+            coords = [
+                [xmin,ymin],
+                [xmin,ymax],
+                [xmax,ymax],
+                [xmax,ymin],
+                [xmin,ymin]
+            ]
+            gj = json.dumps({
+                'type': 'Polygon',
+                'coordinates': [coords]
+            })
+            geom = GEOSGeometry(gj)
+
+            dataset.extent_geom = geom#GEOSGeometry(gj)
+            
+        dataset.save()
     
     
     

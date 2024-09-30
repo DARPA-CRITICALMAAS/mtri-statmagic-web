@@ -757,6 +757,7 @@ def submit_model_run(request):
     print('POSTing model run to CDR:')
     print(model_run)
     #print(model_run.model_dump_json(exclude_none=True))
+
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:

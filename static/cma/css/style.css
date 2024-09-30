@@ -2172,8 +2172,11 @@ a.site_src_link {
     text-align: center;
 }
 #model_output_layers_filter select {
-    width: 280px;
-    
+    width: 280px;    
+}
+
+.collapse.model_results {
+    display: none;
 }
 
 @keyframes spin {

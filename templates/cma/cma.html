@@ -210,10 +210,10 @@
                                 {% for layer in layers %}
                                     <tr data-path="{{layer.data_source_id}}"  onmouseover='showLayerExtentPreview("{{layer.data_source_id}}");' onmouseout='hideLayerExtentPreview();'>
     <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
-                                        <td class='name' title='{{layer.name}}'>{{layer.name_pretty}}</td>
+                                        <td class='name' title='{{layer.name}}'>{{layer.name_pretty}}{% if layer.data_format == 'shp' %}*{% endif %}</td>
                                         <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
                                         <td class='show_chk'>
-                                            {% if layer.data_format == 'tif' %}
+                                            {% if layer.data_format != 'shp2' %}
                                             
                                             <input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.data_source_id}}");' />
                                             {% else %}
@@ -221,7 +221,10 @@
                                             {% endif %}
                                         </td>
                                         <td class='download'>
-                                            <a href='{{layer.download_url}}' target='_blank'><img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 /></a>
+                                            <a href='{{layer.download_url}}' target='_blank'>
+                                                {{ layer.data_format }}
+                                                <!--<img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 />-->
+                                            </a>
                                         </td>
                                         <td>
                                             <div class="radiocube" align="left">
@@ -244,7 +247,7 @@
             </div>
         
             <div class='collapse modeling'>
-                <div class='header topbar modeling'><span class="collapse">+ </span> Modeling</div>
+                <div class='header topbar modeling'><span class="collapse">+ </span> Modeling Tools</div>
                 <div class='content main'>
                     <!--<div id='modeling_progress_message' class='modeling_message'>Model run(s) in progress:
                         <table class='model_run_status'>
@@ -366,14 +369,23 @@
             <div class='collapse model_results'>
                 <div class='header topbar model_results'><span class="collapse">+ </span> Model results</div>
                 <div class='content main'>
+                    <div id='model_output_layers_filter'>
+                        Filter MPM layers: <select onchange='loadModelOutputs();'>
+                            <option value='all'>all</option>
+                        </select>
+                    </div>
+                    <div class='collapse sub'>
+                        <div class='header topbar sub model_inputs'><span class="collapse">+ </span> Processed layers</div>
+                        <div class='content'>
+                            <table class='datalayer_table' id='processed_layers_table'>
+                            </table>
+                        </div> <!--content-->
+                    </div> <!--collapse sub-->
+                        
                     <div class='collapse sub'>
                         <div class='header topbar sub model_outputs'><span class="collapse">+ </span> Outputs</div>
                         <div class='content'>
-                            <div id='model_output_layers_filter'>
-                                Filter MPM outputs: <select onchange='loadModelOutputs();'>
-                                    <option value='all'>all</option>
-                                </select>
-                            </div>
+                            
                             <table class='datalayer_table' id='model_outputs_table'>
                             </table>
                         </div> <!--content-->

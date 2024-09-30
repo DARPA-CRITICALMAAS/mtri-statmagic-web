@@ -687,7 +687,7 @@ function clearCMA() {
 // Performs various tasks to load a selected CMA into the GUI
 function loadCMA(cma_id) {
     var cma = CMAS_EXISTING[cma_id];
-//     console.log(cma);
+    
     
     // Clear queried sites
     clearMineralSites();
@@ -734,6 +734,9 @@ function loadCMA(cma_id) {
       loadModelOutputs(cma_id,'all');
       
       syncModelOutputs(cma_id);
+      
+      // Show MODEL RESULTS section
+      $('.collapse.model_results').show();
     
 }
 
