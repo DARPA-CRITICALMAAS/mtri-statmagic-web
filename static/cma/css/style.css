@@ -2178,6 +2178,36 @@ a.site_src_link {
 .collapse.model_results {
     display: none;
 }
+td.hypertune {
+    padding: 0px 20px;
+    
+}
+.rotate {
+    transform: rotate(-70deg);
+    
+/*     writing-mode: vertical-lr; */
+}
+.rotate_container {
+    width: 16px;
+    padding-left: 4px;
+    height: 70px;
+    display: inline-block; 
+    position: relative;
+    left: -10px;
+    top: 48px;
+    pointer-events: none;
+}
+input.hypertune_input {
+    margin-left: 4px;
+    cursor: pointer;
+}
+
+.model_parameters_table tbody tr.hypertune_labels {
+    background-color: transparent;
+}
+td.hypertune {
+    display: none;
+}
 
 @keyframes spin {
     0% { transform: rotate(0deg); }

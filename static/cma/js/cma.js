@@ -58,6 +58,24 @@ function copyJSON(json) {
 
 function resetModelCache() {
     MODELS_CACHE = copyJSON(MODELS);
+    
+    // Now go through and set all SRI default values to null, per Angel Daruna's 
+    // comment on Slack:
+    // https://darpausgs.slack.com/archives/C05LT2E8YJY/p1727788832839669
+    $.each(MODELS_CACHE, function(mname, mobj) {
+        $.each(mobj.parameters, function(reqopt,groups) {
+            $.each(groups, function(group,parr) {
+                $.each(parr, function(i,p) {
+                    p.value = p.html_attributes.value;
+                    if (mname == 'sri_NN') {
+                        p.value = null;
+                    }
+                });
+            });
+        });
+    });
+
+
 }
 
 // Stuff to do when the page loads
@@ -360,7 +378,23 @@ function capitalizeFirstLetter(string) {
 // or when a user wants to edit processing step parameters
 function buildParametersTable(mobj, table_selector, dobj) {
     var showhide_groups = {};
-    ptable_html = '<table class="model_parameters_table">';
+    var do_hypertune = mobj.name == 'sri_NN';
+    var hypertune = '';
+    var ptable_html = '<table class="model_parameters_table">';
+    if (do_hypertune) {
+        // If hypertune option, add header to table
+        ptable_html += `
+            <tr class='hypertune_labels'>
+                <td></td>
+                <td></td>
+                <td>
+                    <div class='rotate_container'><div class='rotate'>customize</div></div>
+                    <div class='rotate_container'><div class='rotate'>hypertune</div></div>
+                </td>
+            </tr>
+        `;
+    }
+
     var range_double_params = {};
     $.each(['required','optional'], function(r,reqopt) {
         var obj = mobj.parameters[reqopt];
@@ -374,6 +408,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                 <tr class='subcategory_label optional' onclick='toggleHeader(this);'>
                     <td><span class='collapse'>+</span> Advanced</td>
                     <td></td>
+                    <td class='hypertune'></td>
                 </tr>
             `;
         }
@@ -385,6 +420,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     <tr class='subcategory_label' data-reqopt='${reqopt}'>
                         <td>${capitalizeFirstLetter(group_name)}</td>
                         <td></td>
+                        <td class='hypertune'></td>
                     </tr>
                 `;
             }
@@ -397,6 +433,21 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     }
                     showhide_groups[pshow].push(pid);
                 }
+                
+                if (do_hypertune) {
+                    // Create set of radio inputs
+                    var cust_checked = ' checked';
+                    var hyp_checked = '';
+                    if (p.value == null) {
+                        cust_checked = '';
+                        hyp_checked = ' checked';
+                    }
+                    hypertune = `
+                        <input type='radio' class='hypertune_input' name='hypertune_${pid}' value='customize'${cust_checked}>
+                        <input type='radio' class='hypertune_input' name='hypertune_${pid}' value='hypertune'${hyp_checked}>
+                    `;
+                }
+                
                 var input_html;
                 var input_td_attrs = '';
                 if (p.input_type != 'select') {
@@ -426,7 +477,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                             <span class='range_label'>${attrs.min}</span>${input_html}<span class='range_label'>${attrs.max}</span><input class='range_value' type='number' value=${v} />`;
 //                         <div class='range_value'>${v}</div>
                         
-                        input_td_attrs = ' class="range_td"';
+                        input_td_attrs = ' class="input range_td"';
                         
                     }
                     if (p.input_type == 'range_double') {
@@ -462,7 +513,8 @@ function buildParametersTable(mobj, table_selector, dobj) {
                         title="${p.description}" 
                         data-reqopt='${reqopt}'>
                         <td class='label'>${p.name_pretty}:</td>
-                        <td${input_td_attrs}>${input_html}</td>
+                        <td${input_td_attrs}><div class='input'>${input_html}</div></td>
+                        <td class='hypertune'>${hypertune}</td>
                     </tr>
                 `;
                 
@@ -472,6 +524,22 @@ function buildParametersTable(mobj, table_selector, dobj) {
     ptable_html += '<tr class="divider"></tr></table>';
     
     $(table_selector).html(ptable_html);
+    
+    if (do_hypertune) {
+//         $('.parameters_form .model_parameters_table td div.input').hide();
+        $('.parameters_form .model_parameters_table td.hypertune').show();
+        
+        $('input.hypertune_input').on('change', function(e) {
+            var v = $(e.target).val();
+            if (v == 'customize') {
+                $(e.target).closest('tr').find('div.input').show();
+            } else {
+                $(e.target).closest('tr').find('div.input').hide();
+            }
+        });
+        
+        $('input.hypertune_input:checked').trigger('change');
+    }
     
      // Toggle to hide advanced options
     $('tr[data-reqopt="optional"]').hide();
@@ -487,7 +555,6 @@ function buildParametersTable(mobj, table_selector, dobj) {
     });
     
     // Insert double sliders as needed
-//     console.log(range_double_params);
     $('.range_double').each(function(i,cmp) {
         if (Object.keys(range_double_params).length == 0) {
             return;
@@ -2338,12 +2405,12 @@ function submitModelRun() {
     $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
         $.each(groups, function(group,parr) {
             $.each(parr, function(i,p) {
-                train_config[p.name] = p.html_attributes.value;
+                train_config[p.name] = p.value;//p.html_attributes.value;
                 
-                // TODO: range_double types require a different way of getting the val
-                if (p.input_type == 'range_double') {
-//                     var vmin = $(`${model}__`).val()
-                }
+//                 // TODO: range_double types require a different way of getting the val
+//                 if (p.input_type == 'range_double') {
+// //                     var vmin = $(`${model}__`).val()
+//                 }
             });
         });
     });
@@ -3188,23 +3255,46 @@ function saveParametersForm() {
                 $.each(parr, function(i,p) {
                     var p_cache = MODELS_CACHE[parent_id].parameters[reqopt][g][i];
                     var v = $(`#${mobj.name}__${p.name}`).val();
-                    if (p.input_type != 'range_double' && v != p_cache.html_attributes.value) {
-                        changes = true;
-                    }
-                    p_cache.html_attributes.value = v;
-//                     p.html_attributes.value = v;
                     
                     if (p.input_type == 'range_double') {
                         var vmin = $(`#${mobj.name}__${p.name}__min`).val();
                         var vmax = $(`#${mobj.name}__${p.name}__max`).val();
 //                         p.html_attributes.value = [vmin,vmax];
-                        var v = [vmin,vmax];
-                        if (v == p_cache.html_attributes.value) {
-                            changes = true;
-                        }
-                        p_cache.html_attributes.value = [vmin,vmax];
-                        
+                        v = [vmin,vmax];
                     }
+                    
+                    p_cache.html_attributes.value = v;
+                    
+                    // Special case for sri_NN: check for hypertune value
+                    //  * if hypertune, set value to null
+                    if ($(`input[name="hypertune_${mobj.name}__${p.name}"]:checked`).val() == 'hypertune') {
+                        v = null;
+                    } 
+
+//                     else {
+//             
+//                         
+//                         if (p.input_type == 'range_double') {
+//                             var vmin = $(`#${mobj.name}__${p.name}__min`).val();
+//                             var vmax = $(`#${mobj.name}__${p.name}__max`).val();
+//     //                         p.html_attributes.value = [vmin,vmax];
+//                             v = [vmin,vmax];
+// //                             if (v == p_cache.html_attributes.value) {
+// //                                 changes = true;
+// //                             }
+//                         }
+//                     }
+//                     if (p.input_type != 'range_double' && v != p_cache.value) {
+                    if (v != p_cache.value) {
+                        changes = true;
+                    }
+                    p_cache.value = v;
+                    
+
+
+//                     p.html_attributes.value = v;
+                    
+                    
                 });
             });
         });

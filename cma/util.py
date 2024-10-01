@@ -1165,9 +1165,15 @@ def process_vector_for_mapfile(dataset):
                     exts = f.split('/')[-1].split(stem)[1].lstrip('.')
                     sync_path = get_output_layer_local_sync_path(dsid,ext=exts)
                     
-                    # And copy to local sync dir
+                    # Copy to local sync dir
                     print(f"\tsyncing {f} to: {sync_path}")
                     shutil.move(os.path.join(root,f), sync_path)
+                    
+                    # Run shptree to index the file
+                    if exts == 'shp':
+                        print("\tindexing vector...")
+                        os.system('shptree {sync_path}')
+                    
                     #print('\n',f, exts, stem, sync_path)
 
     # If missing, metadata, get:

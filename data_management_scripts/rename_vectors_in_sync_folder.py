@@ -15,10 +15,14 @@ for dl in dm_util.util.models.DataLayer.objects.filter(data_format='shp'):
     dsid = dl.data_source_id
     print('\n',stem, dsid)
 
-    # Find all files matching this stem
-    for f in sorted(glob.glob(f'{sd}{stem}*')):
-        print(f, f.replace(stem,dsid))
-        shutil.move(f, f.replace(stem,dsid))
+    shp = os.path.join(sd,f'{dsid}.shp')
+
+    os.system(f'shptree {shp}')
+
+    # # Find all files matching this stem
+    # for f in sorted(glob.glob(f'{sd}{stem}*')):
+    #     print(f, f.replace(stem,dsid))
+    #     shutil.move(f, f.replace(stem,dsid))
 
 
 

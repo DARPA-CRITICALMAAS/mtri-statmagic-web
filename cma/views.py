@@ -734,6 +734,8 @@ def submit_model_run(request):
         #blerg
    
     train_config = params['train_config']
+
+    #train_config = {'final_learning_rate': None, 'initial_learning_rate': None}
    
     # Mapping of model name to model config schema
     model_map = {
@@ -765,7 +767,8 @@ def submit_model_run(request):
     else:
         # Post to CDR
         res = cdr.post_model_run(
-            model_run.model_dump_json(exclude_none=True)
+            model_run.model_dump_json()
+           # model_run.model_dump_json(exclude_none=True)
         )
         
     res2 = cdr.get_model_run(res['model_run_id'])
