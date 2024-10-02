@@ -52,6 +52,34 @@ const SPECIFY_EXTENT_TR = `
     </td>
 `;
 
+const VECTOR_LEGENDS = {
+    POINT: function(color, layername, w, h) {
+        return `
+            <pattern id="circles_${layername}" x="0" y="0" width="9" height="9" patternUnits="userSpaceOnUse">
+                <circle fill="rgb(${color})" cx="2" cy="2" r="2"></circle>
+                <circle fill="rgb(${color})" cx="7" cy="6" r="2"></circle>
+            </pattern>
+            <rect width="${w}" height="${h}" fill="url(#circles_${layername})" />
+        `
+    },
+    LINE: function(color, layername, w, h) {
+        return `
+            <defs>
+                <pattern id="diagonalHatch_${layername}" patternUnits="userSpaceOnUse" width="9.5" height="9.5" patternTransform="rotate(45)">
+                    <line x1="0" y="0" x2="0" y2="9.5" stroke="rgb(${color})" stroke-width="3" />
+                </pattern>
+            </defs>
+            <rect width="${w}" height="${h}" fill="url(#diagonalHatch_${layername})" />
+        `
+    },
+    POLYGON: function(color, layername, w, h) {
+        return `
+            <rect width="${w}" height="${h}" fill="rgb(${color})" />
+        `
+    },
+};
+
+
 function copyJSON(json) {
     return JSON.parse(JSON.stringify(json));
 }
@@ -482,7 +510,10 @@ function buildParametersTable(mobj, table_selector, dobj) {
                     }
                     if (p.input_type == 'range_double') {
                         range_double_params[p.name] = p;
-                        input_html = `<input type='number' id='${pid}__min' value=${p.html_attributes.value[0]}/><div id='range_double__${p.name}' class='range_double'></div><input type='number' id='${pid}__max' value=${p.html_attributes.value[1]} />`;
+                        input_html = `
+                            <input type='number' id='${pid}__min' value=${p.html_attributes.value[0]}/>
+                                <div id='range_double__${p.name}' class='range_double'></div>
+                            <input type='number' id='${pid}__max' value=${p.html_attributes.value[1]} />`;
                     }
                 } else { // for 'select' elements
                     var opts = '';
@@ -1108,7 +1139,12 @@ function loadModelRun(cma_id,model_run_id) {
     $.each(MODELS_CACHE[mtype].parameters, function(reqopt,groups) {
         $.each(groups, function(group,parr) {
             $.each(parr, function(i,p) {
-                p.html_attributes.value = train_config[p.name];
+                p.value = train_config[p.name];
+                // Only update the html_attribute default value if non-null
+                if (p.value != null) {
+                    p.html_attributes.value = p.value;
+                    
+                }
             });
         });
     });
@@ -2628,9 +2664,31 @@ function onToggleLayerClick(target,layer_name) {
         // Add legend content
         var w = 60;
         var h = 14;
-        var lmin = datalayer.stats_minimum;
-        var lmax = datalayer.stats_maximum;
-        var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
+        
+        var vmin = '';
+        var vmax = '';
+        var svg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];
+        if (datalayer.data_format == 'tif') {
+            var lmin = datalayer.stats_minimum;
+            var lmax = datalayer.stats_maximum;
+            var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
+            vmin = lmin.toPrecision(precision);
+            vmax = lmax.toPrecisisvg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];on(precision);
+            svg = `
+                <linearGradient id="gradient_${layer_name_scrubbed}">
+                    <stop stop-color="#fff" offset="0%" />
+                    <stop stop-color="rgb(${datalayer.color})" offset="100%" />
+                </linearGradient>
+                <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name_scrubbed})" />
+            `;
+        } else {
+            svg = VECTOR_LEGENDS[datalayer.vector_format](
+                datalayer.color,
+                layer_name_scrubbed,
+                w,
+                h
+            );
+        }
         
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
@@ -2643,19 +2701,15 @@ function onToggleLayerClick(target,layer_name) {
                 </div>
                 <table>
                     <tr>
-                        <td>${lmin.toPrecision(precision)}</td>
+                        <td>${vmin}</td>
                         <td>
                             <div class='colorbar'>
                                 <svg height='${h}' width='${w}'>
-                                    <linearGradient id="gradient_${layer_name_scrubbed}">
-                                        <stop stop-color="#fff" offset="0%" />
-                                        <stop stop-color="rgb(${datalayer.color})" offset="100%" />
-                                    </linearGradient>
-                                    <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name_scrubbed})" />
+                                    ${svg}
                                 </svg>
                             </div>
                         </td>
-                        <td>${lmax.toPrecision(precision)}</td>
+                        <td>${vmax}</td>
                     </tr>
                 </table>
             </div>
