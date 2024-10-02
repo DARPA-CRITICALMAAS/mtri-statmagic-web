@@ -820,10 +820,13 @@ select:invalid {
 /*     color: #d9d9d9; */
 }
 #datalayer_info .modal {
-    color: #f2f2f2;
+    top: 12.5%;
     height: auto;
+    max-height: 75%;
+    color: #f2f2f2;
     font-size: 1.0rem;
     cursor: pointer;
+    overflow-y: auto;
 }
 #datalayer_info .modal div {
     margin-bottom: 20px;
@@ -2208,7 +2211,22 @@ input.hypertune_input {
 td.hypertune {
     display: none;
 }
-
+.model_parameters_table.vector_attrs th {
+    text-align: center;
+    font-weight: normal;
+    color: #999;
+}
+.model_parameters_table.vector_attrs td {
+    text-align: left;
+}
+.model_parameters_table.vector_attrs td.vals {
+    font-family: 'Open Sans Condensed';
+}
+.attrvalue {
+    color: #ffffcc;
+    font-family: monospace;
+    font-size: 0.8rem;
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

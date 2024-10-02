@@ -2584,13 +2584,56 @@ function checkModelRunStatus(model_run_id) {
 function showDataLayerInfo(layer_name,model_output) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
+    var attrs = '';
     if (dl.data_format == 'shp') {
-        sr = '[vector]';
+        sr = '';
+        attrs += `
+            <span class='label'>Attributes:</span><br>
+            <table class="model_parameters_table vector_attrs">
+                <tr>
+                    <th>Attribute</td>
+                    <th>Values</td>
+                </tr>
+        `;
+        $.each(dl.attribute_stats, function(attr,data) {
+            var vals = '';
+            if (data.min) {
+                vals = `min: <span class='attrvalue'>${data.min.toFixed(3)}</span>, max: <span class='attrvalue'>${data.max.toFixed(3)}</span>`;
+            }
+            if (data.unique_values) {
+                var uvs = data.unique_values;
+                uvs.sort();
+                vals = `<span title="${JSON.stringify(data.unique_values).replaceAll('"','')}">[`;
+                
+                if (data.unique_values.length > 3) {
+                    vals += `<span class='attrvalue'>${data.unique_values[0]}</span>,...<span class='attrvalue'>${data.unique_values.slice(-1).pop()}</span>]</span>`;
+                } else {
+                    v0 = '';
+                    $.each(data.unique_values, function(i,v) {
+                        v0 += `
+                            <span class='attrvalue'>${v.replaceAll('<','').replaceAll('>','')}</span>,`;
+                    });
+                    v0 = v0.slice(0,-1) + ']';
+                    vals += v0;
+                    
+                }
+            }
+            attrs += `
+                <tr>
+                    <td>${attr}</td>
+                    <td class='vals'>${vals}</td>
+                </tr>
+            `;
+        });
+        attrs += '</table>';
+        
     } else {
         sr += ' m';
-        
     }
-    var src = `<span class='label'>Source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`;
+    if (sr) {
+        sr = `<span class='label'>Spatial resolution:</span><br>${sr}`;
+    }
+    var src = `<span class='label'>Original source:</span><br>${dl.authors} ${dl.publication_date}.<br>${dl.reference_url}`;
     
     if (model_output) {
         src = `
@@ -2602,6 +2645,7 @@ function showDataLayerInfo(layer_name,model_output) {
     }
     
     $('#dl_title').html(dl.name_pretty);
+    $('#dl_dsid').html(`<span class='label'>Data source ID:</span><br>${dl.data_source_id}`);
     $('#dl_name').html(`<span class='label'>Evidence layer raster prefix:</span><br>${dl.name}`);
     $('#dl_description').html(`
         <span class='label'>Description:</span><br>
@@ -2611,7 +2655,8 @@ function showDataLayerInfo(layer_name,model_output) {
         <span class='label'>Data format:</span><br>
         ${dl.data_format}
     `);
-    $('#dl_spatial_resolution_m').html(`<span class='label'>Spatial resolution:</span><br>${sr}`);
+    $('#dl_attrs').html(attrs);
+    $('#dl_spatial_resolution_m').html();
     $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.download_url}' target='_blank'>${dl.download_url}</a>`);
     $('#dl_source').html(`${src}`);
     
