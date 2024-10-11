@@ -1843,7 +1843,8 @@ function resetButton(btn_id,label) {
     $(`#${btn_id}`).html(label);
 }
 
-function downloadMineralSites() {
+function downloadMineralSites(format) {
+    format = format || 'shp';
     // Request the selected sites
     
     // First abort any requests to the same endpoint that are in progress
@@ -1858,8 +1859,10 @@ function downloadMineralSites() {
         commodity: $('#commodity').val(),
         limit: $('#mineral_sites_limit').val(),
         wkt: getWKT(),
-        format: 'shp',
+        format: format,
     };
+    
+    var ext = format == 'shp' ? 'zip' : format;
     
     // Use XMLHttpRequest instead of Jquery $ajax
     xhttp = new XMLHttpRequest();
@@ -1870,7 +1873,7 @@ function downloadMineralSites() {
             a = document.createElement('a');
             a.href = window.URL.createObjectURL(xhttp.response);
             // Give filename you wish to download
-            a.download = `StatMAGIC_${data.commodity}_${getDateAsYYYYMMDD(null,true)}_shp.zip`;
+            a.download = `StatMAGIC_${data.commodity}_${getDateAsYYYYMMDD(null,true)}.${ext}`;
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
@@ -1948,10 +1951,12 @@ function loadMineralSitesToTable() {
     var trs = '';
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,mobj) {
         var m  = mobj.properties;
-//         var names = maybeArrToStr(m.names);
-//         var types = maybeArrToStr(m.types);
-//         var ranks = maybeArrToStr(m.ranks);
-        var srcs = getMineralSiteSourcesTable(m);
+        var msids = maybeArrToStr(m.mineral_site_ids);
+        var names = maybeArrToStr(m.names);
+        var types = maybeArrToStr(m.type);
+        var ranks = maybeArrToStr(m.rank);
+        var rowspan = names.length;
+        //var srcs = getMineralSiteSourcesTable(m);
         var conf = m.top1_deposit_classification_confidence;
         if (conf) {
             conf = conf.toFixed(1);
@@ -1960,19 +1965,41 @@ function loadMineralSitesToTable() {
         }
         trs += `
         <tr>
-            <td>${m.id}</td>
-            <td>${m.commodity}</td>
-            <td class='sources'>${srcs}</td>
-            <td>${m.top1_deposit_type}</td>
-            <td>${m.top1_deposit_group}</td>
-            <td>${m.top1_deposit_environment}</td>
-            <td>${conf}</td>
-            <td>${m.top1_deposit_classification_source}</td>
+            <td class='id' rowspan=${rowspan}>${m.id}</td>
+            <td class='commodity' rowspan=${rowspan}>${m.commodity}</td>
+            <td class='sources'><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[0] || '--'}</a></td>
+            <td class='sources rank'>${types[0] || 'NotSpecified'}</td>
+            <td class='sources type'>${ranks[0] || '--'}</td>
+            <td class='break' rowspan=${rowspan}></td>
+            <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_type || '--'}</td>
+            <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_group || '--'}</td>
+            <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_environment || '--'}</td>
+            <td class='dt_data conf' rowspan=${rowspan}>${conf}</td>
+            <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_classification_source || '--'}</td>
         </tr>
         `;
+        for (let i = 1; i < names.length; i++) {
+            trs += `
+                <tr>
+                    <td class='sources'><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[i] || '--'}</a></td>
+                    <td class='sources rank'>${types[i] || 'NotSpecified'}</td>
+                    <td class='sources type'>${ranks[i] || '--'}</td>
+                </tr>
+            `;
+            
+        }
     });
     $('#sites_tbody').append(trs);
         
+}
+
+function getMineralSiteSourceLink(mineral_site_id) {
+    var reclink = mineral_site_id;
+    if (mineral_site_id.indexOf('mrdata') > -1) {
+        var record_id = mineral_site_id.split('__').slice(-1)[0];
+        reclink = `https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}`
+    } 
+    return reclink
 }
 
 function getMineralSiteSourcesTable(prop) {
@@ -1989,14 +2016,15 @@ function getMineralSiteSourcesTable(prop) {
     var ranks = maybeArrToStr(prop.rank);
     var types = maybeArrToStr(prop.type);
     $.each(msids, function(i,msid) {
-        var reclink = msid;
-        if (msid.indexOf('mrdata') > -1) {
-            var record_id = msid.split('__').slice(-1)[0];
-            reclink = `https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}`
-        } else {
-            reclink = msid;
-            
-        }
+//         var reclink = msid;
+//         if (msid.indexOf('mrdata') > -1) {
+//             var record_id = msid.split('__').slice(-1)[0];
+//             reclink = `https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}`
+//         } else {
+//             reclink = msid;
+//             
+//         }
+        var reclink = getMineralSiteSourceLink(msid);
         var name = names[i] || '--';
         var type = types[i] || 'NotSpecified';
         var rank = ranks[i] || '--';
@@ -2051,12 +2079,13 @@ function loadMineralSitesToMap() {
             layer.bindPopup(popup);
         
             var commdts = getCommodityAndDTsFromSite(prop);
+            var conf = prop.top1_deposit_classification_confidence;
             
-            var dtcs_html = '';
-            $.each(commdts.dtcs_w_conf, function(i,d) {
-                var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
-                dtcs_html += ` ${d.name} ${conf}`;
-            });
+//             var dtcs_html = '';
+//             $.each(commdts.dtcs_w_conf, function(i,d) {
+//                 var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
+//                 dtcs_html += ` ${d.name} ${conf}`;
+//             });
             
             var src = getMineralSiteSourcesTable(prop);
             
@@ -2071,12 +2100,15 @@ function loadMineralSitesToMap() {
                     
                     <tr>
                         <td class='label'>Primary deposit type:</td>
-                        <td>${dtcs_html[0].name ? dtcd_html[0] : '--'}</td>
+                        <td>${prop.top1_deposit_type || '--'}</td>
                     </tr>
-                    
+                     <tr>
+                        <td class='label'>Primary deposit group:</td>
+                        <td>${prop.top1_deposit_group || '--'}</td>
+                    </tr>
                     <tr>
                         <td class='label'>Primary deposit type conf.:</td>
-                        <td> ${dtcs_html[0].conf ? dtcs_html[0].conf.toFixed(2) : '--'}</td>
+                        <td> ${conf ? conf.toFixed(2) : '--'}</td>
                     </tr>
                     <tr><td class='label'>Grade:</td><td>${prop.grade ? prop.grade.toFixed(2) : '--'}</td></tr>
                     <tr><td class='label'>Tonnage (Mt):</td><td>${prop.tonnage ? prop.tonnage.toFixed(1) : '--'}</td></tr>
@@ -2156,6 +2188,17 @@ function loadMineralSitesToMap() {
             <div class='legend_header'><span class='collapse'>-</span> Known deposit sites</div>
             <div class='legend_body'>
                 <table>
+                    <tr class='buttons'>
+                        <td>
+                            <div class='topbar_button'>
+                                 <span class="link mineral_sites_download_link" onclick="downloadMineralSites('csv');" style="display: inline;">csv</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites();" style="display: inline;">shp</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('gpkg');" style="display: inline;">gpkg</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('geojson');" style="display: inline;">geojson</span>|<img title='View tonnage histogram for the sites that have tonnage data' src="/static/cma/img/icons8-histogram-50.png" height="14px" class="download_icon"
+                                onclick="createTonnageHistogram();">
+                                <img src="/static/cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon">
+                                <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="$('#show_sites').show();">
+                                
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
                         <td class='label'>Display by:</td>
                     </tr><tr>

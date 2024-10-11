@@ -964,7 +964,7 @@ div.img_hover:hover div:first-child {
     -webkit-transition: 0.2s ease;
 }
 .link:hover {
-    color: #e26f03;
+    color: #fdbd81;
 }
 a {
     cursor: pointer;
@@ -1910,7 +1910,8 @@ select#sites_display_select {
     left: 50%;
 }
 
-.collapse div.topbar_button {
+.collapse div.topbar_button,
+div.topbar_button {
 /*     position: relative; */
     float: right;
     width: auto;
@@ -1920,7 +1921,8 @@ select#sites_display_select {
     vertical-align: bottom;
     padding: 0px auto;
 }
-.collapse div.topbar_button img {
+.collapse div.topbar_button img,
+div.topbar_button img {
     margin: 4px 0px 0px 0px;
     vertical-align: bottom;
 }
@@ -2000,6 +2002,7 @@ select#sites_display_select {
 }
 .mineral_sites_download_link {
     display:none;
+    font-size: 0.65rem;
 }
 
 .datalayer_table input[type="checkbox"].dedup_chk {
@@ -2015,6 +2018,17 @@ select#sites_display_select {
     left: 2.5%;
 }
 
+#sites_table thead td {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #262626;
+}
+
+#sites_table thead td.top {
+    top: -16px;
+}
+
 #sites_table tbody td {
     overflow-x: hidden;
     max-width: 100px;
@@ -2025,7 +2039,22 @@ select#sites_display_select {
 /*     font-size:  */
 }
 #sites_table tbody td.sources {
-    min-width: 200px;
+/*     min-width: 200px; */
+}
+#sites_table tbody td.dt_data {
+    font-size: 0.70rem;
+    color: #acd2ac;
+}
+#sites_table tbody td.dt_data.conf {
+    font-size: 0.8rem;
+    font-family: monospace;
+}
+#sites_table tbody td.commodity {
+    color: #ffffcc;
+}
+#sites_table tbody td.id {
+    font-size: 0.6rem;
+    color: #c3c3c3;
 }
 #sites_table td.primdep_header {
     color: #8bc18b;
@@ -2033,9 +2062,18 @@ select#sites_display_select {
 
 #sites_table td.primdep_header.top {
     border-bottom: 1px solid #455445;
-    
 }
-
+#sites_table td.sources {
+    color: #fdc086;
+    font-size: 0.7rem;
+}
+#sites_table td.primdep_header.sources.top {
+    border-bottom: 1px solid #634c36;
+}
+#sites_table td.primdep_header .onecol_subhdr {
+    width: 33%;
+    display: inline-block;
+}
 
 .close-top.layer_legend_close {
     top: -4px;
@@ -2069,16 +2107,25 @@ a.site_src_link {
 .mineral_site_info_table {
     width: 100%;
 }
-.mineral_site_info_table td {
-    text-align: right;
+.model_parameters_table table.mineral_site_info_table tr {
+    background-color: transparent;
+    
 }
-.mineral_site_info_table.sources td {
+.mineral_site_info_table td {
+    border-bottom: 1px solid: #222;
+    text-align: right;
+    
+}
+.mineral_site_info_table.sources td,
+.mineral_site_info_table td.sources {
     text-align: left;
 }
-.mineral_site_info_table.sources td.rank {
+.mineral_site_info_table.sources td.rank,
+.mineral_site_info_table td.rank {
     text-align: center;
 }
-.mineral_site_info_table.sources td.type {
+.mineral_site_info_table.sources td.type,
+.mineral_site_info_table td.type{
     font-size: 0.7rem;
 }
 .mineral_site_info_table td.label {
@@ -2253,6 +2300,17 @@ td.hypertune {
     color: #ffffcc;
     font-family: monospace;
     font-size: 0.8rem;
+}
+.topbar_button {
+    color: #888;
+    
+}
+.topbar_button img:hover {
+    background-color: #111;
+}
+.legend_body tr.buttons td {
+    padding: 0px 2px 4px 0px;
+    
 }
 @keyframes spin {
     0% { transform: rotate(0deg); }

@@ -983,15 +983,32 @@ def get_cache_key(prefix,params,exclude_params=[]):
     return '|'.join(k)
 
 
-def downloadShapefile(FeatureCollection, shp_name='test5'):
+def downloadVector(FeatureCollection, base_name='test5', output_format='shp'):
     '''
     Data is a list of GeoJSON features; a dict w/ 'features'
     '''
     
+    format_map = {
+        'shp': {
+            'extension': 'zip',
+            'driver_name': 'ESRI Shapefile',
+        }, 
+        'gpkg': {
+            'extension': 'gpkg',
+            'driver_name': 'GPKG',
+            'mime': 'application/geopackage+sqlite3'
+        },
+        'geojson': {
+            'extension': 'geojson',
+            'driver_name': 'GeoJSON',
+            'mime': 'application/geo+json'
+        },
+    }
+    
     # map of fields to be truncated b/c the way shapefile does this
     # automatically kind of sucks
     trunc_fields = {
-        'mineral_sites_ids': 'minsiteids',
+        'mineral_site_ids': 'minsiteids',
         'tonnage_unit': 'tonn_unit',
         'top1_deposit_type': 't1_deptype',
         'top1_deposit_group': 't1_depgrp',
@@ -1003,11 +1020,17 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
         'contained_metal_unit': 'cont_mt_un'
     }
 
-    shp_tempfile = os.path.join('/tmp', '{}.shp'.format(shp_name))
+    fobj = format_map[output_format]
+    print(output_format, fobj)
+
+    ext = fobj['extension']
+    unid = getUniqueID()
+    shp_tempfile = os.path.join('/tmp', f'{base_name}_{unid}.{output_format}')
+
 
     # "4" = ESRI Shapefile
     #driver = ogr.GetDriver(6)
-    driver = ogr.GetDriverByName('ESRI Shapefile')
+    driver = ogr.GetDriverByName(fobj['driver_name'])
 
     ds = driver.CreateDataSource(shp_tempfile)
 
@@ -1034,7 +1057,9 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
         
         fields = data[0]['properties'].keys()
         for field in fields:
-            fn = field if field not in trunc_fields else trunc_fields[field]
+            fn = field
+            if output_format == 'shp':
+                fn = field if field not in trunc_fields else trunc_fields[field]
                 
             v = data[0]['properties'][field]
             dtype = ogr.OFTString  # assume string by default
@@ -1057,15 +1082,9 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
                     dtype = type_dict[type(v)]
                 if not dtype:
                     continue
-                #if type(v) == unicode:
-                    #u = str(v)
     
                 feature.SetField(str(p2), u)
-                #if 'fuel_moisture' in p:
-                    #tmp1 = p2
-                    #tmp2 = str(p2)
-                    #tmp3 = [feature.GetField(x) for x in range(len(fields))]
-                    #blerg
+
             if row['geometry']['type'] == 'GeometryCollection':
                 for point in row['geometry']['geometries']:
                     point = ogr.CreateGeometryFromJson(json.dumps(point))
@@ -1083,19 +1102,30 @@ def downloadShapefile(FeatureCollection, shp_name='test5'):
         ds = None
         
     # Now write the files to zip
-    bytes_io = BytesIO()
-    with zipfile.ZipFile(bytes_io, 'w', zipfile.ZIP_DEFLATED) as archive:
-        for ext in ('.shp','.dbf','.shx','.prj'):
-            f = shp_tempfile.replace('.shp',ext)
-            archive.write(f,os.path.basename(f))
+    if output_format == 'shp':
+        print(shp_tempfile)
+        bytes_io = BytesIO()
+        with zipfile.ZipFile(bytes_io, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for ext in ('.shp','.dbf','.shx','.prj'):
+                f = shp_tempfile.replace('.shp',ext)
+                archive.write(f,os.path.basename(f))
 
-    bytes_io.seek(0) # Go to the first byte
-    response = HttpResponse(bytes_io.read(), content_type='application/zip')
-    bytes_io.close() # Dispose of the in-memory file
+        bytes_io.seek(0) # Go to the first byte
+        response = HttpResponse(bytes_io.read(), content_type='application/zip')
+        bytes_io.close() # Dispose of the in-memory file
 
-    response['Content-Disposition'] = 'attachment; filename="{}.zip"'.format(shp_name)
+        
+        
+    else:
+         response = HttpResponse(
+            open(shp_tempfile,'rb'),
+            content_type=fobj['mime']
+         )
+         
+    response['Content-Disposition'] = f'attachment; filename="{base_name}_{unid}.{fobj["extension"]}'
     
     return response
+
 
 def get_extent_geom_of_raster(tif):
     '''

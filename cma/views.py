@@ -11,6 +11,7 @@ from cdr import cdr_utils
 from . import util
 from . import models
 from . import mapfile
+from io import StringIO
 from osgeo import gdal, ogr
 from shapely import wkt
 from shapely.geometry import mapping
@@ -930,7 +931,16 @@ def get_mineral_sites(request):
             'geometry': gj_point
         })
 
-    if params['format'] == 'json':
+    base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
+
+    if params['format'] == 'csv':
+        buff = StringIO()
+        sites_df.to_csv(buff)
+        buff.seek(0)
+        response = HttpResponse(buff, content_type='application/csv')
+        response['Content-Disposition'] = f'attachment; filename="{base_name}.csv'
+
+    elif params['format'] == 'json':
         # Return response as JSON to client
         response = HttpResponse(json.dumps({
             'mineral_sites': sites_gj,
@@ -938,10 +948,12 @@ def get_mineral_sites(request):
         }))
         response['Content-Type'] = 'application/json'
         
-    if params['format'] == 'shp':
-        return util.downloadShapefile(
+    #if params['format'] == 'shp':
+    else:
+        response = util.downloadVector(
             {'features': sites_gj},
-            shp_name=f'StatMAGIC_{params["commodity"]}_{dt.now().date()}'
+            output_format=params['format'],
+            base_name=base_name,
         )
     
     return response
