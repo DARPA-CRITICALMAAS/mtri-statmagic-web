@@ -62,7 +62,6 @@ def getUniqueID():
 def convertVectorToGeoJSONresponse(vector_filepath,params):
     '''
     Convert input vector file to geojson, returns json dict
-    
     '''
     
     # Set temp path for geojson file

@@ -11,19 +11,23 @@
         <div class='content'>
             <table class='model_parameters_table cmamodelrun' id='sites_table'>
                 <thead>
-                    <td>ID</td>
-                    <td>Names</td>
-                    <td>Commodity</td>
-                    <td>Type</td>
-                    <td>Mineral site IDs</td>
-                    <td>Primary dep. type</td>
-                    <td>Primary dep. group</td>
-                    <td>Primary dep. env.</td>
-                    <td>Primary dep. conf.</td>
-                    <td>Primary dep. source</td>
+                    <tr>
+                        <td colspan=3></td>
+                        <td colspan=5 class='primdep_header top'>Primary deposit</td>
+                    </tr>
+                    <tr>
+                        <td>ID</td>
+                        <td>Comm.</td>
+                        <td>Source(s)</td>
+                        <td class='primdep_header'>type</td>
+                        <td class='primdep_header'>group</td>
+                        <td class='primdep_header'>env.</td>
+                        <td class='primdep_header'>conf.</td>
+                        <td class='primdep_header'>source</td>
+                    <tr>
 
                 </thead>
-                <tbody>
+                <tbody id='sites_tbody'>
                 </tbody>
             </table>
         </div>

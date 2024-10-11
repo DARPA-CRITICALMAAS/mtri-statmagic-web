@@ -679,7 +679,9 @@ tr.subcategory_label td {
 }
 tr.subcategory_label td.colname,
 .content.datacube #datacube_layers thead td,
-.cmamodelrun thead td {
+.cmamodelrun thead td,
+.mineral_site_info_table td.colname
+{
     font-size: 0.7rem;
     color: #999;
     text-align: center;
@@ -2016,8 +2018,24 @@ select#sites_display_select {
 #sites_table tbody td {
     overflow-x: hidden;
     max-width: 100px;
+    text-align: left;
+    font-size: 0.8rem;
+}
+#sites_table tbody td.msids {
+/*     font-size:  */
+}
+#sites_table tbody td.sources {
+    min-width: 200px;
+}
+#sites_table td.primdep_header {
+    color: #8bc18b;
+}
+
+#sites_table td.primdep_header.top {
+    border-bottom: 1px solid #455445;
     
 }
+
 
 .close-top.layer_legend_close {
     top: -4px;
@@ -2053,6 +2071,15 @@ a.site_src_link {
 }
 .mineral_site_info_table td {
     text-align: right;
+}
+.mineral_site_info_table.sources td {
+    text-align: left;
+}
+.mineral_site_info_table.sources td.rank {
+    text-align: center;
+}
+.mineral_site_info_table.sources td.type {
+    font-size: 0.7rem;
 }
 .mineral_site_info_table td.label {
     text-align: left;

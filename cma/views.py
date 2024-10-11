@@ -661,31 +661,14 @@ def submit_model_run(request):
         #  identical specifications (e.g. if both transform and scaling had
         #  'mean' option, that would confuse things)
         
-         #for tm in el['transform_methods']:
-            #dfs = processing_steps[tm['name']]['parameter_defaults']
-            #vs = {}
-            #for p,default_v in dfs.items():
-                #v = default_v
-                #if p in tm['parameters']:
-                    #v = tm['parameters'][p]
-                #vs[p] = v
-                
-            #if tm['name'] == 'impute':
-                #vs = json.loads(prospectivity_input.Impute(
-                    #impute_method=vs['method'],
-                    #window_size=[vs['window_size']]*2
-                #).model_dump_json())
-
-            #tms.append({'name': tm['name'], 'parameters': vs})
-        
         tms = []
         for tm in el['transform_methods']:
             
-            # For transform/scale, the only param is 'method'; if not set, 
-            # get the default value
+            # Why am I skipping 'scale'?
             if tm['name'] == 'scale':
                 continue
-            if tm['name'] in ('transform','scale'):
+            
+            if tm['name'] not in ('impute',):
                 dfs = processing_steps[tm['name']]['parameter_defaults']
                 vs = {}
                 for p,default_v in dfs.items():
@@ -694,12 +677,6 @@ def submit_model_run(request):
                         v = tm['parameters'][p]
                     vs[p] = v
                     tms.append(v)
-                
-                #if 'method' in tm['parameters']:
-                    #v = tm['method']
-                #else:
-                    #v = processing_steps[tm['name']]['parameter_defaults']['method']
-                    
                 
             if tm['name'] == 'impute':
                 dfs = processing_steps[tm['name']]['parameter_defaults']
@@ -741,6 +718,7 @@ def submit_model_run(request):
     model_map = {
         'sri_NN': prospectivity_input.NeuralNetUserOptions,
         'beak_som': prospectivity_input.SOMTrainConfig,
+        #'jataware_rf': prospectivity_input.RFUserOptions,
     }
    
     # Build TA3 models metadata instance
@@ -802,7 +780,7 @@ def get_mineral_sites(request):
         'only_gradetonnage': False,
         
         # this will be converted to bbox_polygon for CDR
-        'wkt': '', # WKT polygon indicating AOI
+        'wkt': None, # WKT polygon indicating AOI
         
         # output format
         'format': 'json'    
@@ -815,14 +793,43 @@ def get_mineral_sites(request):
     
     #print(params)
     
-    params['wkt'] = util.validate_wkt_geom(params['wkt'])
-    gj = util.convert_wkt_to_geojson(params['wkt'])
+    if params['wkt']:
+        params['wkt'] = util.validate_wkt_geom(params['wkt'])
+        gj = util.convert_wkt_to_geojson(params['wkt'])
     
-    # Account for multipolygons by changing type to Polygon and grabbing 1st 
-    # polygon in multipolygon set
-    if gj['type'] == 'MultiPolygon':
-        gj['type'] = 'Polygon';
-        gj['coordinates'] = gj['coordinates'][0]
+        print(gj)
+    
+        # Account for multipolygons by changing type to Polygon and grabbing 1st 
+        # polygon in multipolygon set
+        if gj['type'] == 'MultiPolygon':
+            gj['type'] = 'Polygon';
+            gj['coordinates'] = gj['coordinates'][0]
+    else: # if no extent provided, default to NA coords
+        #gj = {
+            #"type": "Polygon",
+            #"coordinates": [
+                #[
+                    #[-180, 7],
+                    #[-180, 83.5],
+                    #[-52, 83.5],
+                    #[-52, 7],
+                    #[-180, 7]
+                #]
+            #]
+        #}
+        gj = {
+            'type': 'Polygon',
+            'coordinates': (
+                ((-78.50593, 6.664608), (-77.001544, 8.407168), 
+                 (-76.273124, 13.581921), (-60.522853, 11.544616), 
+                 (-44.950799, 51.179343), (-75.787818, 75.845169), 
+                 (-72.028561, 79.496652), (-57.270212, 83.026219), 
+                 (-167.606439, 83.753911), (-169.011996, 64.320872), 
+                 (-173.137277, 63.587675), (-187.786318, 54.316523), 
+                 (-188.752638, 51.179343), (-87.527109, 4.65308), 
+                 (-78.50593, 6.664608)),)
+        }
+
 
     cs = [params['commodity']]
     if params['commodity'] == 'rare earth elements':

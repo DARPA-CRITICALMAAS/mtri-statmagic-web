@@ -42,30 +42,30 @@ post_data_intersect_sources = {
 #
 # for r in res:
 #     print(r)
-# blerg
-
-res = cdr.get_cma('ESRI:102008_dd3d7552701c9c08e8019eef6ee42db15777a33d85b44f00ab019161306f27f1__res0_10000_res1_10000_Nickel')
-print(res)
-blerg
-
+# # blerg
 #
-# res = cdr.get_model_run("acce401ee598467a8a9db766c4514bd3")
-# print(res['event']['payload']['evidence_layers'])#.keys()))
+# res = cdr.get_cma('ESRI:102008_dd3d7552701c9c08e8019eef6ee42db15777a33d85b44f00ab019161306f27f1__res0_10000_res1_10000_Nickel')
 # print(res)
 # blerg
-
-# for p,v in res['event']['payload']['train_config'].items():
-#     print(p,v)
-# for el in res['event']['payload']['evidence_layers']:
-#     print(el['data_source']['description'],el['data_source']['format'])
-# print(len(res['event']['payload']['evidence_layers']))
+#
+# #
+# # res = cdr.get_model_run("acce401ee598467a8a9db766c4514bd3")
+# # print(res['event']['payload']['evidence_layers'])#.keys()))
+# # print(res)
+# # blerg
+#
+# # for p,v in res['event']['payload']['train_config'].items():
+# #     print(p,v)
+# # for el in res['event']['payload']['evidence_layers']:
+# #     print(el['data_source']['description'],el['data_source']['format'])
+# # print(len(res['event']['payload']['evidence_layers']))
+# # blerg
+# res = cdr.get_prospectivity_output_layers()
+# for r in res:
+#     print()
+#     print(r)
+# print(len(res))
 # blerg
-res = cdr.get_prospectivity_output_layers()
-for r in res:
-    print()
-    print(r)
-print(len(res))
-blerg
 # #
 # res = cdr.intersect_sources(json.dumps(post_data_intersect_sources))
 # #res = cdr.get_cmas()
@@ -93,11 +93,24 @@ bbox_polygon_site_search = {
     ]
 }
 
+gj = {
+    "type": "Polygon",
+    "coordinates": [
+        [
+            [-180, -90],
+            [-180, 90],
+            [180, 90],
+            [180, -90],
+            [-180, -90]
+        ]
+    ]
+}
 res = cdr.get_dedup_sites_search(
     commodity='Copper',
     bbox_polygon=json.dumps(bbox_polygon_site_search),
     limit=1000
 )
+print(res)
 ranks = []
 for r in json.loads(res.to_json(orient='records')):
     for k,v in r.items():

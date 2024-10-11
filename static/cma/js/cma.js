@@ -38,19 +38,27 @@ var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 var MODELS_CACHE;
 resetModelCache();
 
-const SPECIFY_EXTENT_TR = `
-    <td class='label'>Extent:</td>
-    <td align='right'>
-        <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
-        <img src="/static/cma/img/draw-polygon-icon.png" 
-            height="17"
-            id="draw_polygon_icon" /></a>
-        <a onClick=drawStart("rectangle")>
-        <img src="/static/cma/img/draw-rectangle-icon.png"
-            height="17"
-            id="draw_rectangle_icon" ></a>
-    </td>
-`;
+function getSpecifyExtentTR(ignore) {
+    var ig = '';
+    if (ignore) {
+        ig = `/ <label title='If checked, will query all of North America'>ignore <input type='checkbox' id='sites_ignoreextent' onchange='validateLoadSitesButton();'></label>`;
+            
+    }
+    return `
+        <td class='label'>Extent:</td>
+        <td align='right'>
+            <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
+            <img src="/static/cma/img/draw-polygon-icon.png" 
+                height="17"
+                id="draw_polygon_icon" /></a>
+            <a onClick=drawStart("rectangle")>
+            <img src="/static/cma/img/draw-rectangle-icon.png"
+                height="17"
+                id="draw_rectangle_icon" ></a>
+            ${ig}
+        </td>
+    `;
+}
 
 const VECTOR_LEGENDS = {
     POINT: function(color, layername, w, h) {
@@ -216,7 +224,7 @@ function onLoad() {
     $('.datalayer_table.known_deposit_sites input').on('change',validateLoadSitesButton);
     
     // Load extent specification tools to KNOWN DEPOSIT SITES
-    $('#mineral_sites_extent_tr').html(SPECIFY_EXTENT_TR);
+    $('#mineral_sites_extent_tr').html(getSpecifyExtentTR(true));
     
     // Create listeners for the upload data layer form
     $('#uploadForm_datalayer input').on('change', function() {
@@ -310,7 +318,7 @@ function addCMAControl() {
                                 <span class='link' style='color:#ffb366' onclick='loadCMAresolutionFromLayers();'>load min. from input layers</span>
                             </td>
                         </tr>
-                        <tr>${SPECIFY_EXTENT_TR}</tr>
+                        <tr>${getSpecifyExtentTR()}</tr>
                     </table>
                     <div class='cma_button_container'>
                         <div id="btn_cma_initialize_cancel" class='button load_sites cmainit cancel' onClick='showCMAstart();'>Cancel</div>
@@ -417,7 +425,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
                 <td></td>
                 <td>
                     <div class='rotate_container'><div class='rotate'>customize</div></div>
-                    <div class='rotate_container'><div class='rotate'>hypertune</div></div>
+                    <div class='rotate_container'><div title='With this option, the value of the parameter will be determined via hyperparameter tuning' class='rotate'>optimize</div></div>
                 </td>
             </tr>
         `;
@@ -1765,6 +1773,9 @@ function loadMineralSites() {
         types.push(chk.id.split('__')[1].replace('_',' '));
     });
     
+    var ignore_extent = $('#sites_ignoreextent').is(':checked');
+    var wkt = ignore_extent ? null : getWKT();
+    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: JSON.stringify({
             top1_deposit_type: $('#top1_deposit_type').val(),
@@ -1774,7 +1785,7 @@ function loadMineralSites() {
             rank: rank.join(','),
             type: types.join(','),
             limit: $('#mineral_sites_limit').val(),
-            wkt: getWKT(),
+            wkt: wkt,
         }),
         type: 'POST',
         dataType: 'json',
@@ -1934,27 +1945,75 @@ function maybeArrToStr(n) {
 
 function loadMineralSitesToTable() {
 
+    var trs = '';
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,mobj) {
         var m  = mobj.properties;
-        tr = `
+//         var names = maybeArrToStr(m.names);
+//         var types = maybeArrToStr(m.types);
+//         var ranks = maybeArrToStr(m.ranks);
+        var srcs = getMineralSiteSourcesTable(m);
+        var conf = m.top1_deposit_classification_confidence;
+        if (conf) {
+            conf = conf.toFixed(1);
+        } else {
+            conf = '--';
+        }
+        trs += `
         <tr>
             <td>${m.id}</td>
-            <td>${maybeArrToStr(m.names)}</td>
             <td>${m.commodity}</td>
-            <td>${maybeArrToStr(m.type)}</td>
-            <td>${maybeArrToStr(m.mineral_site_ids)}</td>
+            <td class='sources'>${srcs}</td>
             <td>${m.top1_deposit_type}</td>
             <td>${m.top1_deposit_group}</td>
             <td>${m.top1_deposit_environment}</td>
-            <td>${m.top1_deposit_classification_confidence}</td>
+            <td>${conf}</td>
             <td>${m.top1_deposit_classification_source}</td>
         </tr>
         `;
-        
-        $('#sites_table tbody').append(tr);
-        
     });
+    $('#sites_tbody').append(trs);
         
+}
+
+function getMineralSiteSourcesTable(prop) {
+    var src = `
+        <table class='model_parameters_table mineral_site_info_table sources'>
+            <tr>
+                <td class='colname'>Name</td>
+                <td class='colname'>Type</td>
+                <td class='colname'>Rank</td>
+            </tr>
+    `;
+    var names = maybeArrToStr(prop.names);
+    var msids = maybeArrToStr(prop.mineral_site_ids);
+    var ranks = maybeArrToStr(prop.rank);
+    var types = maybeArrToStr(prop.type);
+    $.each(msids, function(i,msid) {
+        var reclink = msid;
+        if (msid.indexOf('mrdata') > -1) {
+            var record_id = msid.split('__').slice(-1)[0];
+            reclink = `https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}`
+        } else {
+            reclink = msid;
+            
+        }
+        var name = names[i] || '--';
+        var type = types[i] || 'NotSpecified';
+        var rank = ranks[i] || '--';
+
+        src += `
+            <tr>
+                <td><a href=${reclink} target='_blank'>${name}</a></td>
+                <td class='type'>${type}</td>
+                <td class='rank'>${rank}</td>
+            </tr>
+        `;
+    });
+    src += '</table>';
+    
+    return src;
+    
+    
 }
 
 function loadMineralSitesToMap() {
@@ -1989,16 +2048,7 @@ function loadMineralSitesToMap() {
             var ranks = maybeArrToStr(prop.rank);
             var types = maybeArrToStr(prop.type);
             
-//             console.log(maybeArrToStr(prop.rank));
-//             var source_id = prop.mineral_site_ids.split('__')[0];
-//             var record_id = prop.mineral_site_ids.split('__').slice(-1)[0];
-            
             layer.bindPopup(popup);
-            
-//             if (prop.mineral_site_ids.indexOf('mrdata') > -1) {
-//                 src = `https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}`.replaceAll('"','').replaceAll(']');
-//             //https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=${record_id}
-//             }
         
             var commdts = getCommodityAndDTsFromSite(prop);
             
@@ -2008,15 +2058,7 @@ function loadMineralSitesToMap() {
                 dtcs_html += ` ${d.name} ${conf}`;
             });
             
-            var src = '';
-            $.each(msids, function(i,msid) {
-                if (msid.indexOf('mrdata') > -1) {
-                    var record_id = msid.split('__').slice(-1)[0];
-                    var type = types[i] ? types[i] : 'NotSpecified';
-                    src += `<br>${types[i]} (${ranks[i]}): <a class='site_src_link' href='https://mrdata.usgs.gov/mrds//show-mrds.php?dep_id=${record_id}' target='_blank'>${msid}</a>`.replaceAll('"','').replaceAll(']');
-                }
-                
-            });
+            var src = getMineralSiteSourcesTable(prop);
             
             popup.setContent(`
                 <b>${maybeArrToStr(prop.names).join(' /<br>')}</b>
@@ -2041,7 +2083,7 @@ function loadMineralSitesToMap() {
                 
                 </table>
                 <br><br>
-                <span class='label'>Source(s):</span><b>${src}</b>
+                <span class='label'>Source(s):</span>${src}
         
                 <br><br>
                 
@@ -2318,7 +2360,6 @@ function onMineralSitesDisplayByChange() {
           
         }
     });
-    console.log(colormaps);
     
     // Create legend
     var lhtml = '';
@@ -2368,7 +2409,8 @@ function createLegendControl(element_id,position) {
 
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
-    if (v != undefined && drawnLayer) {
+    var ignore_extent = $('#sites_ignoreextent').is(':checked');
+    if (v != undefined && (drawnLayer || ignore_extent)) {
         $('#load_sites_button').removeClass('disabled');
         loadMineralSites();
     } else {
@@ -2718,7 +2760,8 @@ function onToggleLayerClick(target,layer_name) {
             var lmax = datalayer.stats_maximum;
             var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
             vmin = lmin.toPrecision(precision);
-            vmax = lmax.toPrecisisvg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];on(precision);
+            vmax = lmax.toPrecision(precision);
+            //var svg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];on(precision);
             svg = `
                 <linearGradient id="gradient_${layer_name_scrubbed}">
                     <stop stop-color="#fff" offset="0%" />
@@ -3647,7 +3690,6 @@ function createTonnageHistogram() {
         if (!tonnage) {return;} // skip sites w/out tonnage data
         data.push({tonnage: tonnage});
     });
-    console.log(data);
     
     // set the dimensions and margins of the graph
     var margin = {top: 10, right: 30, bottom: 50, left: 40},
