@@ -968,10 +968,10 @@ def get_cache_key(prefix,params,exclude_params=[]):
             'limit',
             'ignore_cache',
             #'output_spatial_aggregations',
-            'output_temporal_aggregations',
-            'nawfd_stochastic_use_cached',
-            'output_format',
-            'format_for_calculator',
+            #'output_temporal_aggregations',
+            #'nawfd_stochastic_use_cached',
+            'format',
+            #'format_for_calculator',
             'ignore_limit',
             ):
             #v = params[p] if params[p] else '|'
@@ -1072,11 +1072,13 @@ def downloadVector(FeatureCollection, base_name='test5', output_format='shp'):
 
 
         # Now add data
-        print(len(data))
+        #print(len(data))
         for row in data:
             feature = ogr.Feature(layer.GetLayerDefn())
             for p, v in row['properties'].items():
-                p2 = p if p not in trunc_fields else trunc_fields[p]
+                p2 = p
+                if output_format == 'shp':
+                    p2 = p if p not in trunc_fields else trunc_fields[p]
                 u = v
                 if v:
                     dtype = type_dict[type(v)]
@@ -1085,16 +1087,17 @@ def downloadVector(FeatureCollection, base_name='test5', output_format='shp'):
     
                 feature.SetField(str(p2), u)
 
-            if row['geometry']['type'] == 'GeometryCollection':
-                for point in row['geometry']['geometries']:
-                    point = ogr.CreateGeometryFromJson(json.dumps(point))
-                    feature.SetGeometry(point)
-                    layer.CreateFeature(feature)
+            #if row['geometry']['type'] == 'GeometryCollection':
+                #for point in row['geometry']['geometries']:
+                    #point = ogr.CreateGeometryFromJson(json.dumps(point))
+                    #feature.SetGeometry(point)
+                    #layer.CreateFeature(feature)
                     
-            else:
-                point = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
-                feature.SetGeometry(point)
-                layer.CreateFeature(feature)
+            #else:
+            #point = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
+            point = ogr.CreateGeometryFromJson(json.dumps(row['geometry']))
+            feature.SetGeometry(point)
+            layer.CreateFeature(feature)
 
             feature = None
             poly = None

@@ -1751,18 +1751,7 @@ function finishDraw(layer) {
     validateCMAinitializeForm();
 }
 
-
-
-function loadMineralSites() {
-    // Request the selected sites
-    
-    // First abort any requests to the same endpoint that are in progress
-    if (AJAX_GET_MINERAL_SITES) {
-        AJAX_GET_MINERAL_SITES.abort();
-    }
-    
-    setLoadingLoadSitesButton();
-    
+function getMineralSitesRequestFilters() {
     var rank = [];
     $('.dedup_chk.rank:checked').each(function(i,chk) {
         rank.push(chk.id.split('__')[1]);
@@ -1776,17 +1765,34 @@ function loadMineralSites() {
     var ignore_extent = $('#sites_ignoreextent').is(':checked');
     var wkt = ignore_extent ? null : getWKT();
     
+    return {
+        top1_deposit_type: $('#top1_deposit_type').val(),
+        top1_deposit_classification_confidence__gte: $('#top1_deposit_classification_confidence__gte').val(),
+        commodity: $('#commodity').val(),
+        only_gradetonnage: $('#only_gradetonnage').is(':checked'),
+        rank: rank.join(','),
+        type: types.join(','),
+        limit: $('#mineral_sites_limit').val(),
+        wkt: wkt,
+    }
+    
+    
+}
+
+function loadMineralSites() {
+    // Request the selected sites
+    
+    // First abort any requests to the same endpoint that are in progress
+    if (AJAX_GET_MINERAL_SITES) {
+        AJAX_GET_MINERAL_SITES.abort();
+    }
+    
+    setLoadingLoadSitesButton();
+    
+    
+    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
-        data: JSON.stringify({
-            top1_deposit_type: $('#top1_deposit_type').val(),
-            top1_deposit_classification_confidence__gte: $('#top1_deposit_classification_confidence__gte').val(),
-            commodity: $('#commodity').val(),
-            only_gradetonnage: $('#only_gradetonnage').is(':checked'),
-            rank: rank.join(','),
-            type: types.join(','),
-            limit: $('#mineral_sites_limit').val(),
-            wkt: wkt,
-        }),
+        data: JSON.stringify(getMineralSitesRequestFilters()),
         type: 'POST',
         dataType: 'json',
         contentType: 'application/json; charset=utf-8',
@@ -1854,13 +1860,8 @@ function downloadMineralSites(format) {
     
    setLoadingLoadSitesButton();
     
-    var data = {
-        deposit_site: $('#deposit_type').val(),
-        commodity: $('#commodity').val(),
-        limit: $('#mineral_sites_limit').val(),
-        wkt: getWKT(),
-        format: format,
-    };
+    var data = getMineralSitesRequestFilters();
+    data.format = format;
     
     var ext = format == 'shp' ? 'zip' : format;
     
@@ -2080,13 +2081,6 @@ function loadMineralSitesToMap() {
         
             var commdts = getCommodityAndDTsFromSite(prop);
             var conf = prop.top1_deposit_classification_confidence;
-            
-//             var dtcs_html = '';
-//             $.each(commdts.dtcs_w_conf, function(i,d) {
-//                 var conf = d.conf ? `<span class='confidence'><span class='lab'>conf:</span> ${d.conf.toFixed(2)}</span>` : ''
-//                 dtcs_html += ` ${d.name} ${conf}`;
-//             });
-            
             var src = getMineralSiteSourcesTable(prop);
             
             popup.setContent(`

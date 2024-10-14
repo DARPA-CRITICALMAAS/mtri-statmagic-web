@@ -1,4 +1,5 @@
 import json, os, sys
+import pandas as pd
 from django.core.exceptions import BadRequest
 from datetime import datetime as dt
 from django.shortcuts import render
@@ -798,7 +799,7 @@ def get_mineral_sites(request):
         params['wkt'] = util.validate_wkt_geom(params['wkt'])
         gj = util.convert_wkt_to_geojson(params['wkt'])
     
-        print(gj)
+        #print(gj)
     
         # Account for multipolygons by changing type to Polygon and grabbing 1st 
         # polygon in multipolygon set
@@ -853,8 +854,9 @@ def get_mineral_sites(request):
             'Erbium'
         ]
 
-    print(cs)
+   # print(cs)
     sites_json = []
+    sites_df_merged = None
     for c in cs:
         # Args to (a) send to CDR and (b) use as cache key
         args = {
@@ -883,13 +885,20 @@ def get_mineral_sites(request):
         else:
             print('cache found!')
         
-        sites_json += json.loads(sites_df.to_json(orient='records'))
+        if not sites_df_merged:
+            sites_df_merged = sites_df
+        else:
+            sites_df_merged = sites_df_merged.append(sites_df, ignore_index=True)
+        
     # print(json.dumps(gj))
     
-    # Convert to geoJSON
+    # Apply non-CDR-based filters
     #   * TODO: also trim out unncessary properties
-    sites_gj = []
-    for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
+
+    
+    sites_filtered = []
+    #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
+    for index, site in sites_df_merged.iterrows():
         # Apply grade/tonnage data filter
         #print(params['only_gradetonnage'])
         if params['only_gradetonnage'] in ('true',True,'True','t','T') and not site['grade']:
@@ -921,40 +930,49 @@ def get_mineral_sites(request):
         if skip:
             continue
         
-        #if params['top1_deposit_type']:
-            #if params['top1_deposit_type'] != site['top1_deposit_type']:
-                #continue
-        gj_point = util.convert_wkt_to_geojson(site['wkt'])
-        sites_gj.append({
-            'type': 'Feature',
-            'properties': site,
-            'geometry': gj_point
-        })
+        sites_filtered.append(site)
+       
 
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
-
+    
+    print('n sites filtered:',len(sites_filtered))
+    
     if params['format'] == 'csv':
+        sites_df_filtered = pd.DataFrame(sites_filtered,columns=sites_df_merged.columns)
         buff = StringIO()
-        sites_df.to_csv(buff)
+        sites_df_filtered.to_csv(buff)
         buff.seek(0)
         response = HttpResponse(buff, content_type='application/csv')
         response['Content-Disposition'] = f'attachment; filename="{base_name}.csv'
 
-    elif params['format'] == 'json':
-        # Return response as JSON to client
-        response = HttpResponse(json.dumps({
-            'mineral_sites': sites_gj,
-            'params': params
-        }))
-        response['Content-Type'] = 'application/json'
-        
-    #if params['format'] == 'shp':
     else:
-        response = util.downloadVector(
-            {'features': sites_gj},
-            output_format=params['format'],
-            base_name=base_name,
-        )
+        # Create GeoJSON of the filtered sites
+        sites_gj = []
+        for site in sites_filtered:
+            st = json.loads(site.to_json())
+
+            gj_point = util.convert_wkt_to_geojson(st['centroid_epsg_4326'])
+            sites_gj.append({
+                'type': 'Feature',
+                'properties': st,
+                'geometry': gj_point
+            })
+        print(len(sites_gj))
+
+        if params['format'] == 'json':
+            # Return response as JSON to client
+            response = HttpResponse(json.dumps({
+                'mineral_sites': sites_gj,
+                'params': params
+            }))
+            response['Content-Type'] = 'application/json'
+            
+        else:
+            response = util.downloadVector(
+                {'features': sites_gj},
+                output_format=params['format'],
+                base_name=base_name,
+            )
     
     return response
     
