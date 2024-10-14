@@ -1949,14 +1949,19 @@ function maybeArrToStr(n) {
 
 function loadMineralSitesToTable() {
 
+    // First clear out existing rows
+    $('#sites_tbody').empty();
+    
     var trs = '';
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,mobj) {
+       // var bg_color = i % 2 == 0 ? 'rgb(64, 64, 64)' : 'rgb(57, 57, 57);';
+        var evenodd = i % 2 == 0 ? 'even' : 'odd';
         var m  = mobj.properties;
         var msids = maybeArrToStr(m.mineral_site_ids);
         var names = maybeArrToStr(m.names);
         var types = maybeArrToStr(m.type);
         var ranks = maybeArrToStr(m.rank);
-        var rowspan = names.length;
+        var rowspan = names.length > 3 ? 4 : names.length;//Math.min(names.length+1,4);
         //var srcs = getMineralSiteSourcesTable(m);
         var conf = m.top1_deposit_classification_confidence;
         if (conf) {
@@ -1964,34 +1969,69 @@ function loadMineralSitesToTable() {
         } else {
             conf = '--';
         }
+        
+        var src_style = names.length == 1 ? ' style="border-bottom: none;"' : '';
+        var top1_src = m.top1_deposit_classification_source;
+        top1_src = top1_src ? `${top1_src.slice(0,12)} [...]` : '--';
+        
         trs += `
-        <tr>
+        <tr class='${evenodd}' id='site_tr_${m.id}'>
             <td class='id' rowspan=${rowspan}>${m.id}</td>
             <td class='commodity' rowspan=${rowspan}>${m.commodity}</td>
-            <td class='sources'><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[0] || '--'}</a></td>
-            <td class='sources rank'>${types[0] || 'NotSpecified'}</td>
-            <td class='sources type'>${ranks[0] || '--'}</td>
+            <td class='sources'${src_style}><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[0] || '--'}</a></td>
+            <td class='sources rank'${src_style}>${types[0] || 'NotSpecified'}</td>
+            <td class='sources type'${src_style}>${ranks[0] || '--'}</td>
             <td class='break' rowspan=${rowspan}></td>
             <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_type || '--'}</td>
             <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_group || '--'}</td>
             <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_environment || '--'}</td>
             <td class='dt_data conf' rowspan=${rowspan}>${conf}</td>
-            <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_classification_source || '--'}</td>
+            <td class='dt_data' title='${m.top1_deposit_classification_source}' rowspan=${rowspan}>${top1_src}</td>
         </tr>
         `;
         for (let i = 1; i < names.length; i++) {
+            cls = i > 2 ? `site_src_row_extra ${m.id}` : '';
+            var style = i == names.length - 1 ? ' style="border-bottom: none;"' : '';
             trs += `
-                <tr>
-                    <td class='sources'><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[i] || '--'}</a></td>
-                    <td class='sources rank'>${types[i] || 'NotSpecified'}</td>
-                    <td class='sources type'>${ranks[i] || '--'}</td>
+                <tr class='${cls} ${evenodd}'>
+                    <td class='sources'${style}>
+                        <a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[i] || '--'}</a>
+                    </td>
+                    <td class='sources rank'${style}>${types[i] || 'NotSpecified'}</td>
+                    <td class='sources type'${style}>${ranks[i] || '--'}</td>
                 </tr>
             `;
+            
+            // After the third source, if any remain, hide under expandable
+            // row
+            if (i == 2 && names.length > 3) {
+                
+                trs += `
+                <tr class='${evenodd}'>
+                    <td colspan=3 class='site_src_toggle_tr ${m.id}' onclick='toggleAllSiteSources("${m.id}",${names.length});'>
+                        + show all ${names.length} sources for this site
+                    </td>
+                </tr>
+                `;
+            }
             
         }
     });
     $('#sites_tbody').append(trs);
-        
+}
+
+function toggleAllSiteSources(mid,n_srcs) {
+    var td = $(`.site_src_toggle_tr.${mid}`);
+
+    if (td.html().indexOf('+') > -1) {
+        td.html('- collapse full sources list');
+        $(`.site_src_row_extra.${mid}`).show();
+        $(`#site_tr_${mid} td`).not('.sources').attr('rowspan',n_srcs+1);
+    } else {
+        td.html(`+ show all ${n_srcs} sources for this site`);
+        $(`.site_src_row_extra.${mid}`).hide();
+        $(`#site_tr_${mid} td`).not('.sources').attr('rowspan',Math.min(n_srcs+1,4));
+    }
 }
 
 function getMineralSiteSourceLink(mineral_site_id) {

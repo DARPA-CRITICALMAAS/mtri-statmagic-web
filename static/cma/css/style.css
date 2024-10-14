@@ -604,13 +604,15 @@ span.collapse {
     -webkit-transition: 0.3s ease;
 }
 .datalayer_table tbody tr:nth-child(odd),
-.model_parameters_table tbody tr:nth-child(odd) {
+.model_parameters_table tbody tr:nth-child(odd),
+#sites_table tbody tr.odd {
     background-color: rgb(78, 78, 78);
 }
 .model_parameters_table tbody tr:nth-child(odd) {
     background-color: rgb(57, 57, 57);
 }
-.model_parameters_table tbody tr:nth-child(even) {
+.model_parameters_table tbody tr:nth-child(even),
+#sites_table tbody tr.even {
     background-color: rgb(64, 64, 64);
 }
 .datalayer_table td,
@@ -2035,10 +2037,21 @@ div.topbar_button img {
     text-align: left;
     font-size: 0.8rem;
 }
+/*#sites_table tbody tr:nth-child(odd) {
+    background-color: rgb(64,64,64);
+}
+#sites_table tbody td {
+    border-bottom: 1px solid #444;
+}*/
+#sites_table tbody tr:hover {
+    background-color: #222;
+}
 #sites_table tbody td.msids {
 /*     font-size:  */
 }
 #sites_table tbody td.sources {
+     border-bottom: 1px solid #666; 
+/*     background-color: transparent; */
 /*     min-width: 200px; */
 }
 #sites_table tbody td.dt_data {
@@ -2051,6 +2064,16 @@ div.topbar_button img {
 }
 #sites_table tbody td.commodity {
     color: #ffffcc;
+}
+#sites_table tbody td.site_src_toggle_tr {
+    color: #888;
+    font-size: 0.7rem;
+    font-style: italic;
+    cursor: pointer;
+    background: transparent;
+}
+#sites_table tbody td.site_src_toggle_tr:hover {
+    color: #fff;
 }
 #sites_table tbody td.id {
     font-size: 0.6rem;
@@ -2312,6 +2335,15 @@ td.hypertune {
     padding: 0px 2px 4px 0px;
     
 }
+tr.site_src_row_extra {
+    display: none;
+    
+}
+
+#sites_tbody td {
+    vertical-align: top;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

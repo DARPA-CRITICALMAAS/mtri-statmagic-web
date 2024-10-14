@@ -885,10 +885,10 @@ def get_mineral_sites(request):
         else:
             print('cache found!')
         
-        if not sites_df_merged:
+        if type(sites_df_merged) == type(None):
             sites_df_merged = sites_df
         else:
-            sites_df_merged = sites_df_merged.append(sites_df, ignore_index=True)
+            sites_df_merged = pd.concat([sites_df_merged,sites_df])
         
     # print(json.dumps(gj))
     
