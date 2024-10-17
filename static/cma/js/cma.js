@@ -231,6 +231,13 @@ function onLoad() {
         validateUploadDataLayerForm();
     });
     
+    // Add on click event for sorting by mineral site table headers
+    $('.sites_sort_th td').on('click', function(e) {
+        var sort_by = $(e.target).attr('data-prop');
+        console.log(sort_by);
+        loadMineralSitesToTable(sort_by);
+    });
+    
     // Get metadata
     getMetadata();
 }
@@ -1800,6 +1807,11 @@ function loadMineralSites() {
 //             console.log(response);
             GET_MINERAL_SITES_RESPONSE_MOST_RECENT = response;
             
+            // Add 'exclude' property to each site
+            $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,s) {
+                s.properties.exclude = false;
+            });
+            
             // Add points to map
             loadMineralSitesToMap();
             
@@ -1947,13 +1959,21 @@ function maybeArrToStr(n) {
     return n.indexOf('[') > -1 ? JSON.parse(n) : [n];
 }
 
-function loadMineralSitesToTable() {
+function loadMineralSitesToTable(sort_by) {
+    sort_by = sort_by || 'id';
 
     // First clear out existing rows
     $('#sites_tbody').empty();
     
+    var sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.sort(function(a,b){
+        var aprop = a.properties;
+        var bprop = b.properties;
+        return aprop[sort_by] - bprop[sort_by];
+    })
+    console.log(sites);
+    
     var trs = '';
-    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,mobj) {
+    $.each(sites, function(i,mobj) {
        // var bg_color = i % 2 == 0 ? 'rgb(64, 64, 64)' : 'rgb(57, 57, 57);';
         var evenodd = i % 2 == 0 ? 'even' : 'odd';
         var m  = mobj.properties;
@@ -1986,7 +2006,11 @@ function loadMineralSitesToTable() {
             <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_group || '--'}</td>
             <td class='dt_data' rowspan=${rowspan}>${m.top1_deposit_environment || '--'}</td>
             <td class='dt_data conf' rowspan=${rowspan}>${conf}</td>
-            <td class='dt_data' title='${m.top1_deposit_classification_source}' rowspan=${rowspan}>${top1_src}</td>
+            <td class='dt_data'
+                title='${m.top1_deposit_classification_source}'
+                rowspan=${rowspan}>
+                ${top1_src}
+            </td>
         </tr>
         `;
         for (let i = 1; i < names.length; i++) {
@@ -2082,8 +2106,18 @@ function getMineralSiteSourcesTable(prop) {
     
     return src;
     
-    
 }
+
+            
+function toggleExcludeChk(id) {
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,s) {
+        if (s.properties.id == id) {
+            s.properties.exclude = $('#site_popup_exclude_chk').is(':checked');
+            return false;
+        }
+    });
+}
+        
 
 function loadMineralSitesToMap() {
     
@@ -2111,51 +2145,8 @@ function loadMineralSitesToMap() {
                 minWidth: 260,
                 autoPan: false,
             });
-            var prop = feature.properties;//e.layer.feature.properties;      
-//             var src = '';
-            var msids = maybeArrToStr(prop.mineral_site_ids);
-            var ranks = maybeArrToStr(prop.rank);
-            var types = maybeArrToStr(prop.type);
-            
-            layer.bindPopup(popup);
-        
-            var commdts = getCommodityAndDTsFromSite(prop);
-            var conf = prop.top1_deposit_classification_confidence;
-            var src = getMineralSiteSourcesTable(prop);
-            
-            popup.setContent(`
-                <b>${maybeArrToStr(prop.names).join(' /<br>')}</b>
-                <br><br>
-                <table class='model_parameters_table mineral_site_info_table'>
-                    <tr>
-                        <td class='label'>Commodity:</td>
-                        <td class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</td>
-                    </tr>
-                    
-                    <tr>
-                        <td class='label'>Primary deposit type:</td>
-                        <td>${prop.top1_deposit_type || '--'}</td>
-                    </tr>
-                     <tr>
-                        <td class='label'>Primary deposit group:</td>
-                        <td>${prop.top1_deposit_group || '--'}</td>
-                    </tr>
-                    <tr>
-                        <td class='label'>Primary deposit type conf.:</td>
-                        <td> ${conf ? conf.toFixed(2) : '--'}</td>
-                    </tr>
-                    <tr><td class='label'>Grade:</td><td>${prop.grade ? prop.grade.toFixed(2) : '--'}</td></tr>
-                    <tr><td class='label'>Tonnage (Mt):</td><td>${prop.tonnage ? prop.tonnage.toFixed(1) : '--'}</td></tr>
-                
-                </table>
-                <br><br>
-                <span class='label'>Source(s):</span>${src}
-        
-                <br><br>
-                
 
-                
-            `);
+            layer.bindPopup(popup);
         }
     });
     
@@ -2173,6 +2164,55 @@ function loadMineralSitesToMap() {
 //         e.layer.openPopup();
     });
     MINERAL_SITES_LAYER.on('click', function(e) {
+        var prop = e.layer.feature.properties;//e.layer.feature.properties;      
+        var msids = maybeArrToStr(prop.mineral_site_ids);
+        var ranks = maybeArrToStr(prop.rank);
+        var types = maybeArrToStr(prop.type);
+
+        var commdts = getCommodityAndDTsFromSite(prop);
+        var conf = prop.top1_deposit_classification_confidence;
+        var src = getMineralSiteSourcesTable(prop);
+        var exclude_chk = '';
+        if (getActiveCMAID()) { // If CMA/modeling tools are active, show 'exclude' checkbox
+            // TODO: check prop for checked
+            var checked = prop.exclude ? ' checked' : '';
+            exclude_chk = `
+                <label><span class='label'>Exclude from model training data:</span>
+                    <input type='checkbox' id='site_popup_exclude_chk' onchange='toggleExcludeChk("${prop.id}")' ${checked}/>
+                </label>`;
+        }
+        
+        e.layer._popup.setContent(`
+            <b>${maybeArrToStr(prop.names).join(' /<br>')}</b>
+            <br><br>
+            <table class='model_parameters_table mineral_site_info_table'>
+                <tr>
+                    <td class='label'>Commodity:</td>
+                    <td class='emri_keyword'>${commdts.commodities.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</td>
+                </tr>
+                <tr>
+                    <td class='label'>Primary deposit type:</td>
+                    <td>${prop.top1_deposit_type || '--'}</td>
+                </tr>
+                    <tr>
+                    <td class='label'>Primary deposit group:</td>
+                    <td>${prop.top1_deposit_group || '--'}</td>
+                </tr>
+                <tr>
+                    <td class='label'>Primary deposit type conf.:</td>
+                    <td> ${conf ? conf.toFixed(2) : '--'}</td>
+                </tr>
+                <tr><td class='label'>Grade:</td><td>${prop.grade ? prop.grade.toFixed(2) : '--'}</td></tr>
+                <tr><td class='label'>Tonnage (Mt):</td><td>${prop.tonnage ? prop.tonnage.toFixed(1) : '--'}</td></tr>
+            
+            </table>
+            <br><br>
+            <span class='label'>Source(s):</span>${src}
+    
+            <br><br>
+            ${exclude_chk} 
+        `);
+        
         e.layer.openPopup();
     });
     MINERAL_SITES_LAYER.addTo(MAP);
@@ -2197,6 +2237,9 @@ function loadMineralSitesToMap() {
         <option value="tonnage">Tonnage</option>
         <option value="grade">Grade</option>
     `;
+    if (getActiveCMAID()) {
+        opts += "<option value='exclude'>Included in training</option>";
+    }
     
     // ranks
     $.each(['A','B','C','D','E','U'], function(i,d) {
@@ -2227,7 +2270,7 @@ function loadMineralSitesToMap() {
                             <div class='topbar_button'>
                                  <span class="link mineral_sites_download_link" onclick="downloadMineralSites('csv');" style="display: inline;">csv</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites();" style="display: inline;">shp</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('gpkg');" style="display: inline;">gpkg</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('geojson');" style="display: inline;">geojson</span>|<img title='View tonnage histogram for the sites that have tonnage data' src="/static/cma/img/icons8-histogram-50.png" height="14px" class="download_icon"
                                 onclick="createTonnageHistogram();">
-                                <img src="/static/cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon">
+                                <img src="/static/cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon" onclick="createGradeTonnageScatterplot();">
                                 <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="$('#show_sites').show();">
                                 
                             </div>
@@ -2395,6 +2438,14 @@ function onMineralSitesDisplayByChange() {
             var display_cat = display_by.split('__')[0];
             var display_filter = display_by.split('__')[1];
             var commdts = getCommodityAndDTsFromSite(prop);
+            
+            if (display_by == 'exclude') {
+                if (!prop.exclude) {
+                    fillColor = fillColor_filterYes;
+                    fillOpacity = fillOpacity_filterYes;
+                    strokeWeight = 0.5;
+                }
+            }
             
             if (display_cat == 'commodity') {
                 if (commdts.commodities.indexOf(display_filter) > -1) {
@@ -3756,6 +3807,87 @@ function onStartedCMA(cma) {
     resetModelUI(true);
 }
 
+
+function createGradeTonnageScatterplot() {
+    var elid = '#graph_modal_content';
+    $(elid).empty();
+    
+    var data = [];
+    $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,site) {
+        var tonnage = site.properties.tonnage;
+        var grade = site.properties.grade;
+        if (!tonnage || !grade) {return;} // skip sites w/out tonnage data
+        data.push({tonnage: tonnage, grade: grade});
+    });
+    
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 30, bottom: 50, left: 60},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select(elid)
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`);
+        
+    // X axis: scale and draw:
+    var x = d3.scaleLinear()
+        .domain([
+            d3.min(data, function(d) { return +d.grade }),
+            d3.max(data, function(d) { return +d.grade})
+        ])
+        .range([0, width]);
+        
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+    
+    // Y axis: scale and draw:
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+        y.domain([0, d3.max(data, function(d) { return +d.tonnage})]);   
+        
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    // append the points
+    svg.append('g')
+        .selectAll('dot')
+        .data(data)
+        .enter()
+        .append('circle')
+            .attr('cx', function(d) { return x(d.grade);})
+            .attr('cy', function(d) { return y(d.tonnage);})
+            .attr('r', 6)
+            .style('fill','#69b3a2');
+   
+    
+    // x-axis label
+    svg.append('text')
+        .style('fill', '#999')
+        .attr('text-anchor','middle')
+        .attr('class','camera_header')
+        .attr('transform', `translate(${width/2},${height+40}) `)
+        .text('grade (%)');
+        
+    // y-axis label
+    svg.append('text')
+        .style('fill', '#999')
+        .attr('text-anchor','middle')
+        .attr('class','camera_header')
+        .attr('transform', `translate(-40,${height/2}) rotate(-90)`)
+        .text('million tonnes');
+        
+        
+    $('#graph_modal_header').html('Grade/tonnage');
+    $('#graph_modal').show();
+        
+}
 
 function createTonnageHistogram() {
     var elid = '#graph_modal_content';

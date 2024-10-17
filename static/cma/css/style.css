@@ -1836,6 +1836,9 @@ select#sites_display_select {
     height: auto;
     max-height: 600px;
     overflow-y: auto;
+    width: 75%;
+    left: calc(12.5% - 40px);
+   
 }
 
 #choose_cma_table tbody tr {
@@ -2016,8 +2019,8 @@ div.topbar_button img {
 #graph_modal .modal {
     width: 90%;
     height: 90%;
-    top: 2.5%;
-    left: 2.5%;
+    top: calc(5% - 24px); 
+    left: calc(5% - 40px);
 }
 
 #sites_table thead td {
@@ -2326,18 +2329,15 @@ td.hypertune {
 }
 .topbar_button {
     color: #888;
-    
 }
 .topbar_button img:hover {
     background-color: #111;
 }
 .legend_body tr.buttons td {
     padding: 0px 2px 4px 0px;
-    
 }
 tr.site_src_row_extra {
     display: none;
-    
 }
 
 #sites_tbody td {

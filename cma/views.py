@@ -917,7 +917,7 @@ def get_mineral_sites(request):
         for p in ('rank','type','top1_deposit_type','top1_deposit_group'):
             if params[p]:
                 srank = site[p]
-                if not srank:
+                if not srank or srank in ('nan',) or type(srank) == float:
                     skip = True
                     continue
                 if '[' in srank:
@@ -935,7 +935,7 @@ def get_mineral_sites(request):
 
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
     
-    print('n sites filtered:',len(sites_filtered))
+    #print('n sites filtered:',len(sites_filtered))
     
     if params['format'] == 'csv':
         sites_df_filtered = pd.DataFrame(sites_filtered,columns=sites_df_merged.columns)
@@ -957,7 +957,7 @@ def get_mineral_sites(request):
                 'properties': st,
                 'geometry': gj_point
             })
-        print(len(sites_gj))
+        #print(len(sites_gj))
 
         if params['format'] == 'json':
             # Return response as JSON to client
