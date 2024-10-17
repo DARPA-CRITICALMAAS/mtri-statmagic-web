@@ -2344,6 +2344,13 @@ tr.site_src_row_extra {
     vertical-align: top;
 }
 
+.sites_sort_th td:not(.sources) {
+    cursor: pointer;
+}
+.sites_sort_th td:not(.sources):hover {
+    font-weight: bold;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

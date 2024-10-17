@@ -23,6 +23,7 @@ var GET_MINERAL_SITES_RESPONSE_MOST_RECENT
 var GET_MODEL_RUNS_MOST_RECENT;
 var MINERAL_SITES_LAYER;
 var CMAS_EXISTING;
+var MINERAL_SITES_SORT_BY = {prop: 'id', order: 'asc'};
 var FISHNET_LAYER = new L.FeatureGroup();
 const DRAW_STYLE = {
     color: 'orange',
@@ -234,8 +235,14 @@ function onLoad() {
     // Add on click event for sorting by mineral site table headers
     $('.sites_sort_th td').on('click', function(e) {
         var sort_by = $(e.target).attr('data-prop');
-        console.log(sort_by);
-        loadMineralSitesToTable(sort_by);
+
+        // Toggle sort order if same row was clicked
+        if (MINERAL_SITES_SORT_BY.prop == sort_by) {
+            MINERAL_SITES_SORT_BY.order = MINERAL_SITES_SORT_BY.order == 'asc' ? 'desc' : 'asc';
+        }
+        MINERAL_SITES_SORT_BY.prop = sort_by;
+
+        loadMineralSitesToTable();
     });
     
     // Get metadata
@@ -1959,18 +1966,35 @@ function maybeArrToStr(n) {
     return n.indexOf('[') > -1 ? JSON.parse(n) : [n];
 }
 
-function loadMineralSitesToTable(sort_by) {
-    sort_by = sort_by || 'id';
+function loadMineralSitesToTable() {
+//     sort_by = sort_by || 'id';
+    var sort_by = MINERAL_SITES_SORT_BY.prop;
 
     // First clear out existing rows
     $('#sites_tbody').empty();
     
     var sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.sort(function(a,b){
+        v0 = MINERAL_SITES_SORT_BY.order == 'asc' ? 1 : -1;
+        v1 = v0 == 1 ? -1 : 1;
         var aprop = a.properties;
         var bprop = b.properties;
-        return aprop[sort_by] - bprop[sort_by];
+        var av = aprop[sort_by];
+        var bv = bprop[sort_by];
+        
+        if (a === b) {
+            return 0;
+        }
+        
+        if (av === null || av == false) {
+            return v0;
+        }
+        if (bv === null || bv == false) {
+            return v1;
+        }
+
+        return av > bv ? v0 : v1;
     })
-    console.log(sites);
+//     console.log(sites);
     
     var trs = '';
     $.each(sites, function(i,mobj) {
@@ -1994,8 +2018,11 @@ function loadMineralSitesToTable(sort_by) {
         var top1_src = m.top1_deposit_classification_source;
         top1_src = top1_src ? `${top1_src.slice(0,12)} [...]` : '--';
         
+        var exclude = m.exclude ? ' checked' : '';
+        
         trs += `
         <tr class='${evenodd}' id='site_tr_${m.id}'>
+            <td class='exclude sites_table_exclude_td' rowspan=${rowspan}><input type='checkbox'${exclude} onclick='toggleExcludeChk("${m.id}");' /></td>
             <td class='id' rowspan=${rowspan}>${m.id}</td>
             <td class='commodity' rowspan=${rowspan}>${m.commodity}</td>
             <td class='sources'${src_style}><a href='${getMineralSiteSourceLink(msids[0])}' target='_blank'>${names[0] || '--'}</a></td>
@@ -2112,10 +2139,13 @@ function getMineralSiteSourcesTable(prop) {
 function toggleExcludeChk(id) {
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,s) {
         if (s.properties.id == id) {
-            s.properties.exclude = $('#site_popup_exclude_chk').is(':checked');
+            s.properties.exclude = !s.properties.exclude//$('#site_popup_exclude_chk').is(':checked');
             return false;
         }
     });
+    
+    // Reset display (in case 'included in training' is selected
+    onMineralSitesDisplayByChange();
 }
         
 
@@ -2206,7 +2236,7 @@ function loadMineralSitesToMap() {
                 <tr><td class='label'>Tonnage (Mt):</td><td>${prop.tonnage ? prop.tonnage.toFixed(1) : '--'}</td></tr>
             
             </table>
-            <br><br>
+            <br>
             <span class='label'>Source(s):</span>${src}
     
             <br><br>
@@ -2271,7 +2301,7 @@ function loadMineralSitesToMap() {
                                  <span class="link mineral_sites_download_link" onclick="downloadMineralSites('csv');" style="display: inline;">csv</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites();" style="display: inline;">shp</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('gpkg');" style="display: inline;">gpkg</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('geojson');" style="display: inline;">geojson</span>|<img title='View tonnage histogram for the sites that have tonnage data' src="/static/cma/img/icons8-histogram-50.png" height="14px" class="download_icon"
                                 onclick="createTonnageHistogram();">
                                 <img src="/static/cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon" onclick="createGradeTonnageScatterplot();">
-                                <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="$('#show_sites').show();">
+                                <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="loadMineralSitesToTable();$('#show_sites').show();">
                                 
                             </div>
                         </td>
