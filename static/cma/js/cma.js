@@ -751,7 +751,7 @@ function onModelSelect() {
         
         button_html += `
             <td>
-                <div class='button ${button.label}' onclick='${onclick};'>
+                <div class='button model_process_submit ${button.class}' onclick='${onclick};'>
                     ${button.label}
                 </div>
             </td>`;
@@ -2631,6 +2631,39 @@ function showModelInfo(layer_name) {
 
 function getActiveCMAID() {
     return $('#cma_loaded').attr('data-cma_id');
+    
+}
+
+// Send POST request to backend
+function submitPreprocessing() {
+    
+    // TODO: account for if 'ignore extent' is checked; b/c training sites 
+    //       submitted for model runs should ALWAYS adhere to extent 
+    var training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.map(
+        function(s) {return s.properties.id;}
+    );
+    
+    var cma_id = getActiveCMAID();
+    var data = {
+        cma_id: cma_id,
+        evidence_layers : DATACUBE_CONFIG,
+        training_sites: training_sites,
+        dry_run: true,
+    };
+    
+    $.ajax('submit_preprocessing', {
+        data: JSON.stringify(data),
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8',
+        success: function(response) {
+            console.log(this.url,response);
+        },
+        error: function(response) {
+            console.log(response);
+            alert(response.responseText);
+        },
+    });
     
 }
 

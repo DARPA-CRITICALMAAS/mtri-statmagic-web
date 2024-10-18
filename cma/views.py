@@ -628,6 +628,104 @@ def initiate_cma(request):
 
 
 @csrf_exempt
+def submit_preprocessing(request):
+    # Expected URL parameters w/ default values (if applicable)
+    params = {
+        'cma_id': None,
+        'evidence_layers': [],
+        'training_sites': [],
+        'dry_run': False,
+    }
+    params = util.process_params(request, params, post_json=True)
+    vector_layers = []
+    
+    # Build evidence layer model instances
+    evidence_layers = []
+    for el in params['evidence_layers']:
+        dl = models.DataLayer.objects.filter(
+            data_source_id=el['data_source_id']
+        ).first()
+        
+        tms = util.process_transform_methods(el['transform_methods'])
+
+        if dl.vector_format:
+            # TODO: build features from vector sources
+            # Actually seems like these should go into extra_geometries as geojson
+            # b/c evidence_features DataTypeId requires an ID of a feature
+            # already in the CDR
+            extra_geometries = []
+            
+            l = prospectivity_input.DefineVectorProcessDataLayer(
+                label_raster = False,
+                title = el['data_source_id'],
+                evidence_features = [],
+                extra_geometries = extra_geometries,
+                transform_methods = tms,
+            )
+            
+            vector_layers.append(l)
+            
+        else:
+
+            l = prospectivity_input.DefineProcessDataLayer(
+                cma_id = params['cma_id'],
+                data_source_id = el["data_source_id"],
+                title = dl.name,
+                transform_methods = tms#[
+                    #"log",
+                    #"minmax",
+                    #Impute(impute_method="mean", window_size=[3,3])
+                #]
+            )
+            evidence_layers.append(l)
+       
+    #vector_layers = []
+    #for site_id in params['training_sites']:
+    # Now do training sites
+    if params['training_sites']:
+        #print(params['training_sites'])
+        tms = []#util.process_transform_methods(el['transform_methods'])
+        extra_geometries = []
+        
+        evidence_features = [
+            prospectivity_input.DataTypeId(
+                raw_data_type = prospectivity_input.RawDataType.MINERAL_SITE,
+                id=x
+            ) for x in params['training_sites'] if type(x) == str
+        ]
+        
+        # extra_geometries will be provided as list of coordinates [x,y]
+        extra_geometries = [
+            prospectivity_input.Point(coordinates = x)
+            for x in params['training_sites'] if type(x) == list
+        ]
+            
+        ## Build vector layer model instances
+        l = prospectivity_input.DefineVectorProcessDataLayer(
+            label_raster = True,
+            title = 'Training sites',
+            evidence_features = evidence_features,
+            extra_geometries = extra_geometries,
+            transform_methods = tms,
+        )
+        
+        vector_layers.append(l)
+        
+        
+    prospectivity_input.CreateProcessDataLayers(
+        cma_id=params['cma_id'],
+        system="statmagic",
+        system_version="",
+        evidence_layers=evidence_layers,
+        vector_layers=vector_layers,
+    )
+    
+    print(vector_layers)
+
+    
+    
+
+@csrf_exempt
 def submit_model_run(request):
     # Expected URL parameters w/ default values (if applicable)
     params = {
@@ -635,7 +733,7 @@ def submit_model_run(request):
         'model': None,
         'train_config': {},
         'evidence_layers': [],
-        'dry_run': False,
+        'dry_run': False, # set to True to skip posting to CDR (just tests process)
     }
     params = util.process_params(request, params, post_json=True)
     
@@ -647,70 +745,8 @@ def submit_model_run(request):
     model = models.ProspectivityModelType.objects.filter(name=params['model']).first()
    
    
-    # Build evidence layer model instances
-    evidence_layers = []
-    for el in params['evidence_layers']:
-        dl = models.DataLayer.objects.filter(
-            data_source_id=el['data_source_id']
-        ).first()
-        
-        #  This list can be:
-        #    * any length
-        #    * any combination/order of processing types in:
-        #       https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/main/cdr_schemas/prospectivity_input.py#L95
-        #
-        #  But, FWIW wouldn't work if multiple transform methods have a 
-        #  identical specifications (e.g. if both transform and scaling had
-        #  'mean' option, that would confuse things)
-        
-        tms = []
-        for tm in el['transform_methods']:
-            
-            # Why am I skipping 'scale'?
-            if tm['name'] == 'scale':
-                continue
-            
-            if tm['name'] not in ('impute',):
-                dfs = processing_steps[tm['name']]['parameter_defaults']
-                vs = {}
-                for p,default_v in dfs.items():
-                    v = default_v
-                    if p in tm['parameters']:
-                        v = tm['parameters'][p]
-                    vs[p] = v
-                    tms.append(v)
-                
-            if tm['name'] == 'impute':
-                dfs = processing_steps[tm['name']]['parameter_defaults']
-                vs = {}
-                for p,default_v in dfs.items():
-                    v = default_v
-                    if p in tm['parameters']:
-                        v = tm['parameters'][p]
-                    vs[p] = v
-                    
-                v = prospectivity_input.Impute(
-                    impute_method=vs['method'],
-                    window_size=[vs['window_size']]*2
-                )
-
-                tms.append(v)
-
-        #print(tms)
-        #print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
-        l = prospectivity_input.DefineProcessDataLayer(
-            cma_id = params['cma_id'],
-            data_source_id = el["data_source_id"],
-            title = dl.name,
-            transform_methods = tms#[
-                #"log",
-                #"minmax",
-                #Impute(impute_method="mean", window_size=[3,3])
-            #]
-        )
-        evidence_layers.append(l)
-        #print(l.
-        #blerg
+    # TODO: rebuild this using process layer IDs instead
+    evidence_layers = {}
    
     train_config = params['train_config']
 

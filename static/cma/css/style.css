@@ -2351,6 +2351,28 @@ tr.site_src_row_extra {
     font-weight: bold;
 }
 
+.button.model_process_submit {
+    line-height: 1.1rem;
+    padding: 8px 10px;
+    min-height: 2.2rem;
+    height: 100%;
+}
+
+#modeling_buttons_table div.button.preprocess {
+    background-color: #afaf6a;
+}
+#modeling_buttons_table div.button.preprocess:hover {
+    background-color: #74743e;
+}
+
+#modeling_buttons_table div.button.run {
+    background-color: #6a9daf;
+}
+
+#modeling_buttons_table div.button.run:hover {
+    background-color: #365763;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

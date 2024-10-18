@@ -271,6 +271,11 @@ class CDR():
             'prospectivity/prospectivity_model_run',POST=metadata
         )
 
+    def post_prospectivity_preprocess(self, metadata):
+        return self.run_query(
+            'prospectivity/prospectivity_preprocess', POST=metadata
+        )
+
     ####################################
     # Tiles
     def get_tiles_sources(self,page_size=10):

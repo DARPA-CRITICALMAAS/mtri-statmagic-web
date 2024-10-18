@@ -74,6 +74,8 @@ post_data_intersect_sources = {
 # print(res[0].keys())
 #print(cdr.get_mineral_inventories('copper'))
 
+res = cdr.post_prospectivity_preprocess()
+
 bbox_polygon_site_search = {
     # "bbox": [
     #     36.217,

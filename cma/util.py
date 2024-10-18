@@ -1304,6 +1304,50 @@ def download_model_outputs(urls_to_download, cma_name, model_run_id):
 
     return response
     
+    
+def process_transform_methods(transform_methods):
+    #  This list can be:
+    #    * any length
+    #    * any combination/order of processing types in:
+    #       https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/main/cdr_schemas/prospectivity_input.py#L95
+    #
+    #  But, FWIW wouldn't work if multiple transform methods have a 
+    #  identical specifications (e.g. if both transform and scaling had
+    #  'mean' option, that would confuse things)
+    
+    tms = []
+    for tm in transform_methods:
+        # Skipping 'scale' b/c there are no schema definitions for the min/max values
+        if tm['name'] == 'scale':
+            continue
+        
+        if tm['name'] not in ('impute',):
+            dfs = processing_steps[tm['name']]['parameter_defaults']
+            vs = {}
+            for p,default_v in dfs.items():
+                v = default_v
+                if p in tm['parameters']:
+                    v = tm['parameters'][p]
+                vs[p] = v
+                tms.append(v)
+            
+        if tm['name'] == 'impute':
+            dfs = processing_steps[tm['name']]['parameter_defaults']
+            vs = {}
+            for p,default_v in dfs.items():
+                v = default_v
+                if p in tm['parameters']:
+                    v = tm['parameters'][p]
+                vs[p] = v
+                
+            v = prospectivity_input.Impute(
+                impute_method=vs['method'],
+                window_size=[vs['window_size']]*2
+            )
+
+            tms.append(v)
+            
+    return tms
 
     ## Open raster, pull out metadata and data
    ## ds = gdal.Open(tif)
