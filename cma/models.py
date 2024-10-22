@@ -92,6 +92,18 @@ class DataLayer(DisplayLayer):
     #color = models.CharField(max_length=20,null=True, blank=True)
     #disabled = models.BooleanField(default=False)
     
+class ProcessedLayer(DisplayLayer):
+    class Meta:
+        db_table = 'processedlayer'
+        
+    system = models.CharField(max_length=30,null=True, blank=True)
+    system_version = models.CharField(max_length=200,null=True, blank=True)
+    cma_id = models.CharField(max_length=200,null=True, blank=True)
+    event_id = models.CharField(max_length=200,null=True, blank=True)
+    transform_methods = models.JSONField(null=True,blank=True)
+    label_raster = models.BooleanField(default=False)
+    datalayer = models.ForeignKey(DataLayer, on_delete=models.CASCADE,null=True,blank=True)
+    
     
 class CRS(models.Model):
     class Meta:

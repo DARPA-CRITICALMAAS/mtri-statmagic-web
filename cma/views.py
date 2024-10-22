@@ -1,5 +1,6 @@
 import json, os, sys
 import pandas as pd
+import geopandas as gpd
 from django.core.exceptions import BadRequest
 from datetime import datetime as dt
 from django.shortcuts import render
@@ -62,7 +63,10 @@ def home(request):
         util.load_parameters(model_opts[modelname]['parameters'],mp)
 
     # Get data layers
-    dls = util.get_datalayers_for_gui(include_outputlayers=False)
+    dls = util.get_datalayers_for_gui(
+        include_outputlayers=False,
+        include_processedlayers=False
+    )
     
     # Put any data/info you want available on front-end in this dict
     context = {
@@ -639,6 +643,8 @@ def submit_preprocessing(request):
     params = util.process_params(request, params, post_json=True)
     vector_layers = []
     
+    processing_steps = util.get_processing_steps()
+    
     # Build evidence layer model instances
     evidence_layers = []
     for el in params['evidence_layers']:
@@ -646,38 +652,52 @@ def submit_preprocessing(request):
             data_source_id=el['data_source_id']
         ).first()
         
-        tms = util.process_transform_methods(el['transform_methods'])
+        tms = util.process_transform_methods(
+            el['transform_methods'],
+            processing_steps,
+        )
 
-        if dl.vector_format:
-            # TODO: build features from vector sources
-            # Actually seems like these should go into extra_geometries as geojson
-            # b/c evidence_features DataTypeId requires an ID of a feature
-            # already in the CDR
-            extra_geometries = []
+        # vvv NEVERMIND: mpm_input_preprocessing handles vector layers already,
+        #     and including these here instead would make it hard to check that  
+        #     a layer was already processed in this way
+        #if dl.vector_format:
+            ## TODO: build features from vector sources
+            ## Actually seems like these should go into extra_geometries as 
+            ## geojson b/c evidence_features DataTypeId requires an ID of a 
+            ## feature already in the CDR
+            #extra_geometries = []
+            ##shp = util.get_output_layer_local_sync_path(
+                ##el['data_source_id'],
+                ##ext='shp'
+            ##)
+            ##print('loading:',shp)
+            ##gdf = gpd.read_file(shp)
+            ##print(gdf.to_json())
+            ##blerg
             
-            l = prospectivity_input.DefineVectorProcessDataLayer(
-                label_raster = False,
-                title = el['data_source_id'],
-                evidence_features = [],
-                extra_geometries = extra_geometries,
-                transform_methods = tms,
-            )
+            #l = prospectivity_input.DefineVectorProcessDataLayer(
+                #label_raster = False,
+                #title = el['data_source_id'],
+                #evidence_features = [],
+                #extra_geometries = extra_geometries,
+                #transform_methods = tms,
+            #)
             
-            vector_layers.append(l)
+            #vector_layers.append(l)
             
-        else:
+       # else:
 
-            l = prospectivity_input.DefineProcessDataLayer(
-                cma_id = params['cma_id'],
-                data_source_id = el["data_source_id"],
-                title = dl.name,
-                transform_methods = tms#[
-                    #"log",
-                    #"minmax",
-                    #Impute(impute_method="mean", window_size=[3,3])
-                #]
-            )
-            evidence_layers.append(l)
+        l = prospectivity_input.DefineProcessDataLayer(
+            cma_id = params['cma_id'],
+            data_source_id = el["data_source_id"],
+            title = dl.name,
+            transform_methods = tms#[
+                #"log",
+                #"minmax",
+                #Impute(impute_method="mean", window_size=[3,3])
+            #]
+        )
+        evidence_layers.append(l)
        
     #vector_layers = []
     #for site_id in params['training_sites']:
@@ -703,7 +723,7 @@ def submit_preprocessing(request):
         ## Build vector layer model instances
         l = prospectivity_input.DefineVectorProcessDataLayer(
             label_raster = True,
-            title = 'Training sites',
+            title = 'Label raster',
             evidence_features = evidence_features,
             extra_geometries = extra_geometries,
             transform_methods = tms,
@@ -712,7 +732,7 @@ def submit_preprocessing(request):
         vector_layers.append(l)
         
         
-    prospectivity_input.CreateProcessDataLayers(
+    process_data_layers = prospectivity_input.CreateProcessDataLayers(
         cma_id=params['cma_id'],
         system="statmagic",
         system_version="",
@@ -720,9 +740,39 @@ def submit_preprocessing(request):
         vector_layers=vector_layers,
     )
     
-    print(vector_layers)
+    #print(vector_layers)
+
+    print('POSTing model run to CDR:')
+    #print(process_data_layers)
+    #print(model_run.model_dump_json(exclude_none=True))
 
     
+    #print(process_data_layers.model_dump_json(indent=4))
+    #print(params['dry_run'])
+    #blerg
+    
+    cdr = cdr_utils.CDR()
+    #if params['dry_run']:
+        #res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
+    #else:
+    # Post to CDR
+    res = cdr.post_prospectivity_preprocess(
+        process_data_layers.model_dump_json()
+        # model_run.model_dump_json(exclude_none=True)
+    )
+        
+    print(res)
+    #blerg
+    #res2 = cdr.get_model_run(res['event_id'])
+
+    # Return JSON w/ ID indicating model run
+    response = HttpResponse(json.dumps({
+        'event_id': res['event_id'],
+       #'model_run': res2
+    }))
+    response['Content-Type'] = 'application/json'
+    
+    return response
     
 
 @csrf_exempt
@@ -737,7 +787,7 @@ def submit_model_run(request):
     }
     params = util.process_params(request, params, post_json=True)
     
-    processing_steps = util.get_processing_steps()
+    #processing_steps = util.get_processing_steps()
     
     # TODO: should this model meta info should come from the CDR database 
     #       entries? For now, it's coming from the GUI db

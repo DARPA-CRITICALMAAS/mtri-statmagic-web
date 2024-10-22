@@ -23,6 +23,9 @@ class DataLayerAdmin(admin.ModelAdmin):
 class OutputLayerAdmin(admin.ModelAdmin):
     list_display = ('id','data_format','data_source_id','cma_id','model','download_url','category','disabled')
 
+class ProcessedLayerAdmin(admin.ModelAdmin):
+    list_display = ('id','data_format','data_source_id','cma_id','event_id','download_url','category','disabled')
+
 
 admin.site.register(models.ProspectivityModelType, ProspectivityModelTypeAdmin)
 admin.site.register(models.ProspectivityModelTypeParameter, ProspectivityModelTypeParameterAdmin)
@@ -31,3 +34,4 @@ admin.site.register(models.ProcessingStepParameter, ProcessingStepParameterAdmin
 admin.site.register(models.CRS, CRSAdmin)
 admin.site.register(models.DataLayer, DataLayerAdmin)
 admin.site.register(models.OutputLayer, OutputLayerAdmin)
+admin.site.register(models.ProcessedLayer, ProcessedLayerAdmin)

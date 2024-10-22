@@ -63,7 +63,7 @@ def write_mapfile(
         mapfile_title = 'StatMAGIC data layers',
         processing_scale_buckets = 100,
     ):
-    from .models import DataLayer, OutputLayer
+    from .models import DataLayer, OutputLayer, ProcessedLayer
     '''
     processing_scale_buckets:   Parameter used to specify number of buckets to
                                 divide data into for classification; MASSIVELY 
@@ -103,7 +103,8 @@ def write_mapfile(
 
     datalayers = DataLayer.objects.filter(disabled=False).order_by('category','subcategory','name')
     outputlayers = OutputLayer.objects.filter().order_by('category','subcategory','name')
-    datasets = list(chain(datalayers, outputlayers))
+    processedlayers = ProcessedLayer.objects.filter().order_by('category','subcategory','name')
+    datasets = list(chain(datalayers, outputlayers, processedlayers))
     #.values(
         #'name',
         #'download_url',

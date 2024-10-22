@@ -787,6 +787,10 @@ function clearCMA() {
     $(`#model_outputs_table tr td.show_chk input:checked`).trigger('click');
     $('#model_outputs_table').empty();
     
+    // Same with processed layers
+    $('#processedlayer_container .content.main tr td.show_chk input:checked').trigger('click');
+    $('#processedlayer_container .content.main table').empty();
+    
     // Reset the Filter MPM outputs drop down
     $('#model_output_layers_filter select').html(
         '<option value="all" selected}>all</option>'
@@ -886,10 +890,11 @@ function loadModelOutputs(cma_id,model_run_id) {
         </tr>
     `);
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
-        if (d.cma_id && d.cma_id == cma_id &&
+        if (d.gui_model == 'outputlayer' && 
+            d.cma_id && d.cma_id == cma_id &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
         ) {
-            addRowToDataLayersTable(table,d,true);
+            addRowToDataLayersTable(table,d,d.subcategory,true);
         }
     });
 }
@@ -1013,10 +1018,33 @@ function processDataLayersUpdates(response) {
             
             // Add the layer to the layer list
             var table = $('#model_outputs_table');
-            addRowToDataLayersTable(table,dl);
+            
+            // If ProcessedLayer, dynamically build the layer control as needed 
+            if (dl.gui_model == 'processedlayer') {
+                var table_id = `processed_layers_table_${dl.category}`;
+                table = $(`#${table_id}`);
+                
+//                 // Add category if doesn't exist
+//                 if (table.length == 0) {
+//                     var div = $('#processedlayer_container .content.main');
+//                     
+//                     var category_html = `
+//                         <div class='collapse sub'>
+//                             <div class='header topbar sub ${dl.category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${dl.category}</div>
+//                             <div class='content'>
+//                                 <table class='datalayer_table' id='${table_id}'>
+//                                 </table>
+//                             </div> <!--content-->
+//                         </div>  <!--collapse sub-->
+//                     `;
+//                     div.append(category_html);
+//                     table = $(`#${table_id}`);
+//                 }
+            }
+//             console.log(table,dl.gui_model,dl);
+            addRowToDataLayersTable(table,dl,dl.subcategory,dl.gui_model=='outputlayer');
         }
     });
-    
 }
 
 // Requests backend to check for any output layers that have not yet been
@@ -1346,131 +1374,122 @@ function createLayerControl() {
         });
     });
     
+    // NOTE: commenting macrostrat out temporarily b/c leaflet.vectorgrid not loading:
+    // <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
     
-     // Create a popup 
-    var popup2 = L.popup({
-        minWidth: 260,
-        autoPan: false,
-    });
-    var macrostrat_layer_units = L.vectorGrid.protobuf(
-        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
-        attribution: 'Macrostrat',
-        interactive: true,
-        vectorTileLayerStyles: {
-            units: function (properties) {
-                return {
-                    weight: 0.1,
-                    color: properties.color,
-                    fillColor: properties.color,
-                    fillOpacity: 0.5,
-                    fill: true,
-                };
-            },
-            lines: {
-                weight: 0,
-                
-            }
-        },
-    });
-    macrostrat_layer_units.bindPopup(popup2);
-    macrostrat_layer_units.on('click', function(e) {
-        var prop = e.layer.properties;
-        
-        // Special parsing of the 'lith' property b/c sometimes it's just a
-        // list and sometimes it's divided between Major/Minor/etc.
-        var lith = prop.lith;
-        if (lith.indexOf('Major') > -1) {
-            lith = lith.replaceAll('{',' ').replaceAll('},','}');
-            if (lith.slice(-1) == '}') {
-                lith = lith.slice(0,-1);
-            }
-            lith = lith.split('}');
-        } else {
-            lith = lith.split(',');
-        }
-    
-        var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
-    
-        popup2.setContent(`
-            <b>${prop.name}</b>
-            <br><br>
-            <span class='label'>Age:</span> <b>${prop.age}</b><br>
-            <span class='label'>Best age (top):</span> <b>${prop.best_age_top.toFixed(1)}</b><br>
-            <span class='label'>Best age (bottom):</span> <b>${prop.best_age_bottom.toFixed(1)}</b><br>
-            ${desc}
-            <br><br>
-            <span class='label'>Lithology:</span><br><span class='emri_keyword'>${lith.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-            <br><br>
-            <span class='label'>Comments:</span>
-            <div class='macrostrat_source'>${prop.comments}</div>
-            <br><br>
-            <span class='label'>Source:</span><br>
-            <div class='macrostrat_source'><a href='${prop.ref_url}' target='_blank' >${prop.ref_authors} ${prop.ref_year}. ${prop.ref_title}. ${prop.ref_source}. ${prop.ref_isbn}</a>
-            </div>
-            <br>
-            
-            
-        `);
-        console.log(e.layer.properties);
-        macrostrat_layer_units.openPopup();
-
-    });
-    macrostrat_layer_units.on('mouseover', function(e) {
-        e.layer.setStyle({fillOpacity: 0.9});
-    });
-    macrostrat_layer_units.on('mouseout', function(e) {
-        e.layer.setStyle({fillOpacity: 0.5,});
-    });
-    
-     // Create a popup 
-    var popup = L.popup({
-        minWidth: 260,
-        autoPan: false,
-    });
-    var macrostrat_layer_lines = L.vectorGrid.protobuf(
-        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
-        attribution: 'Macrostrat',
-        interactive: true,
-        vectorTileLayerStyles: {
-            units: {
-                fillOpacity: 0,
-                weight: 0,
-            },
-            lines: {
-                weight: 1,
-                color: '#222',
-            }
-        },
-    });
-    
-    images2.Layers.macrostrat_units = {
-        group: 'Reference Layers',
-        label: 'Macrostrat - units',
-        as_checkbox: true,
-        title: '',
-        layers: [macrostrat_layer_units],
-        legend: '',
-    };
-    images2.Layers.macrostrat_lines = {
-        group: 'Reference Layers',
-        label: 'Macrostrat - lines',
-        as_checkbox: true,
-        title: '',
-        layers: [macrostrat_layer_lines],
-        legend: '',
-    }
-//     macrostrat_layer_lines.bindPopup(popup);
-//     macrostrat_layer_lines.on('click', function(e) {
-//         popup.setContent(`<h2>${e.layer.properties.name}</h2>`);
-//         macrostrat_layer_lines.openPopup();
-//         console.log(e.layer.properties);
+//      // Create a popup 
+//     var popup2 = L.popup({
+//         minWidth: 260,
+//         autoPan: false,
 //     });
-//     macrostrat_layer.on('mouseover', function(e) {
-// //         console.log(e.layer);
-// //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
-// 
+//     var macrostrat_layer_units = L.vectorGrid.protobuf(
+//         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+//         attribution: 'Macrostrat',
+//         interactive: true,
+//         vectorTileLayerStyles: {
+//             units: function (properties) {
+//                 return {
+//                     weight: 0.1,
+//                     color: properties.color,
+//                     fillColor: properties.color,
+//                     fillOpacity: 0.5,
+//                     fill: true,
+//                 };
+//             },
+//             lines: {
+//                 weight: 0,
+//                 
+//             }
+//         },
+//     });
+//     macrostrat_layer_units.bindPopup(popup2);
+//     macrostrat_layer_units.on('click', function(e) {
+//         var prop = e.layer.properties;
 //         
+//         // Special parsing of the 'lith' property b/c sometimes it's just a
+//         // list and sometimes it's divided between Major/Minor/etc.
+//         var lith = prop.lith;
+//         if (lith.indexOf('Major') > -1) {
+//             lith = lith.replaceAll('{',' ').replaceAll('},','}');
+//             if (lith.slice(-1) == '}') {
+//                 lith = lith.slice(0,-1);
+//             }
+//             lith = lith.split('}');
+//         } else {
+//             lith = lith.split(',');
+//         }
+//     
+//         var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
+//     
+//         popup2.setContent(`
+//             <b>${prop.name}</b>
+//             <br><br>
+//             <span class='label'>Age:</span> <b>${prop.age}</b><br>
+//             <span class='label'>Best age (top):</span> <b>${prop.best_age_top.toFixed(1)}</b><br>
+//             <span class='label'>Best age (bottom):</span> <b>${prop.best_age_bottom.toFixed(1)}</b><br>
+//             ${desc}
+//             <br><br>
+//             <span class='label'>Lithology:</span><br><span class='emri_keyword'>${lith.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+//             <br><br>
+//             <span class='label'>Comments:</span>
+//             <div class='macrostrat_source'>${prop.comments}</div>
+//             <br><br>
+//             <span class='label'>Source:</span><br>
+//             <div class='macrostrat_source'><a href='${prop.ref_url}' target='_blank' >${prop.ref_authors} ${prop.ref_year}. ${prop.ref_title}. ${prop.ref_source}. ${prop.ref_isbn}</a>
+//             </div>
+//             <br>
+//             
+//             
+//         `);
+//         console.log(e.layer.properties);
+//         macrostrat_layer_units.openPopup();
+// 
 //     });
+//     macrostrat_layer_units.on('mouseover', function(e) {
+//         e.layer.setStyle({fillOpacity: 0.9});
+//     });
+//     macrostrat_layer_units.on('mouseout', function(e) {
+//         e.layer.setStyle({fillOpacity: 0.5,});
+//     });
+//     
+//      // Create a popup 
+//     var popup = L.popup({
+//         minWidth: 260,
+//         autoPan: false,
+//     });
+//     var macrostrat_layer_lines = L.vectorGrid.protobuf(
+//         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+//         attribution: 'Macrostrat',
+//         interactive: true,
+//         vectorTileLayerStyles: {
+//             units: {
+//                 fillOpacity: 0,
+//                 weight: 0,
+//             },
+//             lines: {
+//                 weight: 1,
+//                 color: '#222',
+//             }
+//         },
+//     });
+//     
+//     images2.Layers.macrostrat_units = {
+//         group: 'Reference Layers',
+//         label: 'Macrostrat - units',
+//         as_checkbox: true,
+//         title: '',
+//         layers: [macrostrat_layer_units],
+//         legend: '',
+//     };
+//     images2.Layers.macrostrat_lines = {
+//         group: 'Reference Layers',
+//         label: 'Macrostrat - lines',
+//         as_checkbox: true,
+//         title: '',
+//         layers: [macrostrat_layer_lines],
+//         legend: '',
+//     }
+    
     
     // Mapping of 'program' property to color, as used in: https://ngmdb.usgs.gov/emri/#20041
     var emri_color_map = {
@@ -1492,107 +1511,59 @@ function createLayerControl() {
         minWidth: 260,
         autoPan: false,
     });
-    var emri_layer = L.vectorGrid.protobuf(
-        'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
-        fetchOptions: {
-            headers: {
-//                 Authorization: `Bearer ${CDR_BEARER}`
-            },
-        },
-        rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
-        attribution: 'Earth MRI',
-        interactive: true,
-        vectorTileLayerStyles: {
-            'acquisitions-1ug54m': function(properties) {
-                return {
-                    weight: 0.5,
-                    color: '#cccccc',
-                    fillColor: emri_color_map[parseEMRIprogram(properties)],
-                    fillOpacity: 0.5,
-                    fill: true,
-                };
-            },
-        },
-    });
-    emri_layer.bindPopup(popup);
-    emri_layer.on('click', function(e) {
-        console.log(e.layer.properties);
-        var prop = e.layer.properties;
-        var contact = JSON.parse(prop.contact)[0];
-        console.log(contact);
-        popup.setContent(`
-            <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
-            <br><br>
-            <span class='label'>Year started:</span> <b>${prop.yearstart}</b>
-            <br><br>
-            <span class='label'>Contact name:</span> <b>${contact.cname}</b><br>
-            <span class='label'>Contact email:</span> <b>${contact.cmail}</b><br>
-            <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
-            <br><br>
-            <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-            
-        `);
-        emri_layer.openPopup();
-    });
-    
-    images2.Layers.emri_layer = {
-        group: 'Reference Layers',
-        label: 'Earth MRI Acquisitions',
-        as_checkbox: true,
-        title: '',
-        layers: [emri_layer],
-        legend: '',
-    };
-    
-    // Populate the 'images2' object
-    // key: the layer control group (e.g. 'imagery','other','features', etc.)
-    // values: object with:
-    //      key: WMS layername
-    //      value: object returned from "getWMSLayer"
-//     var images2 = {
-//         'Layers': {
-//             macrostrat_units: {
-//                 group: 'Reference Layers',
-//                 label: 'Macrostrat - units',
-//                 as_checkbox: true,
-//                 title: '',
-//                 layers: [macrostrat_layer_units],
-//                 legend: '',
+//     var emri_layer = L.vectorGrid.protobuf(
+//         'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
+//         fetchOptions: {
+//             headers: {
+// //                 Authorization: `Bearer ${CDR_BEARER}`
 //             },
-//             macrostrat_lines: {
-//                 group: 'Reference Layers',
-//                 label: 'Macrostrat - lines',
-//                 as_checkbox: true,
-//                 title: '',
-//                 layers: [macrostrat_layer_lines],
-//                 legend: '',
-//             },
-//             ta1_layer: {
-//                 group: 'Reference Layers',
-//                 label: 'TA1 Layers',
-//                 as_checkbox: true,
-//                 title: '',
-//                 layers: [ta1_layer],
-//                 legend: '',
-//             },
-// //             emri_layer: {
-// //                 group: 'Reference Layers',
-// //                 label: 'Earth MRI Acquisitions',
-// //                 as_checkbox: true,
-// //                 title: '',
-// //                 layers: [emri_layer],
-// //                 legend: '',
-// //             },
-// //             'geophysics': getWMSLayer(
-// //                 'geophysics',
-// //                 'Layers',
-// //                 'GeophysicsMagRTP',
-// //                 null,
-// //                 ''
-// //             ),
 //         },
+//         rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+//         attribution: 'Earth MRI',
+//         interactive: true,
+//         vectorTileLayerStyles: {
+//             'acquisitions-1ug54m': function(properties) {
+//                 return {
+//                     weight: 0.5,
+//                     color: '#cccccc',
+//                     fillColor: emri_color_map[parseEMRIprogram(properties)],
+//                     fillOpacity: 0.5,
+//                     fill: true,
+//                 };
+//             },
+//         },
+//     });
+//     emri_layer.bindPopup(popup);
+//     emri_layer.on('click', function(e) {
+//         console.log(e.layer.properties);
+//         var prop = e.layer.properties;
+//         var contact = JSON.parse(prop.contact)[0];
+//         console.log(contact);
+//         popup.setContent(`
+//             <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
+//             <br><br>
+//             <span class='label'>Year started:</span> <b>${prop.yearstart}</b>
+//             <br><br>
+//             <span class='label'>Contact name:</span> <b>${contact.cname}</b><br>
+//             <span class='label'>Contact email:</span> <b>${contact.cmail}</b><br>
+//             <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
+//             <br><br>
+//             <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+//             
+//         `);
+//         emri_layer.openPopup();
+//     });
+//     
+//     images2.Layers.emri_layer = {
+//         group: 'Reference Layers',
+//         label: 'Earth MRI Acquisitions',
+//         as_checkbox: true,
+//         title: '',
+//         layers: [emri_layer],
+//         legend: '',
 //     };
-//     images2 = {}
+    
+
     var groups = Object.keys(images2).sort();
     images = {};
     var i = 0;
@@ -2639,7 +2610,9 @@ function submitPreprocessing() {
     
     // TODO: account for if 'ignore extent' is checked; b/c training sites 
     //       submitted for model runs should ALWAYS adhere to extent 
-    var training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.map(
+    var training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
+        return !s.properties.exclude;
+    }).map(
         function(s) {return s.properties.id;}
     );
     
@@ -2648,7 +2621,7 @@ function submitPreprocessing() {
         cma_id: cma_id,
         evidence_layers : DATACUBE_CONFIG,
         training_sites: training_sites,
-        dry_run: true,
+        dry_run: false,
     };
     
     $.ajax('submit_preprocessing', {
@@ -3678,8 +3651,27 @@ function initiateCMA() {
     });
 }
 
-function addRowToDataLayersTable(table, dl, model_output) {
-    var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
+function addRowToDataLayersTable(table, dl, subcat, model_output) {
+    // Add category if doesn't exist
+    if (table.length == 0 && dl.gui_model == 'processedlayer') {
+        var div = $('#processedlayer_container .content.main');
+        var table_id = table.selector.replaceAll('#','');
+        var category_html = `
+            <div class='collapse sub'>
+                <div class='header topbar sub ${dl.category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${dl.category}</div>
+                <div class='content'>
+                    <table class='datalayer_table' id='${table_id}'>
+                    </table>
+                </div> <!--content-->
+            </div>  <!--collapse sub-->
+        `;
+        div.append(category_html);
+        table = $(`${table.selector}`);
+    }
+    
+    
+//     var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
+    var subcat = subcat.toUpperCase();
     var name_pretty = dl.name_pretty;
     if (model_output) {
         name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
@@ -3691,7 +3683,7 @@ function addRowToDataLayersTable(table, dl, model_output) {
     var ext = dl.download_url.split('.').slice(-1)[0];
 //     console.log(ext);
     if (dl.data_format != 'tif') {
-        console.log(dl);
+//         console.log(dl);
         show_chk = `${dl.download_url.split('.').slice(-1)[0]}`;
     }
     
@@ -3804,7 +3796,7 @@ function uploadDataLayer() {
             
             // Add the layer to the layer list
             var table = $('#user_upload_layers_table');
-            addRowToDataLayersTable(table,dl);
+            addRowToDataLayersTable(table,dl,dl.category);
             
             // Reset upload form
             updateSHPlabel(

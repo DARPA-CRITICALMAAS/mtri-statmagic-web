@@ -11,7 +11,7 @@
 
 {% block extrahead %}
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+<!-- <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script> -->
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="https://www.unpkg.com/wicket@1.3.8/wicket.js"></script>
@@ -245,7 +245,15 @@
                 {% endfor %}
                 </div>
             </div>
-        
+            <div class='collapse' id='processedlayer_container'>
+                
+                <div class='header topbar toptop'><span class="collapse">+ </span> Processed layers
+                </div>
+                <div class='content main'>
+                    
+                </div> <!--content main-->
+            </div> <!--collapse processedlayer_container-->
+
             <div class='collapse modeling'>
                 <div class='header topbar modeling'><span class="collapse">+ </span> Modeling Tools</div>
                 <div class='content main'>

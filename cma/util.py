@@ -1,8 +1,7 @@
 '''
 Backend utility code.
 '''
-
-import glob, json, math, os, random, re, requests, shutil, string, tempfile, zipfile
+import glob, json, math, os, random, re, requests, shutil, string, sys, tempfile, zipfile
 from pathlib import Path
 from io import BytesIO
 from numbers import Number
@@ -31,6 +30,17 @@ from rasterio.transform import from_origin
 from rasterio.features import rasterize
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
+
+
+# Import cdr_schemas
+if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
+    sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
+else:
+    sys.path.append('/usr/local/project/cdr_schemas')
+    #print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
+#sys.path.append('/usr/local/project/cdr_schemas/')
+from cdr_schemas import prospectivity_models
+from cdr_schemas import prospectivity_input
 
 
 def process_params(req,params,post=False,post_json=False):
@@ -611,6 +621,106 @@ def load_model_outputs(dsids=None,cma_id=None):
         
     return dls['datalayers_lookup']
 
+
+def sync_cdr_prospectivity_processed_layers_to_datalayer(
+        layer_id=None,
+        cma_id=None,
+        event_ids=[],
+        sync_remote_to_local=True, # <- downloads files to local disk to speed rendering
+        update_all=False,
+    ):
+    '''
+    data_source_id: (optional) filter by data source ID if needed
+    '''
+    
+    ### Pull dsids from the GUI DB
+    existing_dsids = [
+        x[0] for x in 
+        models.ProcessedLayer.objects.all().values_list('data_source_id')
+    ]
+    
+    datalayer_subcategories = {
+        x.data_source_id: x for x in 
+        models.DataLayer.objects.all()
+    }
+    
+    ### Pull layers from CDR
+    cdr = cdr_utils.CDR()
+    
+   # if cma_id:
+    event_ids = cdr.get_processed_data_layer_events()
+        
+    dsids = []
+    for event_id in event_ids:
+        res = cdr.get_processed_data_layers(event_id)
+
+        for i,ds in enumerate(res):
+            #print(ds)
+            if layer_id and ds['layer_id'] != layer_id:
+                continue
+            
+            if not update_all and ds['layer_id'] in existing_dsids:
+                continue
+            
+            if ds['download_url'].split('.')[-1] != 'tif':
+                continue
+            
+            if cma_id and ds['cma_id'] != cma_id:
+                continue
+        
+            if event_ids and ds['event_id'] not in event_ids:
+                continue
+
+            print(i, 'get/creating:',ds['layer_id'])
+            #continue
+            stats_minimum = None
+            stats_maximum = None
+            #print(ds)
+            datalayer = None
+            category = 'Training'
+            subcategory = 'Label rasters'
+            if not ds['label_raster']:
+                datalayer = datalayer_subcategories[ds['data_source_id']]
+                subcategory = datalayer.subcategory
+                category = datalayer.category
+                
+            dl, created = models.ProcessedLayer.objects.get_or_create(
+                data_source_id = ds['layer_id'],
+                #download_url = ds['download_url'],
+                defaults = {
+                    'name' : ds['title'],
+                    'name_alt': ds['title'],
+                    'description': ds['title'],
+                    'data_format': 'tif',
+                    'category': category,
+                    'subcategory': subcategory,#ds['model'].capitalize().rstrip('s'),
+                    'download_url': ds['download_url'],
+                    'system': ds['system'],
+                    'system_version': ds['system_version'],
+                    'cma_id': ds['cma_id'],
+                    'event_id': ds['event_id'],
+                    'transform_methods': ds['transform_methods'],
+                    'datalayer': datalayer,
+                    'label_raster': ds['label_raster'],
+                },
+            )
+            if created:
+                print('\tcreated!')
+                dsids.append(dl.data_source_id)
+        #else:
+        #    print('NONTIF:',ds)
+        
+    if len(dsids) > 0:
+        print('New processed layers; processing...')
+        if sync_remote_to_local:
+            sync_remote_outputs_to_local(do_processed_layers=True)
+            
+        # Finally, rewrite mapfile
+        print('Rewriting mapfile')
+        mapfile.write_mapfile()
+    
+    return dsids
+
 def sync_cdr_prospectivity_outputs_to_outputlayer(
         layer_id=None,
         cma_id=None,
@@ -702,8 +812,9 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
     return dsids
             
             
-def getOutputLayers():
-    return models.OutputLayer.objects.all().order_by('category','subcategory','name')
+def getOutputLayers(do_processed_layers=False):
+    obj = models.OutputLayer if not do_processed_layers else models.ProcessedLayer
+    return obj.objects.all().order_by('category','subcategory','name')
 
 
 def get_output_layer_local_sync_path(dsid,ext='tif'):
@@ -712,11 +823,11 @@ def get_output_layer_local_sync_path(dsid,ext='tif'):
     return os.path.join(dd,f'{dsid}.{ext}')
 
 
-def sync_remote_outputs_to_local(dsid=None):
+def sync_remote_outputs_to_local(dsid=None,do_processed_layers=False):
     #dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
 
     # for datalayer in dm_util.getDataLayers():
-    for datalayer in getOutputLayers():
+    for datalayer in getOutputLayers(do_processed_layers=do_processed_layers):
         #print(datalayer.download_url)
 
         if dsid and datalayer.data_source_id != dsid:
@@ -745,6 +856,7 @@ def get_datalayers_for_gui(
         data_source_ids=[],
         include_datalayers=True,
         include_outputlayers=True,
+        include_processedlayers=True,
         cma_id=None
     ):
     datalayers = {'User uploads':{}} # this object sorts by category/subcategory
@@ -760,6 +872,8 @@ def get_datalayers_for_gui(
         mods.append(models.DataLayer)
     if include_outputlayers:
         mods.append(models.OutputLayer)
+    if include_processedlayers:
+        mods.append(models.ProcessedLayer)
     print(filters, mods)
     for Obj in mods:#(models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
@@ -792,6 +906,8 @@ def get_datalayers_for_gui(
             if 'b4050056d38a449fa3d940008e277145' in data['download_url']:
                 data['extent_geom'] = '{ "type": "Polygon", "coordinates": [[[-180,86.3], [-180,16.8], [-12.1,16.8], [-12.1,86.3], [-180,86.3]]]}'
     
+            
+            data['gui_model'] = str(Obj._meta).split('.')[1]
             #print(data['extent_geom'], data['extent_geom'])
             data['name_pretty'] = name_pretty
             datalayers[cat][subcat].append(data)
@@ -1206,9 +1322,28 @@ def process_vector_for_mapfile(dataset):
                         print("\tindexing vector...")
                         os.system('shptree {sync_path}')
                     
-                    #print('\n',f, exts, stem, sync_path)
 
-    # If missing, metadata, get:
+    # vvv NOTE: abandoning this b/c mpm_input_preprocessing 
+    #     module already handles these
+    # Pre-process the features into geojson for more efficient submission of 
+    # preprocessing jobs
+    #gdf = None
+    #features_file = get_output_layer_local_sync_path(dsid,ext='features')
+    #if not os.path.exists(features_file):
+        #gdf = gpd.read_file(features_file.replace('.features','.shp'))
+        #gdfjson = reduce_geojson_precision(
+                #gdf.to_json(), 
+                #precision=4
+        #)
+        #gdfjson = json.loads(gdfjson)
+        #features_data = []
+        #for f in gdfjson['features']:
+            #features_data.append(f['geometry'])
+        
+        #with open(features_file,'w') as f:
+            #f.write(json.dumps(features_data))
+
+    # If missing metadata, get:
     if (dataset.extent_geom is None or 
         dataset.attribute_stats is None or 
         dataset.vector_format is None):
@@ -1216,7 +1351,8 @@ def process_vector_for_mapfile(dataset):
         # Open shapefile 
         shp = f'{path_base}shp'
         print('extracting metadata for:',shp)
-        gdf = gpd.read_file(shp)
+        if not gdf:
+            gdf = gpd.read_file(shp)
         
         if dataset.vector_format is None:
             # NOTE: Assuming here that the type of first feature represents the 
@@ -1305,7 +1441,7 @@ def download_model_outputs(urls_to_download, cma_name, model_run_id):
     return response
     
     
-def process_transform_methods(transform_methods):
+def process_transform_methods(transform_methods,processing_steps):
     #  This list can be:
     #    * any length
     #    * any combination/order of processing types in:

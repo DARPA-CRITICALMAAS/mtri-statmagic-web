@@ -276,6 +276,22 @@ class CDR():
             'prospectivity/prospectivity_preprocess', POST=metadata
         )
 
+    def get_processed_data_layer_events(self,cma_id=''):
+        return self.run_query(
+            f'prospectivity/processed_data_layer_events?cma_id={cma_id}'
+        )
+
+    def get_processed_data_layers(self,event_id=''):
+        return self.run_query(
+            f'prospectivity/processed_data_layers?event_id={event_id}'
+        )
+
+    def get_processed_data_layer(self,layer_id):
+        return self.run_query(
+            f'prospectivity/processed_data_layer?layer_id={layer_id}'
+        )
+
+
     ####################################
     # Tiles
     def get_tiles_sources(self,page_size=10):

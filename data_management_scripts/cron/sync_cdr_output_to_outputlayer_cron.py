@@ -18,3 +18,4 @@ for line in os.popen(f'ps aux | grep {__file__}'):
 
 # Run sync
 dm_util.util.sync_cdr_prospectivity_outputs_to_outputlayer()
+dm_util.util.sync_cdr_prospectivity_processed_layers_to_datalayer()
