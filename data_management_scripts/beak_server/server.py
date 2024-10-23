@@ -397,7 +397,7 @@ def register_system():
 
     registration = {
         "name": SETTINGS['system_name'],
-        "version": SETINGS['system_version'],
+        "version": SETTINGS['system_version'],
         "callback_url": SETTINGS['callback_url'],
         "webhook_secret": SETTINGS['registration_secret'],
         # Leave blank if callback url has no auth requirement
