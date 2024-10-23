@@ -35,8 +35,21 @@ from cdr_schemas.events import Event
 # SRI TA3 specific imports
 #from torch import set_float32_matmul_precision
 
+SETTINGS = {
+    'system_name': 'beak_via_mtri',#os.environ["SYSTEM_NAME"],
+    'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
+    #'ml_model_name': '',#os.environ["MODEL_NAME"],
+    #'ml_model_version': os.environ["MODEL_VERSION"],
+    'user_api_token': os.environ["CDR_TOKEN"],
+    'cdr_host': 'https://api.cdr.land',#os.environ["CDR_HOST"],
+    'local_port': 9999,#,int(os.environ["NGROK_PORT"]),
+    'registration_id': "",
+    'registration_secret': 'https://api.cdr.land',# os.environ["CDR_HOST"],
+    'callback_url':""
+}
 
-def run_ta3_pipeline(model_run_id,app_settings):
+
+def run_ta3_pipeline(model_run_id):
     
     # Get model run metadata from CDR 
     
@@ -51,7 +64,7 @@ def run_ta3_pipeline(model_run_id,app_settings):
 
 def run_ta3_pipeline_orig(
         event_id: int,
-        app_settings: utils.CDR_Settings
+        app_settings: dict
     ):
     
     print("Querying CDR for event.")
@@ -281,32 +294,21 @@ def run_ta3_pipeline_orig(
     print(f"event_id={event_id} cma is finished!")
 
 
-server_settings = utils.CDR_Settings(
-    system_name = os.environ["SYSTEM_NAME"],
-    system_version = os.environ["SYSTEM_VERSION"],
-    ml_model_name = os.environ["MODEL_NAME"],
-    ml_model_version = os.environ["MODEL_VERSION"],
-    user_api_token = os.environ["CDR_TOKEN"],
-    cdr_host = os.environ["CDR_HOST"],
-    local_port = int(os.environ["NGROK_PORT"]),
-    registration_id = "",
-    registration_secret = os.environ["CDR_HOST"],
-    callback_url = ""
-)
+
 
 def clean_up():
     # delete our registered system at CDR on program end
-    headers = {'Authorization': f'Bearer {server_settings.user_api_token}'} # Define the headers for the HTTP request. The 'Authorization' header is set to 'Bearer ' followed by the user API token.
+    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'} # Define the headers for the HTTP request. The 'Authorization' header is set to 'Bearer ' followed by the user API token.
     client = httpx.Client(follow_redirects=True) # Create an HTTP client that follows redirects.
-    client.delete(f"{server_settings.cdr_host}/user/me/register/{server_settings.registration_id}", headers=headers) # Send a DELETE request to the CDR host to unregister the system. The URL is constructed from the CDR host URL, the registration ID, and some static parts. The headers defined earlier are passed to the request.
+    client.delete(f"{SETTINGS["cdr_host"]}/user/me/register/{SETTINGS["registration_id"]}", headers=headers) # Send a DELETE request to the CDR host to unregister the system. The URL is constructed from the CDR host URL, the registration ID, and some static parts. The headers defined earlier are passed to the request.
 
 # register clean_up
 atexit.register(clean_up)
 
 
 # Get ngrok to give us an endpoint
-listener = ngrok.forward(server_settings.local_port, authtoken_from_env=True) # Forward the local port through ngrok and get a listener.
-server_settings.callback_url = listener.url() + "/hook" # Set the callback URL to the ngrok URL plus "/hook".
+listener = ngrok.forward(SETTINGS['local_port'], authtoken_from_env=True) # Forward the local port through ngrok and get a listener.
+SETTINGS['callback_url'] = listener.url() + "/hook" # Set the callback URL to the ngrok URL plus "/hook".
 
 
 app = FastAPI() # creating an instance
@@ -322,7 +324,7 @@ async def event_handler(
             case Event(event="prospectivity_model_run.process"):
                 print("Received model run event payload!")
                 print(evt.payload)
-                run_ta3_pipeline(evt.payload['model_run_id'], server_settings)
+                run_ta3_pipeline(evt.payload['model_run_id'])
             case _:
                 print("Nothing to do for event: %s", evt)
 
@@ -340,7 +342,7 @@ async def verify_signature(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="x-hub-signature-256 header is missing!")
     hash_object = hmac.new(
-        server_settings.registration_secret.encode("utf-8"),
+        SETTINGS.registration_secret.encode("utf-8"),
         msg=payload_body,
         digestmod=hashlib.sha256
     ) # creating a new hmac hash object
@@ -370,21 +372,21 @@ def run():
     uvicorn.run(
         "__main__:app",
         host="0.0.0.0",
-        port=server_settings.local_port,
+        port=SETTINGS['local_port'],
         reload=False
     ) # start a Uvicorn server with the FastAPI application
 
 
 def register_system():
     """Register our system to the CDR using the server_settings"""
-    global server_settings
-    headers = {'Authorization': f'Bearer {server_settings.user_api_token}'}
+    #global server_settings
+    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'}
 
     registration = {
-        "name": server_settings.system_name,
-        "version": server_settings.system_version,
-        "callback_url": server_settings.callback_url,
-        "webhook_secret": server_settings.registration_secret,
+        "name": SETTINGS['system_name'],
+        "version": SETINGS['system_version'],
+        "callback_url": SETTINGS['callback_url'],
+        "webhook_secret": SETTINGS['registration_secret'],
         # Leave blank if callback url has no auth requirement
         "auth_header": "",
         "auth_token": "",
@@ -395,11 +397,11 @@ def register_system():
     # creating an httpx client
     client = httpx.Client(follow_redirects=True) # follow_redirects=True argument tells the client to automatically follow redirects
 
-    r = client.post(f"{server_settings.cdr_host}/user/me/register",
+    r = client.post(f"{SETTINGS['cdr_host']}/user/me/register",
                     json=registration, headers=headers)
 
     # Log our registration_id such we can delete it when we close the program.
-    server_settings.registration_id = r.json()["id"]
+    SETTINGS['registration_id'] = r.json()["id"]
 
 
 if __name__ == "__main__":
