@@ -355,7 +355,7 @@ async def verify_signature(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="x-hub-signature-256 header is missing!")
     hash_object = hmac.new(
-        SETTINGS.registration_secret.encode("utf-8"),
+        SETTINGS['registration_secret'].encode("utf-8"),
         msg=payload_body,
         digestmod=hashlib.sha256
     ) # creating a new hmac hash object
