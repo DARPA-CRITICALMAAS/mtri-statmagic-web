@@ -795,8 +795,8 @@ def submit_model_run(request):
     model = models.ProspectivityModelType.objects.filter(name=params['model']).first()
    
    
-    # TODO: rebuild this using process layer IDs instead
-    evidence_layers = {}
+    # TODO: rebuild this using processed layer IDs instead
+    evidence_layers = []
    
     train_config = params['train_config']
 

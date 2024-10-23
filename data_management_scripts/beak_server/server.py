@@ -1,4 +1,5 @@
 import os
+import tempfile
 import json
 from pathlib import Path
 #from tqdm import tqdm
@@ -52,7 +53,19 @@ SETTINGS = {
 def run_ta3_pipeline(model_run_id):
     
     # Get model run metadata from CDR 
+    print('Model run submission detected!',model_run_id)
     
+    res = cdr.get_model_run(model_run_id)
+    
+    if res['event']['payload']['model_type'] != 'beak_som':
+        print('\tNot Beak SOM type; ignoring...')
+    
+    with tempfile.NameTemporaryFile() as tmpfile:
+        config_file = tmpfile.name
+        
+    with open(config_file,'w') as f:
+        f.write(json.dumps(res))
+    #train_config =
 
     # Would like the output from run_som to be a list of tuples
     # [(path_to_raster1, ProspectivityOutputLayer1), (path_to_raster2, ProspectivityOutputLayer2), ...]
@@ -405,7 +418,7 @@ def register_system():
 
 
 if __name__ == "__main__":
-    set_float32_matmul_precision('medium') # reduces floating point precision for computational efficiency
+    #set_float32_matmul_precision('medium') # reduces floating point precision for computational efficiency
     print("Registering with CDR")
     register_system()
     print("Starting TA3 server")
