@@ -291,6 +291,10 @@ class CDR():
             f'prospectivity/processed_data_layer?layer_id={layer_id}'
         )
 
+    def get_preprocess_event(self,event_id):
+        return self.run_query(
+            f'prospectivity/event/{event_id}'
+        )
 
     ####################################
     # Tiles
