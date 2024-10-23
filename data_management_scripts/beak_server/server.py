@@ -300,7 +300,7 @@ def clean_up():
     # delete our registered system at CDR on program end
     headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'} # Define the headers for the HTTP request. The 'Authorization' header is set to 'Bearer ' followed by the user API token.
     client = httpx.Client(follow_redirects=True) # Create an HTTP client that follows redirects.
-    client.delete(f"{SETTINGS["cdr_host"]}/user/me/register/{SETTINGS["registration_id"]}", headers=headers) # Send a DELETE request to the CDR host to unregister the system. The URL is constructed from the CDR host URL, the registration ID, and some static parts. The headers defined earlier are passed to the request.
+    client.delete(f"{SETTINGS['cdr_host']}/user/me/register/{SETTINGS['registration_id']}", headers=headers) # Send a DELETE request to the CDR host to unregister the system. The URL is constructed from the CDR host URL, the registration ID, and some static parts. The headers defined earlier are passed to the request.
 
 # register clean_up
 atexit.register(clean_up)
