@@ -1916,6 +1916,7 @@ select#sites_display_select {
 }
 
 .collapse div.topbar_button,
+.collapse .header div.topbar_button,
 div.topbar_button {
 /*     position: relative; */
     float: right;
@@ -1924,12 +1925,18 @@ div.topbar_button {
     text-transform: none;
     font-size: 0.8rem;
     vertical-align: bottom;
-    padding: 0px auto;
+    padding: 0px 0px;
 }
 .collapse div.topbar_button img,
+.collapse .header div.topbar_button img,
 div.topbar_button img {
     margin: 4px 0px 0px 0px;
     vertical-align: bottom;
+}
+
+.collapse .header div.topbar_button.super {
+    margin-right: 23px;
+    
 }
 
 .button.load {
@@ -1997,7 +2004,8 @@ div.topbar_button img {
 }
 .header.topbar.toptop,
 .header.topbar.deposit_sites,
-.header.topbar.modeling {
+.header.topbar.modeling,
+.header.topbar.model_results {
     margin-bottom: 8px;
     
 }
@@ -2278,7 +2286,8 @@ a.site_src_link {
     width: 280px;    
 }
 
-.collapse.model_results {
+#outputlayer_container,
+#processedlayer_container {
     display: none;
 }
 td.hypertune {
@@ -2373,6 +2382,14 @@ tr.site_src_row_extra {
     background-color: #365763;
 }
 
+
+.header.topbar.modeling_topbar {
+    background-color: #3d2932;
+}
+.header.topbar.modeling_topbar:hover {
+    background-color: #100a0d;
+    
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

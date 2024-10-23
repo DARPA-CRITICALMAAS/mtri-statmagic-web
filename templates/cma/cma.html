@@ -67,7 +67,13 @@
         <div id='control_panel'>
             <div id='sidebar_collapse_button'>&#11207;</div>
             <div class='collapse deposit_sites'>
-                <div class='header topbar deposit_sites'><span class="collapse">+ </span> Known deposit sites</div>
+                <div class='header topbar deposit_sites'><span class="collapse">+ </span> Known deposit sites
+ 
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/dots-24b.png" height="16px" class="download_icon">
+                    </div>
+                
+                </div>
                 <div class='content main'>
                     <table class='datalayer_table known_deposit_sites'>
                         <tr>
@@ -171,6 +177,9 @@
             <div class='collapse' id='datalayer_container'>
                
                 <div class='header topbar toptop'><span class="collapse">+ </span> Prospectivity layers
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                    </div>
                 </div>
                 <div class='content main'>
     
@@ -245,17 +254,15 @@
                 {% endfor %}
                 </div>
             </div>
-            <div class='collapse' id='processedlayer_container'>
-                
-                <div class='header topbar toptop'><span class="collapse">+ </span> Processed layers
-                </div>
-                <div class='content main'>
-                    
-                </div> <!--content main-->
-            </div> <!--collapse processedlayer_container-->
-
+ 
+            
             <div class='collapse modeling'>
-                <div class='header topbar modeling'><span class="collapse">+ </span> Modeling Tools</div>
+                <div class='header topbar modeling modeling_topbar'><span class="collapse">+ </span> Model Tools
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/tools-30.png" height="20px" class="download_icon">
+                    </div>
+                
+                </div>
                 <div class='content main'>
                     <!--<div id='modeling_progress_message' class='modeling_message'>Model run(s) in progress:
                         <table class='model_run_status'>
@@ -374,32 +381,36 @@
                 </div> <!--content main-->
             </div> <!--collapse (Modeling)-->
             
-            <div class='collapse model_results'>
-                <div class='header topbar model_results'><span class="collapse">+ </span> Model results</div>
+            
+            <div class='collapse' id='processedlayer_container'>
+                
+                <div class='header topbar toptop modeling_topbar'><span class="collapse">+ </span> Model processed layers
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                    </div>
+                
+                </div>
+                <div class='content main'>
+                    
+                </div> <!--content main-->
+            </div> <!--collapse processedlayer_container-->
+
+            <div class='collapse model_results' id='outputlayer_container'>
+                <div class='header topbar model_results modeling_topbar'><span class="collapse">+ </span> Model outputs
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                    </div>
+                
+                </div>
                 <div class='content main'>
                     <div id='model_output_layers_filter'>
                         Filter MPM layers: <select onchange='loadModelOutputs();'>
                             <option value='all'>all</option>
                         </select>
                     </div>
-                    <div class='collapse sub'>
-                        <div class='header topbar sub model_inputs'><span class="collapse">+ </span> Processed layers</div>
-                        <div class='content'>
-                            <table class='datalayer_table' id='processed_layers_table'>
-                            </table>
-                        </div> <!--content-->
-                    </div> <!--collapse sub-->
-                        
-                    <div class='collapse sub'>
-                        <div class='header topbar sub model_outputs'><span class="collapse">+ </span> Outputs</div>
-                        <div class='content'>
-                            
-                            <table class='datalayer_table' id='model_outputs_table'>
-                            </table>
-                        </div> <!--content-->
-                    </div>  <!--collapse sub-->
                 </div> <!--content main-->
             </div> <!--collapse model_results-->
+            
         </div><!--control_panel-->
     </div><!--flex-child control_panel -->
     <div class='flex-child map'>

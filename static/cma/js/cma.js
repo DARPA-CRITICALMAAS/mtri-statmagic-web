@@ -771,6 +771,15 @@ function onModelParameterCheckboxChange(cmp) {
 }
 
 
+function resetModelOutputs() {
+    // Clear any model outputs associated w/ CMA 
+    // ...but first remove any visible map layers
+    $(`#outputlayer_container .collapse.sub tr td.show_chk input:checked`).trigger('click');
+    $('#outputlayer_container .collapse.sub').remove();
+//     $('#model_outputs_table').empty();
+    
+}
+
 function clearCMA() {
     $('#cma_loaded').addClass('notactive');
     $('#cma_loaded').attr('data-cma_id','');
@@ -781,11 +790,8 @@ function clearCMA() {
     $('.mpm_top_options.modeling').hide();
     
     $('.model_select_div').hide();
-    
-    // Clear any model outputs associated w/ CMA 
-    // ...but first remove any visible map layers
-    $(`#model_outputs_table tr td.show_chk input:checked`).trigger('click');
-    $('#model_outputs_table').empty();
+
+    resetModelOutputs();
     
     // Same with processed layers
     $('#processedlayer_container .content.main tr td.show_chk input:checked').trigger('click');
@@ -860,7 +866,8 @@ function loadCMA(cma_id) {
       syncModelOutputs(cma_id);
       
       // Show MODEL RESULTS section
-      $('.collapse.model_results').show();
+      $('#outputlayer_container').show();
+      $('#processedlayer_container').show();
     
 }
 
@@ -868,9 +875,13 @@ function loadModelOutputs(cma_id,model_run_id) {
     cma_id = cma_id || getActiveCMAID();
     model_run_id = model_run_id || $('#model_output_layers_filter select').val();
     
+    // Remove existing content
+    resetModelOutputs();
+    
     // Check for outputs that are not sync'ed to the GUI yet
     // PUT THIS IN LOADMOELRUNS
     
+    // TODO: get this download thing working again
     var table = $('#model_outputs_table');
     table.empty();
     table.append(`
@@ -894,9 +905,14 @@ function loadModelOutputs(cma_id,model_run_id) {
             d.cma_id && d.cma_id == cma_id &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
         ) {
-            addRowToDataLayersTable(table,d,d.subcategory,true);
+            addRowToDataLayersTable(d);
         }
     });
+    
+    // Toggle header to expand if model_run_id specified
+    if (model_run_id != 'all') {
+        toggleHeader($(`#outputlayer_container .header.topbar.sub`));
+    }
 }
 
 function downloadModelOutputsBulk() {
@@ -1008,41 +1024,13 @@ function processDataLayersUpdates(response) {
         if (!DATALAYERS_LOOKUP[dsid]) {
             DATALAYERS_LOOKUP[dsid] = dl;
             
-//             alert(`New layer available!: ${dl.name} (${dsid})`);
-            
             // Create WMS map layer so it can be loaded to map
             createMapLayer(dl.data_source_id,dl)
             
             // Add layer lookup 
             DATALAYERS_LOOKUP[dl.data_source_id] = dl;
             
-            // Add the layer to the layer list
-            var table = $('#model_outputs_table');
-            
-            // If ProcessedLayer, dynamically build the layer control as needed 
-            if (dl.gui_model == 'processedlayer') {
-                var table_id = `processed_layers_table_${dl.category}`;
-                table = $(`#${table_id}`);
-                
-//                 // Add category if doesn't exist
-//                 if (table.length == 0) {
-//                     var div = $('#processedlayer_container .content.main');
-//                     
-//                     var category_html = `
-//                         <div class='collapse sub'>
-//                             <div class='header topbar sub ${dl.category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${dl.category}</div>
-//                             <div class='content'>
-//                                 <table class='datalayer_table' id='${table_id}'>
-//                                 </table>
-//                             </div> <!--content-->
-//                         </div>  <!--collapse sub-->
-//                     `;
-//                     div.append(category_html);
-//                     table = $(`#${table_id}`);
-//                 }
-            }
-//             console.log(table,dl.gui_model,dl);
-            addRowToDataLayersTable(table,dl,dl.subcategory,dl.gui_model=='outputlayer');
+            addRowToDataLayersTable(dl);
         }
     });
 }
@@ -3651,14 +3639,34 @@ function initiateCMA() {
     });
 }
 
-function addRowToDataLayersTable(table, dl, subcat, model_output) {
-    // Add category if doesn't exist
-    if (table.length == 0 && dl.gui_model == 'processedlayer') {
-        var div = $('#processedlayer_container .content.main');
-        var table_id = table.selector.replaceAll('#','');
+function addRowToDataLayersTable(dl) {
+    var category = dl.category;
+    var subcat = dl.subcategory;
+    
+    if (dl.gui_model == 'outputlayer') {
+        category = dl.model;//dl.subcategory;
+        subcat = dl.model_run_id;
+    }
+    if (dl.subcategory == 'User upload') {
+        category = 'User upload';
+        subcat = dl.category;
+    }
+    
+//     var gmap = {
+//         outputlayer: 'outputlayer_container',
+//         processedlayer: 'processedlayer_container',
+//         datalayer: 'datalayer_container',
+//     }
+    
+    var table_id = `${dl.gui_model}_table_${category}`
+    var table = $(`#${table_id}`);
+    var div = $(`#${dl.gui_model}_container .content.main`);
+    
+    // Add category section if doesn't exist
+    if (table.length == 0) {// && dl.gui_model == 'processedlayer') {     
         var category_html = `
             <div class='collapse sub'>
-                <div class='header topbar sub ${dl.category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${dl.category}</div>
+                <div class='header topbar sub ${category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${category}</div>
                 <div class='content'>
                     <table class='datalayer_table' id='${table_id}'>
                     </table>
@@ -3673,7 +3681,7 @@ function addRowToDataLayersTable(table, dl, subcat, model_output) {
 //     var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
     var subcat = subcat.toUpperCase();
     var name_pretty = dl.name_pretty;
-    if (model_output) {
+    if (dl.gui_model == 'outputlayer') {
         name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
     }
     var show_chk = `
@@ -3688,7 +3696,7 @@ function addRowToDataLayersTable(table, dl, subcat, model_output) {
     }
     
     // Add columns headers if date-based subcategory is empty
-    var radiocube_header = model_output ? '' : `Add to cube`;
+    var radiocube_header = dl.gui_model == 'outputlayer' ? '' : `Add to cube`;
     if (table.find(`tr.subcategory_label td:contains("${subcat}")`).length == 0) {
         table.append(`
             <tr class='subcategory_label'>
@@ -3701,7 +3709,7 @@ function addRowToDataLayersTable(table, dl, subcat, model_output) {
         `);
     }
     // Add table row
-    var radiocube = model_output ? '' : `
+    var radiocube = dl.gui_model == 'outputlayer' ? '' : `
         <div class="radiocube" align="left">
             <input type="radio" name="radiocube_${dl.data_source_id}" value="no" checked>
             <label class='no' for="radiocube_${dl.data_source_id}" onclick="onRadioCubeClick(this);">N</label>
@@ -3712,7 +3720,7 @@ function addRowToDataLayersTable(table, dl, subcat, model_output) {
     table.append(`
         <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
             <td class='name'>${name_pretty}</td>
-            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${model_output});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
+            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
             <td class='download'>
                 <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
@@ -3795,8 +3803,8 @@ function uploadDataLayer() {
             DATALAYERS_LOOKUP[dl.data_source_id] = dl;
             
             // Add the layer to the layer list
-            var table = $('#user_upload_layers_table');
-            addRowToDataLayersTable(table,dl,dl.category);
+//             var table = $('#user_upload_layers_table');
+            addRowToDataLayersTable(dl);
             
             // Reset upload form
             updateSHPlabel(
