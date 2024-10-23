@@ -826,6 +826,8 @@ select:invalid {
 #datalayer_info .modal {
     top: 12.5%;
     height: auto;
+    width: 75%;
+    left: calc(12.5% - 40px);
     max-height: 75%;
     color: #f2f2f2;
     font-size: 1.0rem;

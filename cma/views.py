@@ -796,7 +796,10 @@ def submit_model_run(request):
    
    
     # TODO: rebuild this using processed layer IDs instead
-    evidence_layers = []
+    evidence_layers = [
+        '05c9f1c74da972e277fc106221845e83__d751713988987e9331980363e24189ce_022fa85caca7865c379b2ecc5af0262f',
+        'd7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851',
+    ]
    
     train_config = params['train_config']
 
@@ -826,6 +829,7 @@ def submit_model_run(request):
     print(model_run)
     #print(model_run.model_dump_json(exclude_none=True))
 
+    print(json.dumps(model_run.model_dump_json(),indent=4))
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:

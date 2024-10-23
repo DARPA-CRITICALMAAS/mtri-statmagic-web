@@ -14,6 +14,42 @@ cdr = CDR()
 #print(res)
 
 
+post_data_submit_model_run = {
+    "cma_id":"ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel",
+    "system":"statmagic",
+    "system_version":"",
+    "author":"Michael Steffen",
+    "date":"2024-10-23",
+    "organization":"Beak",
+    "model_type":"beak_som",
+    "train_config": {
+        "size":20,
+        "dimensions_x":20,
+        "dimensions_y":20,
+        "num_initializations":5,
+        "num_epochs":10,
+        "grid_type":"rectangular",
+        "som_type":"toroid",
+        "som_initialization":"random",
+        "initial_neighborhood_size":0.0,
+        "final_neighborhood_size":1.0,
+        "neighborhood_function":"gaussian",
+        "gaussian_neighborhood_coefficient":0.5,
+        "learning_rate_decay":"linear",
+        "neighborhood_decay":"linear",
+        "initial_learning_rate":0.1,
+        "final_learning_rate":0.01
+    },
+    "evidence_layers":[
+        "05c9f1c74da972e277fc106221845e83__d751713988987e9331980363e24189ce_022fa85caca7865c379b2ecc5af0262f",
+        "d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851"
+    ]
+}
+
+#res = cdr.post_model_run(post_data_submit_model_run)
+#print(res)
+#blerg
+
 post_data_intersect_sources = {
   "cog_ids": [],
   "feature_type": "polygon",
@@ -49,10 +85,10 @@ post_data_intersect_sources = {
 # blerg
 #
 # #
-res = cdr.get_model_run("e77c35bdf7ae4020a9c029959b763c38")
+#res = cdr.get_model_run("e77c35bdf7ae4020a9c029959b763c38")
 # # print(res['event']['payload']['evidence_layers'])#.keys()))
-print(res['event']['payload']['model_type'])
-blerg
+#print(res['event']['payload']['model_type'])
+#blerg
 #
 # # for p,v in res['event']['payload']['train_config'].items():
 # #     print(p,v)
@@ -302,6 +338,6 @@ preprocess_metadata = '''{
 #res = cdr.post_prospectivity_preprocess(preprocess_metadata)
 #res = cdr.get_processed_data_layer_events('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 #https://api.cdr.land/v1/prospectivity/event/bee5379f417c4da1ba318fbfd3296914
-res = cdr.get_preprocess_event('bee5379f417c4da1ba318fbfd3296914')
-#res = cdr.get_processed_data_layer('d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851')
+#res = cdr.get_preprocess_event('bee5379f417c4da1ba318fbfd3296914')
+res = cdr.get_processed_data_layer("d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851")
 print(json.dumps(res,indent=4))

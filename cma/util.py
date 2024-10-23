@@ -874,7 +874,7 @@ def get_datalayers_for_gui(
         mods.append(models.OutputLayer)
     if include_processedlayers:
         mods.append(models.ProcessedLayer)
-    print(filters, mods)
+    #print(filters, mods)
     for Obj in mods:#(models.DataLayer, models.OutputLayer):
         for d in Obj.objects.filter(**filters).order_by(
                 'category','subcategory','name'
@@ -906,6 +906,11 @@ def get_datalayers_for_gui(
             if 'b4050056d38a449fa3d940008e277145' in data['download_url']:
                 data['extent_geom'] = '{ "type": "Polygon", "coordinates": [[[-180,86.3], [-180,16.8], [-12.1,16.8], [-12.1,86.3], [-180,86.3]]]}'
     
+            
+            if 'datalayer' in data and data['datalayer']:
+                data['data_source_id_orig'] = d.datalayer.data_source_id
+                del data['datalayer']
+                
             
             data['gui_model'] = str(Obj._meta).split('.')[1]
             #print(data['extent_geom'], data['extent_geom'])

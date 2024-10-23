@@ -2775,7 +2775,7 @@ function checkModelRunStatus(model_run_id) {
     });
 }
 
-function showDataLayerInfo(layer_name,model_output) {
+function showDataLayerInfo(layer_name,model_output,processed_layer) {
     var dl = DATALAYERS_LOOKUP[layer_name];
     var sr = dl.spatial_resolution_m ? addCommas(dl.spatial_resolution_m.toFixed(0)) : '--';
     var attrs = '';
@@ -2836,6 +2836,25 @@ function showDataLayerInfo(layer_name,model_output) {
             <span class='label'>System:</span> ${dl.system} <span class='label'>v</span>${dl.system_version}<br>
             <span class='label'>Model run info:</span> ${dl.model_run_id} (<span class='link' onclick="loadModelRun('${dl.cma_id}','${dl.model_run_id}');">load model run</span>)
         `;
+    }
+    
+    if (processed_layer) {
+        var dsid_orig = '';
+        if (!dl.label_raster) {
+            dsid_orig = `<span class='label'>Original data source ID:</span> <span class='link' onclick="showDataLayerInfo('${dl.data_source_id_orig}');">${dl.data_source_id_orig || '--'}</span><br>`;
+        }
+        
+
+        src = `
+            <span class='label'>PROCESSING INFO:</span><br>
+            ${dsid_orig}
+            <span class='label'>Label raster?</span> ${dl.label_raster}<br>
+            <span class='label'>System:</span> ${dl.system} <span class='label'>v</span>${dl.system_version}<br>
+            <span class='label'>Preprocessing event ID:</span> ${dl.event_id}<br>
+            <span class='label'>Processing steps:</span><br>
+            ${dl.transform_methods}
+        `;
+        
     }
     
     $('#dl_title').html(dl.name_pretty);
@@ -3720,7 +3739,7 @@ function addRowToDataLayersTable(dl) {
     table.append(`
         <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
             <td class='name'>${name_pretty}</td>
-            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
+            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
             <td class='download'>
                 <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
