@@ -391,7 +391,7 @@ function clearMineralSites() {
     }
     
     // Clear query results
-    $('#mineral_sites_n_results').html('--');
+    $('.mineral_sites_n_results').html('--');
     $('.mineral_sites_download_link').hide();
     
     // Add 'disabled' class back to clear button
@@ -1065,7 +1065,7 @@ function processModelRunsFromCDR(model_runs) {
     $.each(model_runs, function(mrid, mobj) {
         
         // Skip model runs w/ zero evidence layers
-        if (mobj.event.payload.evidence_layers.length == 0) {
+        if (!mobj.event || mobj.event.payload.evidence_layers.length == 0) {
             return;
         }
         
@@ -1788,7 +1788,7 @@ function loadMineralSites() {
             $('#clear_sites_button').removeClass('disabled');
             
             // Update query results n
-            $('#mineral_sites_n_results').html(response.mineral_sites.length);
+            $('.mineral_sites_n_results').html(response.mineral_sites.length);
             $('.mineral_sites_download_link').show();
             
             enableLoadSitesButton();
@@ -2096,12 +2096,19 @@ function getMineralSiteSourcesTable(prop) {
 
             
 function toggleExcludeChk(id) {
+
     $.each(GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites, function(i,s) {
         if (s.properties.id == id) {
             s.properties.exclude = !s.properties.exclude//$('#site_popup_exclude_chk').is(':checked');
             return false;
         }
     });
+    
+    // Update the '.mineral_sites_n_results.training' span
+    var n_included= GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.reduce(function(total,s) {
+        return total + !s.properties.exclude;
+    }, 0);
+    $('.mineral_sites_n_results.training').html(n_included);
     
     // Reset display (in case 'included in training' is selected
     onMineralSitesDisplayByChange();

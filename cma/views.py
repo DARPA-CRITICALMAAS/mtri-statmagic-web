@@ -799,6 +799,7 @@ def submit_model_run(request):
     evidence_layers = [
         '05c9f1c74da972e277fc106221845e83__d751713988987e9331980363e24189ce_022fa85caca7865c379b2ecc5af0262f',
         'd7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851',
+        'aea6cc3f76f618e5557f10916de96be6__d751713988987e9331980363e24189ce_fccb2a8aba0cbb481929f38444304b03'
     ]
    
     train_config = params['train_config']
@@ -829,7 +830,8 @@ def submit_model_run(request):
     print(model_run)
     #print(model_run.model_dump_json(exclude_none=True))
 
-    print(json.dumps(model_run.model_dump_json(),indent=4))
+    print(model_run.model_dump_json(indent=4))
+    blerg
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:

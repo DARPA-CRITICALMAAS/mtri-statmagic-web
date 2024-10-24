@@ -162,7 +162,7 @@
                         <tr>
                             <td colspan=2 align='center'>
                                 <div class='mineral_sites_results_message'>
-                                # query results: <span id='mineral_sites_n_results'>--</span>
+                                # query results: <span class='mineral_sites_n_results'>--</span>
                                     <br>
                                 </div> 
                                 <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
@@ -361,10 +361,12 @@
                         <!--</div>--> <!--content model-->
                    <!-- </div>--> <!--collapse sub (model)-->
                     <div class='collapse sub collapse_training'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Training <span class='header_info training warning'>[no training data selected]</span></div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Training data<span class='header_info training warning'>[<span class='mineral_sites_n_results training'>--</span> training sites selected]</span></div>
                         <div class='content training'>
-                            The model will use the <span id='n_training'></span> sites selected in the KNOWN DEPOSIT SITES section above for training. To filter out specific sites, click on the site or open the table view and click on the <b>exclude</b> checkbox.<br>
+                            <div class='modeling_instructions'>
+                            The model will use the <span id='n_training'></span> sites selected in the <b>KNOWN DEPOSIT SITES</b> section above for training. To filter out specific sites, click on the site or <span class='link' onclick="loadMineralSitesToTable();$('#show_sites').show();">open the sites table</span> and click on the <b>exclude</b> checkbox.<br>
                             Users can also <span class='link'>upload a CSV file</span> of additional sites they would like to include.
+                            </div>
                         
                         </div> <!--content training-->
                     </div> <!--collapse sub (training)-->
