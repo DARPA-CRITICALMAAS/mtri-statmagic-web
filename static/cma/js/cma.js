@@ -686,6 +686,8 @@ function resetModelUI(clear) {
     $('#model_run_loaded .model_run_id').html('[none loaded]');
     $('#model_run_edited').hide();
 
+    
+    
 //     $('#model_select').val('');
     // Collapse results pane 
     closeCollapse('.header.model_results')
@@ -712,6 +714,9 @@ function clearModelUIselections(){
     // Reset model cache which returns the model parameter configurations to
     // default values
     resetModelCache();
+
+    validateModelButtons();
+    
 }
 
 // What happens when 'Select model type' changes
@@ -763,6 +768,9 @@ function onModelSelect() {
     $('.collapse_parameters').show();
     $('.collapse_model_run').show();
     $('#modeling_buttons_table').show();
+    
+    // Enable/disable buttons as needed
+    validateModelButtons();
 
     
 }
@@ -1194,7 +1202,7 @@ function loadModelRun(cma_id,model_run_id) {
     
     var layers = model_run.event.payload.evidence_layers;
     $.each(layers, function(i,layer) {
-        var dsid = layer.data_source.data_source_id;
+        var dsid = layer.layer_id;//layer.data_source.data_source_id;
         var dl = DATALAYERS_LOOKUP[dsid];
         // TODO: current workaround for there not being non-tif data sources
         //       loaded yet; 
@@ -2612,10 +2620,15 @@ function submitPreprocessing() {
         function(s) {return s.properties.id;}
     );
     
+    var evidence_layers = DATACUBE_CONFIG.filter(function(l) {
+        var d = DATALAYERS_LOOKUP[l.data_source_id];
+        return d.gui_model != 'processedlayer';
+    });
+    
     var cma_id = getActiveCMAID();
     var data = {
         cma_id: cma_id,
-        evidence_layers : DATACUBE_CONFIG,
+        evidence_layers : evidence_layers,
         training_sites: training_sites,
         dry_run: false,
     };
@@ -3035,6 +3048,46 @@ function addLayerToDataCube(datalayer) {
         </tr>
     `);
     
+    validateModelButtons();
+}
+
+// Enables/disables model buttons according to selected layers
+function validateModelButtons() {
+    
+    // If DATACUBE is empty, disable all buttons
+    if (DATACUBE_CONFIG.length == 0) {
+        $('.button.model_process_submit.preprocess').addClass('disabled');
+        $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+        $('.button.model_process_submit.run').addClass('disabled');
+        
+        return;
+    }
+
+    var all_processed = true;
+    $.each(DATACUBE_CONFIG, function(i,dl) {
+        var l = DATALAYERS_LOOKUP[dl.data_source_id];
+        if (l.gui_model != 'processedlayer') {
+            all_processed = false;
+        }
+    });
+   
+    if (all_processed) {
+        // If all DATACUBE layers are processed:
+        //  * disable pre-process and pre-process+run buttons
+        //  * enable run model
+        
+        $('.button.model_process_submit.preprocess').addClass('disabled');
+        $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+        $('.button.model_process_submit.run').removeClass('disabled');
+    } else {
+        // Otherwise:
+        //  * disable run model
+        //  * enable the other two
+        
+        $('.button.model_process_submit.preprocess').removeClass('disabled');
+        $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
+        $('.button.model_process_submit.run').addClass('disabled');
+    }
 }
 
 function onRadioCubeClick(cmp) {
@@ -3089,6 +3142,7 @@ function onRadioCubeClick(cmp) {
     
     // Update header_info 
     updateDataCubeLabelInfo();
+    validateModelButtons();
 }
 
 function updateDataCubeLabelInfo() {

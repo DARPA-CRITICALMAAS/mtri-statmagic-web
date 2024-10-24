@@ -2410,6 +2410,13 @@ tr.site_src_row_extra {
 #datacube_layers tbody td.complete:hover {
     color: #75f09e;
 }
+
+#modeling_buttons_table  div.button.model_process_submit.disabled {
+    background-color: #666;
+    color: #999;
+    cursor: default;
+}
+
 /*.content.training {
     padding: 0px 40px 8px 10px;
     color: #c3c3c3;

@@ -435,7 +435,12 @@ def get_model_runs(request):
     # Get model runs and attach to CMAs
     model_runs = {}
     for mr in cdr.get_model_runs(params['cma_id']):
-        model_runs[mr['model_run_id']] = cdr.get_model_run(mr['model_run_id'])
+        run = cdr.get_model_run(mr['model_run_id'])
+        # Filter out model runs from pre-2024-10-24 b/c that is when the 
+        # preprocess and model_run schemas were separated and the model_runs 
+        # no longer fit with what is on the GUI 
+        if run['event'] and run['event']['timestamp'] > '2024-10-24':
+            model_runs[mr['model_run_id']] = run
         
     #While we're at it, check CDR and sync any outputs not yet present
     #dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
