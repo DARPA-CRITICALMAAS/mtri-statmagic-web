@@ -13,6 +13,9 @@ cdr = CDR()
 #res = cdr.run_query('prospectivity/cmas')
 #print(res)
 
+res = cdr.get_model_run('0ab2e4c7f1c643998e29ed4b69af4a52')
+print(res)
+blerg
 
 post_data_submit_model_run = {
     "cma_id":"ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel",

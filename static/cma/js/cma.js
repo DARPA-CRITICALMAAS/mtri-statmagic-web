@@ -2653,12 +2653,19 @@ function submitModelRun() {
         });
     });
 
+    // This is now just a list of ProcessedLayer IDs
+    var evidence_layers = DATACUBE_CONFIG.map(function(l) {
+        return l.data_source_id;
+    });
+//     console.log(evidence_layers);
+//     return;
+    
     var cma_id = getActiveCMAID();
     var data = {
         cma_id: cma_id,
         model: model,
         train_config: train_config,
-        evidence_layers : DATACUBE_CONFIG,
+        evidence_layers: evidence_layers, //DATACUBE_CONFIG,
 //         dry_run: true,
     };
     
@@ -3047,8 +3054,20 @@ function onRadioCubeClick(cmp) {
     if (valnew == 'no') {
         // TODO: if/when multiple instances of single data layer are allowed, 
         // this will need to be updated b/c data-layername might not be unique
-        var dcid = $(`#datacube_layers tr[data-layername='${dsid}']`).attr('data-datacubeindex');
-        DATACUBE_CONFIG.splice(dcid,1);
+//         var dcid = $(`#datacube_layers tr[data-layername='${dsid}']`).each(function(el) {
+//             var dcid = el.attr('data-datacubeindex');
+//             DATACUBE_CONFIG.splice(dcid,1);
+//         });
+        var splices = [];
+        $.each(DATACUBE_CONFIG, function(i,l) {
+            if (l.data_source_id == dsid) {
+                splices.push(i);
+            }
+        });
+        $.each(splices.reverse(), function(i,s) {
+            DATACUBE_CONFIG.splice(s,1);
+        });
+        
         $(`#datacube_layers tr[data-layername='${dsid}']`).remove();
         
         // If there are no rows left, show instructions again
@@ -3056,8 +3075,11 @@ function onRadioCubeClick(cmp) {
             $('#datacube_layers tr.instructions').show();
         }
     } else { // Add layer to cube
-//         var datalayer = DATALAYERS_LOOKUP[dsid];
-        addLayerToDataCube(datalayer);
+        // If layer is not already in the cube, add it:
+        var existing_dsids = DATACUBE_CONFIG.map(function(l) {return l.data_source_id;});
+        if (existing_dsids.indexOf(dsid) == -1) {
+            addLayerToDataCube(datalayer);
+        }
     }
     
     // Update header_info 

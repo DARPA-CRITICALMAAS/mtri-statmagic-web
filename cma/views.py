@@ -722,10 +722,12 @@ def submit_preprocessing(request):
             for x in params['training_sites'] if type(x) == list
         ]
             
+        n_sites = len(evidence_features) + len(extra_geometries)
+            
         ## Build vector layer model instances
         l = prospectivity_input.DefineVectorProcessDataLayer(
             label_raster = True,
-            title = 'Label raster',
+            title = f'Training sites (n={n_sites})',
             evidence_features = evidence_features,
             extra_geometries = extra_geometries,
             transform_methods = tms,
@@ -835,7 +837,7 @@ def submit_model_run(request):
     #print(model_run.model_dump_json(exclude_none=True))
 
     print(model_run.model_dump_json(indent=4))
-    blerg
+    #blerg
     
     cdr = cdr_utils.CDR()
     if params['dry_run']:

@@ -1894,7 +1894,8 @@ select#sites_display_select {
     color: #f2f2f2;
     
 }*/
-#uploadForm_datalayer table {
+#uploadForm_datalayer table,
+#uploadFormCSV table {
     width: auto;
     margin: 0px auto;
     
@@ -2392,6 +2393,14 @@ tr.site_src_row_extra {
     background-color: #100a0d;
 }
 
+#uploadFormCSV table {
+    width: 100%;
+}
+#uploadFormCSV td.label {
+    color: #f2f2f2;
+   min-width: 240px;
+    
+}
 /*.content.training {
     padding: 0px 40px 8px 10px;
     color: #c3c3c3;

@@ -59,6 +59,8 @@ def run_ta3_pipeline(model_run_id):
     )
     
     for output_layer in output_layers:
+        print(output_layer[0])
+        print(output_layer[1].model_dump_json())
         response = cdr.post_prospectivity_output_layers(
             input_file=open(output_layer[0],'rb'),
             metadata=output_layer[1].model_dump_json(),
