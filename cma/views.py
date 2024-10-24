@@ -836,6 +836,9 @@ def submit_model_run(request):
     print(model_run)
     #print(model_run.model_dump_json(exclude_none=True))
 
+    #print(model_run.model_type)
+    #blerg
+
     print(model_run.model_dump_json(indent=4))
     #blerg
     

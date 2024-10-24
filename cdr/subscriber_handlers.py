@@ -72,9 +72,9 @@ def run_ta3_pipeline(model_run_id):
         print(output_layer[1].model_dump_json())
         
         meta = output_layer[1]#.model_dump_json()
-        if meta['title'] == 'Codebook Map':
+        if meta.title == 'Codebook Map':
             bn = os.path.basename(output_layer[0]).split('.')[0][2:]
-            meta['title'] = f'Codebook Map: {bn}'
+            meta.title = f'Codebook Map: {bn}'
         response = cdr.post_prospectivity_output_layers(
             input_file=open(output_layer[0],'rb'),
             metadata=output_layer[1].model_dump_json(),
