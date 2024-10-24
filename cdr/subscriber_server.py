@@ -34,7 +34,7 @@ SETTINGS = {
     'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
     #'ml_model_name': '',#os.environ["MODEL_NAME"],
     #'ml_model_version': os.environ["MODEL_VERSION"],
-    'user_api_token': os.environ["CDR_TOKEN"],
+    'user_api_token': os.environ["CDR_API_TOKEN"],
     'cdr_host': 'https://api.cdr.land',#os.environ["CDR_HOST"],
     'local_port': 9999,#,int(os.environ["NGROK_PORT"]),
     'registration_id': "",
