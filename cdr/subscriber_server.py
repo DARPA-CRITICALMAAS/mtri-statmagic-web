@@ -65,15 +65,15 @@ async def event_handler(
         evt: Event
     ):
     try:
-        #match evt: # pattern matching on evt.
-        if evt == Event(event="ping"):
+        match evt: # pattern matching on evt.
+            case Event(event="ping"):
                 print("Received PING!")
-        elif evt == Event(event="prospectivity_model_run.process"):
+            case Event(event="prospectivity_model_run.process"):
                 print("Received model run event payload!")
                 print(evt.payload)
                 subscriber_handlers.run_ta3_pipeline(evt.payload['model_run_id'])
-        else:
-            print("Nothing to do for event: %s", evt)
+            case _:
+                print("Nothing to do for event: %s", evt)
 
     except Exception:
         print("background processing event: %s", evt)
