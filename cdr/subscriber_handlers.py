@@ -1,4 +1,5 @@
-import os, sys
+import json, os, requests, sys, tempfile, urllib
+from pathlib import Path
 from beak.hmi_integration.call_som import run_som
 
 # Import cdr_schemas
@@ -13,26 +14,42 @@ def run_ta3_pipeline(model_run_id):
     
     # Get model run metadata from CDR 
     print('Model run submission detected!',model_run_id)
-    
+
+
+    cdr = cdr_utils.CDR()
     res = cdr.get_model_run(model_run_id)
     
     # Ignore model runs unless they are 'beak_som' type
     if res['event']['payload']['model_type'] != 'beak_som':
         print('\tNot Beak SOM type; ignoring...')
-    
+
+    # Set temporary output folder                                                        
+    output_folder = Path('/tmp',res['model_run_id'])
+    output_folder.mkdir(parents=True, exist_ok=True)      
+        
     # Extract list of download_urls from the model run payload
-    cdr = cdr_utils.CDR()
+    #cdr = cdr_utils.CDR()
     input_file_list = []
-    for layer_id in res['event']['payload']['evidence_layers']:
-        pl = cdr.get_processed_data_layer(layer_id)
-        input_file_list.append(pl['layer_id'])
+    for l in res['event']['payload']['evidence_layers']:
+        pl = cdr.get_processed_data_layer(l['layer_id'])
+        ext = pl['download_url'].split('.')[-1]
+        
+        download_file = os.path.join(output_folder,f"{l['layer_id']}.{ext}")
+        input_file_list.append(download_file)  
+        if os.path.exists(download_file):
+            continue
+        
+        # Download file to temporary directory
+        with requests.get(pl['download_url']) as r,open(download_file,'wb') as f:
+            f.write(r.content)
+        
+#        input_file_list.append(urllib.parse.quote_plus(pl['download_url'])
+        #input_file_list.append(download_file)
+        #print(pl['download_url'])
     
-    # Set temporary output folder
-    output_folder = os.path.join('/tmp',res['model_run_id'])
-    os.mkdir(output_folder)
     
     # Save json to temporary file b/c that's what run_som takes in
-    with tempfile.NameTemporaryFile() as tmpfile:
+    with tempfile.NamedTemporaryFile() as tmpfile:
         config_file = tmpfile.name
         
     with open(config_file,'w') as f:
