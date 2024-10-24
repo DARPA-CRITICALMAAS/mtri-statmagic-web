@@ -652,6 +652,8 @@ def submit_preprocessing(request):
             data_source_id=el['data_source_id']
         ).first()
         
+        print(el['data_source_id'])
+        
         tms = util.process_transform_methods(
             el['transform_methods'],
             processing_steps,
@@ -752,6 +754,8 @@ def submit_preprocessing(request):
     #blerg
     
     cdr = cdr_utils.CDR()
+    print(process_data_layers.model_dump_json())
+    #blerg
     #if params['dry_run']:
         #res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
     #else:
@@ -1120,14 +1124,42 @@ def get_fishnet(request):
 
 @csrf_exempt
 def get_csv_column_names(request):
-     lines = request.FILES.getlist('file_csv')[0].readlines()
-     cols = lines.replace('\n','').replace('\r','').split(',')
+    lines = request.FILES.getlist('file_csv')[0].readlines()
+    cols = util.clean_line(lines[0])
      
     # Return response as JSON to client
     response = HttpResponse(json.dumps(cols))
     response['Content-Type'] = 'application/json'
 
     return response
+
+@csrf_exempt 
+def upload_sites_csv(request):
+    params = {
+        'csv_longitude_field': '',
+        'csv_latitude_field': '',
+    }
+    params = util.process_params(request, params, post_json=True)
+
+    lines = request.FILES.getlist('file_csv')[0].readlines()
+    hdr = util.clean_line(lines[0])
+
+    coords = []
+    for line in lines[1:]:
+        ln = clean_line(line)
+        lat = ln[hdr.index(params['csv_latitude_field'])]
+        lon = ln[hdr.index(params['csv_longitude_field'])]
+        coords.append([lon,lat])
+        
+     # Return response as JSON to client
+    response = HttpResponse({
+        'site_coords': json.dumps(coords)
+    })
+    response['Content-Type'] = 'application/json'
+
+    return response 
+        
+                 
 
 @csrf_exempt
 def download_model_outputs(request):

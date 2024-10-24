@@ -1445,6 +1445,8 @@ def download_model_outputs(urls_to_download, cma_name, model_run_id):
 
     return response
     
+def clean_line(line):
+    return line.replace('\n','').replace('\r','').split(',')
     
 def process_transform_methods(transform_methods,processing_steps):
     #  This list can be:

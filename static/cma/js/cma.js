@@ -22,6 +22,7 @@ var DATACUBE_CONFIG = [];
 var GET_MINERAL_SITES_RESPONSE_MOST_RECENT
 var GET_MODEL_RUNS_MOST_RECENT;
 var MINERAL_SITES_LAYER;
+var MINERAL_SITES_LAYER_USER_UPLOAD;
 var CMAS_EXISTING;
 var MINERAL_SITES_SORT_BY = {prop: 'id', order: 'asc'};
 var FISHNET_LAYER = new L.FeatureGroup();
@@ -3344,10 +3345,93 @@ function getCSVcolumnHeaders() {
             console.log(response);
         },
     });
-});
+};
+
+function loadUserUploadSitesToMap() {
+    // Remove current layer if it exists
+    if (MAP.hasLayer(MINERAL_SITES_LAYER_USER_UPLOAD)) {
+        MAP.removeLayer(MINERAL_SITES_LAYER_USER_UPLOAD);
+    }
     
+    // Create new layer
+    MINERAL_SITES_LAYER_USER_UPLOAD = L.geoJSON(
+        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites,{
+
+        pointToLayer: function(feature,latlng) {
+            return L.circleMarker(latlng,{
+                radius: 6,
+                fillOpacity: 0.9,
+                opacity: 1,
+                color: '#000',
+                weight: 0.5,
+                className: 'mineral_site_marker',
+            });
+        },
+        onEachFeature: function(feature,layer) {
+            var popup = L.popup({
+                minWidth: 260,
+                autoPan: false,
+            });
+
+            layer.bindPopup(popup);
+        }
+    });
     
+    // Create a popup to use in the macrostrat layer
+    MINERAL_SITES_LAYER_USER_UPLOAD.on('mouseover', function(e) {
+        e.layer.setStyle({radius: 10});
+    });
+    MINERAL_SITES_LAYER_USER_UPLOAD.on('mouseout', function(e) {
+        e.layer.setStyle({radius: 6});
+    });
+    MINERAL_SITES_LAYER_USER_UPLOAD.on('click', function(e) {
+        var exclude_chk = '';
+        e.layer._popup.setContent(`
+            <b>User-uploaded site</b>
+    
+            <br><br>
+            ${exclude_chk} 
+        `);
+        
+        e.layer.openPopup();
+    });
+    MINERAL_SITES_LAYER_USER_UPLOAD.addTo(MAP);
 }
+    
+function uploadCSV() {
+    var shp, dbf;
+    var formData = new FormData($('#uploadFormCSV')[0]);
+
+    $.each($('#file_csv')[0].files, function(i,file) {
+        formData.append('file',file);
+    });
+
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_sites_csv', {
+        processData: false,
+        contentType: false,
+        data: formData,
+        type: 'POST',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            // Process the uploaded site points
+            
+            // Load as layer to map
+            
+            // Show "show user uploaded sites" checkbox in the KNOWN DEPOSIT
+            // SITES layer control 
+            
+            // Show "include XX user uploaded sites" and "include XX KNOWN  
+            // DEPOSIT SITES checkboxes in the TRAINING section
+           
+            
+        },
+        error: function(response) {
+            console.log(response);
+        },
+    });
+};
+    
 
 // detect a change in a file input with an id of “the-file-input”
 $("#file_shp").change(function() {

@@ -39,5 +39,6 @@ urlpatterns = [
     path('download_model_outputs', cma_views.download_model_outputs),
     path('submit_preprocessing', cma_views.submit_preprocessing),
     path('get_csv_column_names', cma_views.get_csv_column_names),
+    path('upload_sites_csv', cma_views.upload_sites_csv),
     path(r'', cma_views.home),
 ]
