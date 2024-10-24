@@ -2657,8 +2657,6 @@ function submitModelRun() {
     var evidence_layers = DATACUBE_CONFIG.map(function(l) {
         return l.data_source_id;
     });
-//     console.log(evidence_layers);
-//     return;
     
     var cma_id = getActiveCMAID();
     var data = {
@@ -3008,6 +3006,13 @@ function addLayerToDataCube(datalayer) {
     
     DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
         
+    var psteps = `<td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>`
+    
+    if (datalayer.gui_model == 'processedlayer') {
+        psteps = `<td class='processing complete' onclick="showDataLayerInfo('${dsid}',false,true);">complete &#10003;</td>`;
+        
+    }
+    
     // Hide instructions 
     $('#datacube_layers tr.instructions').hide();
     
@@ -3016,7 +3021,7 @@ function addLayerToDataCube(datalayer) {
     $('#datacube_layers tr.cube_layer:last').after(`
         <tr class='cube_layer' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
             <td class='name'>${datalayer.name_pretty}</td>
-            <td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>
+            ${psteps}
             <td class='remove'>
                 <div class='img_hover' onclick=''>
                     <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">

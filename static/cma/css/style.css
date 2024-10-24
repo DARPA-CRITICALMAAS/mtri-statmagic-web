@@ -499,7 +499,7 @@ select {
 .collapse .header.topbar {
 /*     font-style: italic; */
 
-    width: 100%;
+    width: calc(100% - 16px);
     text-transform: uppercase;
     border-radius: 2px;
     background-color: #333;
@@ -1938,7 +1938,7 @@ div.topbar_button img {
 }
 
 .collapse .header div.topbar_button.super {
-    margin-right: 23px;
+    margin-right: 10px;
     
 }
 
@@ -2400,6 +2400,15 @@ tr.site_src_row_extra {
     color: #f2f2f2;
    min-width: 240px;
     
+}
+
+#datacube_layers tbody td.complete {
+    color: #9cc9ab;
+    font-style: italic;
+    cursor: pointer;
+}
+#datacube_layers tbody td.complete:hover {
+    color: #75f09e;
 }
 /*.content.training {
     padding: 0px 40px 8px 10px;

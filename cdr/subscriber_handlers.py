@@ -1,6 +1,8 @@
-import json, os, requests, sys, tempfile, urllib
+import atexit, json, os, requests, shutil, sys, tempfile, urllib
 from pathlib import Path
 from beak.hmi_integration.call_som import run_som
+
+
 
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
@@ -11,6 +13,12 @@ else:
 import cdr_utils
 
 def run_ta3_pipeline(model_run_id):
+    output_folder = None
+    
+    @atexit.register
+    def exit():
+        if output_folder and os.path.exists(output_folder):
+            shutil.rmtree(output_folder)
     
     # Get model run metadata from CDR 
     print('Model run submission detected!',model_run_id)
@@ -58,9 +66,15 @@ def run_ta3_pipeline(model_run_id):
         output_folder=output_folder
     )
     
+    titles = 
     for output_layer in output_layers:
         print(output_layer[0])
         print(output_layer[1].model_dump_json())
+        
+        meta = output_layer[1].model_dump_json()
+        if meta['title'] == 'Codebook Map':
+            bn = os.path.basename(output_layer[0]).split('.')[0][2:]
+            meta['title'] = f'Codebook Map: {bn}'
         response = cdr.post_prospectivity_output_layers(
             input_file=open(output_layer[0],'rb'),
             metadata=output_layer[1].model_dump_json(),
