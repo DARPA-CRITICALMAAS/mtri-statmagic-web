@@ -20,7 +20,6 @@ def run_ta3_pipeline(model_run_id):
     if res['event']['payload']['model_type'] != 'beak_som':
         print('\tNot Beak SOM type; ignoring...')
     
-
     # Extract list of download_urls from the model run payload
     cdr = cdr_utils.CDR()
     input_file_list = []
@@ -46,3 +45,4 @@ def run_ta3_pipeline(model_run_id):
         config_file=config_file,
         output_folder=output_folder
     )
+    print(output_layers)

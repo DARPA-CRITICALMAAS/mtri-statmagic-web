@@ -38,5 +38,6 @@ urlpatterns = [
     path('recreate_mapfile', cma_views.recreate_mapfile),
     path('download_model_outputs', cma_views.download_model_outputs),
     path('submit_preprocessing', cma_views.submit_preprocessing),
+    path('get_csv_column_names', cma_views.get_csv_column_names),
     path(r'', cma_views.home),
 ]

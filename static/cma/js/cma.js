@@ -3316,6 +3316,38 @@ function updateSHPlabel(shp,el_id,msg) {
     }
 }
 
+function getCSVcolumnHeaders() {
+    var shp, dbf;
+    var formData = new FormData($('#uploadFormCSV')[0]);
+
+    $.each($('#file_csv')[0].files, function(i,file) {
+        formData.append('file',file);
+    });
+
+    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_csv_column_names', {
+        processData: false,
+        contentType: false,
+        data: formData,
+        type: 'POST',
+        success: function(response) {
+            console.log(this.url,response);
+            
+            var opts = `<option disabled value='' selected hidden>Select...</option>`;
+            $.each(response, function(colname) {
+                opts += `<option value="${colname}">${colname}</option>`;
+            });
+            $('#csv_longitude_field').html(opts);
+            $('#csv_latitude_field').html(opts);
+            
+        },
+        error: function(response) {
+            console.log(response);
+        },
+    });
+});
+    
+    
+}
 
 // detect a change in a file input with an id of “the-file-input”
 $("#file_shp").change(function() {

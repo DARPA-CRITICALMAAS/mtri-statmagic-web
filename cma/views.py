@@ -1116,6 +1116,17 @@ def get_fishnet(request):
     response = HttpResponse(json.dumps(data))
     response['Content-Type'] = 'application/json'
     
+    return respons
+
+@csrf_exempt
+def get_csv_column_names(request):
+     lines = request.FILES.getlist('file_csv')[0].readlines()
+     cols = lines.replace('\n','').replace('\r','').split(',')
+     
+    # Return response as JSON to client
+    response = HttpResponse(json.dumps(cols))
+    response['Content-Type'] = 'application/json'
+
     return response
 
 @csrf_exempt
