@@ -28,7 +28,6 @@ def run_ta3_pipeline(model_run_id):
     output_folder.mkdir(parents=True, exist_ok=True)      
         
     # Extract list of download_urls from the model run payload
-    #cdr = cdr_utils.CDR()
     input_file_list = []
     for l in res['event']['payload']['evidence_layers']:
         pl = cdr.get_processed_data_layer(l['layer_id'])
@@ -42,10 +41,6 @@ def run_ta3_pipeline(model_run_id):
         # Download file to temporary directory
         with requests.get(pl['download_url']) as r,open(download_file,'wb') as f:
             f.write(r.content)
-        
-#        input_file_list.append(urllib.parse.quote_plus(pl['download_url'])
-        #input_file_list.append(download_file)
-        #print(pl['download_url'])
     
     
     # Save json to temporary file b/c that's what run_som takes in
@@ -62,4 +57,12 @@ def run_ta3_pipeline(model_run_id):
         config_file=config_file,
         output_folder=output_folder
     )
-    print(output_layers)
+    
+    for output_layer in output_layers:
+        response = cdr.post_prospectivity_output_layers(
+            input_file=open(output_layer[0],'rb'),
+            metadata=output_layer[1].model_dump_json(),
+        )
+        print(response)
+    
+    #print(output_layers)

@@ -239,6 +239,13 @@ class CDR():
             f'prospectivity/prospectivity_output_layers?page={page}&size={size}&cma_id={cma_id}&model_run_id={model_run_id}'
         )
 
+    def post_prospectivity_output_layers(self, input_file, metadata):
+        return self.run_query(
+            f'prospectivity/prospectivity_output_layer',
+            POST={'metadata': metadata},
+            files={'input_file': input_file}
+        )
+
     def post_cma(self, input_file, metadata):
         return self.run_query(
             f'prospectivity/cma',
