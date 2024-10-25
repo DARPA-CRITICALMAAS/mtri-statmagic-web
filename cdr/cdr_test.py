@@ -13,9 +13,9 @@ cdr = CDR()
 #res = cdr.run_query('prospectivity/cmas')
 #print(res)
 
-res = cdr.get_model_run('0ab2e4c7f1c643998e29ed4b69af4a52')
-print(res)
-blerg
+#res = cdr.get_model_run('0ab2e4c7f1c643998e29ed4b69af4a52')
+#print(res)
+#blerg
 
 post_data_submit_model_run = {
     "cma_id":"ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel",
@@ -88,11 +88,11 @@ post_data_intersect_sources = {
 # blerg
 #
 # #
-res = cdr.get_model_run("e77c35bdf7ae4020a9c029959b763c38")
+#res = cdr.get_model_run("e77c35bdf7ae4020a9c029959b763c38")
 # # print(res['event']['payload']['evidence_layers'])#.keys()))
 #print(res['event']['payload']['model_type'])
-print(res['event']['payload']['evidence_layers'])
-blerg
+#print(res['event']['payload']['evidence_layers'])
+#blerg
 #
 # # for p,v in res['event']['payload']['train_config'].items():
 # #     print(p,v)
@@ -342,6 +342,7 @@ preprocess_metadata = '''{
 #res = cdr.post_prospectivity_preprocess(preprocess_metadata)
 #res = cdr.get_processed_data_layer_events('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 #https://api.cdr.land/v1/prospectivity/event/bee5379f417c4da1ba318fbfd3296914
-#res = cdr.get_preprocess_event('bee5379f417c4da1ba318fbfd3296914')
-res = cdr.get_processed_data_layer("d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851")
-print(json.dumps(res,indent=4))
+res = cdr.get_preprocess_event('bee5379f417c4da1ba318fbfd3296914')
+print(res)
+#res = cdr.get_processed_data_layer("d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851")
+#print(json.dumps(res,indent=4))

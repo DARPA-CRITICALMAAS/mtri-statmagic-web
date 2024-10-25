@@ -611,13 +611,25 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
             print('NONTIF:',ds)
             
 
-def load_model_outputs(dsids=None,cma_id=None):
+def load_new_layers(
+        dsids=None,
+        cma_id=None,
+        event_id=None,
+        include_outputlayers=True,
+        include_processedlayers=False
+    ):
     dls = {'datalayers_lookup': {}}
     
     # NOTE: commenting this filter out for now since we're no longer grabbing
     #       model outputs by default on get_metadata
     #if dsids:
-    dls = get_datalayers_for_gui(include_datalayers=False,cma_id=cma_id)#data_source_ids = dsids)
+    dls = get_datalayers_for_gui(
+        include_datalayers=False,
+        include_outputlayers=include_outputlayers,
+        include_processedlayers=include_processedlayers,
+        cma_id=cma_id,
+        event_id=event_id
+    )#data_source_ids = dsids)
         
     return dls['datalayers_lookup']
 
@@ -857,7 +869,8 @@ def get_datalayers_for_gui(
         include_datalayers=True,
         include_outputlayers=True,
         include_processedlayers=True,
-        cma_id=None
+        cma_id=None,
+        event_id=None,
     ):
     datalayers = {'User uploads':{}} # this object sorts by category/subcategory
     datalayers_lookup = {} # this object just stores a lookup by 'name'
@@ -866,6 +879,8 @@ def get_datalayers_for_gui(
         filters['data_source_id__in'] = data_source_ids
     if cma_id:
         filters['cma_id'] = cma_id
+    if event_id:
+        filters['event_id'] = event_id
 
     mods = []
     if include_datalayers:

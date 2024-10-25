@@ -37,6 +37,19 @@
 {% include './overlay_loadmodelrun.html' %}
 {% include './overlay_sitestable.html' %}
 {% include './overlay_new_model_are_you_sure.html' %}
+
+
+<div id="message_modal_small" >
+    <div class="close-top" onclick="$('#message_modal_small').hide()">
+        <img class="close-top-img" height=22 
+            src="{% static 'cma/' %}img/close-dark.png" 
+            onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+            onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+    </div>
+    <div class='content'></div>
+</div>
+
+
 <div id='message_modal' class='overlay'>
     <div class="modal" >
         <div class="close-top" onclick="$('#message_modal').hide()">

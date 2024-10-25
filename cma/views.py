@@ -344,10 +344,73 @@ def sync_model_outputs(request):
     response = HttpResponse(
         json.dumps({
             'params': params,
-            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(
+            'DATALAYERS_LOOKUP_UPDATES': util.load_new_layers(
                 #dsids,
+                include_processedlayers=True,
                 cma_id=params['cma_id']
             ),
+        })
+    )
+    response['Content-Type'] = 'application/json'
+
+    return response
+
+def sync_processed_layers(request):
+    params = {
+        'event_id': '',
+        'cma_id': '',
+        #'model_runs': None,
+    }
+    params = util.process_params(request,params)
+    
+    # NOTE: commenting out the sync step now b/c much better to let the cron
+    #       take care of this detached from front-end. Instead just do a fresh
+    #       database check for any new model outputs for the given CMA ID
+    ## Check CDR and sync any outputs not yet present
+    #dsids = util.sync_cdr_prospectivity_outputs_to_outputlayer(
+        #cma_id = params['cma_id']
+    #)
+    
+    layers = util.load_new_layers(
+        #dsids,
+        include_outputlayers=False,
+        include_processedlayers=True,
+        cma_id=params['cma_id'],
+        event_id=params['event_id'],
+    )
+    #print(layers)
+    msg = 'No additional layers currently available'
+    
+     # Get mapfile content
+    with open(mapfile.get_mapfile_path(),'r') as f:
+        mapfile_content = f.read()
+    
+    # Check to see if layers have been processed for GUI yet; if not, delay
+    # sending to front-end until they are fully processed
+    delay = False
+    for dsid,layer in layers.items():
+        #dsid = layer['data_source_id']
+        
+        # Check if layer is sync'd locally 
+        if not os.path.exists(util.get_output_layer_local_sync_path(dsid)):
+            msg = 'Processed layer(s) available; optimizing for visualization...'
+            delay = True
+            break
+
+        # Check to see if all layers are in mapfile
+        if mapfile.scrub_wms_layername(dsid) not in mapfile_content:
+            msg = 'Extracting stats/extent for map visualization...'
+            delay = True
+            break
+        
+    if delay:
+        layers = {}
+    
+    response = HttpResponse(
+        json.dumps({
+            'params': params,
+            'DATALAYERS_LOOKUP_UPDATES': layers,
+            'model_run_status': msg,
         })
     )
     response['Content-Type'] = 'application/json'

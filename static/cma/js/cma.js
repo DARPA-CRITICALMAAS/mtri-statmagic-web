@@ -785,8 +785,17 @@ function resetModelOutputs() {
     // ...but first remove any visible map layers
     $(`#outputlayer_container .collapse.sub tr td.show_chk input:checked`).trigger('click');
     $('#outputlayer_container .collapse.sub').remove();
+    
+  
+    
 //     $('#model_outputs_table').empty();
     
+}
+
+function resetProcessedLayers() {
+      // Also clear processed layers 
+    $(`#processedlayer_container .collapse.sub tr td.show_chk input:checked`).trigger('click');
+    $('#processedlayer_container .collapse.sub').remove();
 }
 
 function clearCMA() {
@@ -803,8 +812,7 @@ function clearCMA() {
     resetModelOutputs();
     
     // Same with processed layers
-    $('#processedlayer_container .content.main tr td.show_chk input:checked').trigger('click');
-    $('#processedlayer_container .content.main table').empty();
+    resetProcessedLayers();
     
     // Reset the Filter MPM outputs drop down
     $('#model_output_layers_filter select').html(
@@ -854,41 +862,42 @@ function loadCMA(cma_id) {
     if (drawnLayer && MAP.hasLayer(drawnLayer)) {
         MAP.removeLayer(drawnLayer);
     }
-     drawnLayer = processGetAOIResponse({geometry:cma.extent});
-     finishDraw(drawnLayer);
-    
+    drawnLayer = processGetAOIResponse({geometry:cma.extent});
+    finishDraw(drawnLayer);
+
     // Make UI changes (show model opts, etc.)
-     onStartedCMA(cma);
+    onStartedCMA(cma);
+    
+    // Load model runs
+    loadModelRuns(cma_id);
+    
+    // Load known deposit sites
+    loadMineralSites();
      
-     // Load model runs
-     loadModelRuns(cma_id);
-     
-     // Load known deposit sites
-     loadMineralSites();
-     
+    // Clear loaded processed layers 
+    resetProcessedLayers();  
+    
      // Reset model outputs filter 
      $('#model_output_layers_filter select').val('all');
      // NOTE: vvv inititally load outputs; then check for others via "sync
 //      Load outputs
-      loadModelOutputs(cma_id,'all');
-      
-      syncModelOutputs(cma_id);
-      
-      // Show MODEL RESULTS section
-      $('#outputlayer_container').show();
-      $('#processedlayer_container').show();
+    loadModelOutputs(cma_id,'all');
+    
+    syncModelOutputs(cma_id);
+    
+    // Show MODEL RESULTS section
+    $('#outputlayer_container').show();
+    $('#processedlayer_container').show();
     
 }
 
+// Loads outputs and processed layers to the layer control tables
 function loadModelOutputs(cma_id,model_run_id) {
     cma_id = cma_id || getActiveCMAID();
     model_run_id = model_run_id || $('#model_output_layers_filter select').val();
     
     // Remove existing content
     resetModelOutputs();
-    
-    // Check for outputs that are not sync'ed to the GUI yet
-    // PUT THIS IN LOADMOELRUNS
     
     // TODO: get this download thing working again
     var table = $('#model_outputs_table');
@@ -913,6 +922,12 @@ function loadModelOutputs(cma_id,model_run_id) {
         if (d.gui_model == 'outputlayer' && 
             d.cma_id && d.cma_id == cma_id &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
+        ) {
+            addRowToDataLayersTable(d);
+        }
+        // Also add processed layers
+        if (d.gui_model == 'processedlayer' &&
+            d.cma_id && d.cma_id == cma_id
         ) {
             addRowToDataLayersTable(d);
         }
@@ -1033,11 +1048,16 @@ function processDataLayersUpdates(response) {
         if (!DATALAYERS_LOOKUP[dsid]) {
             DATALAYERS_LOOKUP[dsid] = dl;
             
+            console.log('adding layer: ',dsid);
+            
             // Create WMS map layer so it can be loaded to map
             createMapLayer(dl.data_source_id,dl)
             
             // Add layer lookup 
             DATALAYERS_LOOKUP[dl.data_source_id] = dl;
+            
+            // TODO If it's a processed layer that is replacing a raw layer, update
+            // the DATACUBE to reflect this
             
             addRowToDataLayersTable(dl);
         }
@@ -1057,6 +1077,99 @@ function syncModelOutputs(cma_id) {
             
             // Update DATALAYERS_LOOKUP
             processDataLayersUpdates(response);
+            
+        },
+        error: function(response) {
+            console.log(response);
+        }
+    });
+}
+
+function getNlayersByEventID(event_id) {
+    var n = 0;
+    $.each(DATALAYERS_LOOKUP, function(dsid,l) {
+        if (l.event_id && l.event_id == event_id) {
+            n += 1;
+        }
+    });  
+    return n;
+}
+
+function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
+
+    $.ajax(`/sync_processed_layers`, {
+        data: {
+            cma_id: cma_id,
+            event_id: event_id,
+        },
+        success: function(response) {
+            console.log(response);
+            
+            var n_event_layers_orig = getNlayersByEventID(event_id);
+            
+            var new_layers = [];
+            $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
+                if (!DATALAYERS_LOOKUP[dsid]) {
+                    new_layers.push(dl);
+                }
+            });
+            
+            // Update DATALAYERS_LOOKUP
+            processDataLayersUpdates(response);
+            
+            // Process new layers 
+            $.each(new_layers, function(i,l) {
+                // For some reason these seem to be hidden when added
+                // dynamically
+                $('.radiocube').show();
+//                 console.log(l);
+                // Replace raw layer with processed layer in datacube
+                onRadioCubeClick(
+                    $(`label[for='radiocube_${l.data_source_id_orig}'][class='no']`)[0]
+                );
+                onRadioCubeClick(
+                    $(`label[for='radiocube_${l.data_source_id}'][class='yes']`)[0]
+                );
+            });
+            
+            // Update status message
+            var ts = getDateAsYYYYMMDD(null,true,true).split(' ');
+            var sel0 = `.model_run_status_div[data-model_run_id="${event_id}"]`;
+            var curmsg = $(`${sel0} td.status`).html();
+            if (curmsg != response.model_run_status) {
+                $(`${sel0} td.status`).html(response.model_run_status);
+                
+                
+            }
+             
+            // Check to see if the # of existing layers for the event_id match 
+            // the expected layers
+            var n_event_layers = getNlayersByEventID(event_id);
+            
+            if (n_event_layers != n_event_layers_orig) {
+                $('#message_modal_small .content').html(`
+                    New processed layer available for event ID:<br><span class='highlight'>${event_id}</span>
+                `);
+                $('#message_modal_small').show();
+                $(`#event_n_complete_${event_id}`).html(n_event_layers);
+                $(`${sel0} td.last_updated`).html(`
+                    <span class='date'>${ts[0]}</span>
+                    <span class='time'>${ts[1]}</span>
+                `)
+            }
+            
+//             console.log(event_id, awaiting_n_layers, n_event_layers)
+            
+            // Wait 3 seconds and then check again
+            if (n_event_layers < awaiting_n_layers) {
+                sleep(3000).then(() => {
+                     syncProcessedLayers(cma_id,awaiting_n_layers, event_id);
+                });
+            } else {
+                $('#model_run_status').removeClass('active');
+                showModelingMainPane();
+            }
+            
         },
         error: function(response) {
             console.log(response);
@@ -2640,12 +2753,79 @@ function submitPreprocessing() {
         contentType: 'application/json; charset=utf-8',
         success: function(response) {
             console.log(this.url,response);
+            var event_id = response.event_id;
+            alert(`Pre-processing submitted successfully! Event ID: ${response.event_id}`);
+            
+            // TODO: Disable the modeling buttons until (a) pre-process is complete
+            // or (b) they remove layers? How do I track this?
+            
+            // Set "processing" td in DATACUBE interface to loading spinner
+            $.each(evidence_layers, function(i,l) {
+                 $(`tr[data-layername='${l.data_source_id}'] td.processing`).html(
+                     "<div class='loading_spinner'></div>"
+                );
+            });
+            
+            // Load event ID to status table
+            var ts = getDateAsYYYYMMDD(new Date(),true,true).split(' ');
+            $('#model_run_status_list').append(`
+                <div class='model_run_status_div' data-model_run_id=${event_id}>
+                    <div class='model_run_status_header'>
+                        Status for pre-processing event ID:
+                        <div class='model_run_id'>${event_id}</div>
+                    </div>
+                    <table class='model_parameters_table model_run_status_table'>
+                        <tr>
+                            <td class='label'>Submitted at:</td>
+                            <td class='timestamp'>
+                                <span class='date'>${ts[0]}</span>
+                                <span class='time'>${ts[1]}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Status:</td>
+                            <td class='status'></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Layers complete:</td>
+                            <td><span class='event_n_complete' id='event_n_complete_${event_id}'>0</span> of ${evidence_layers.length}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Last updated:</td>
+                            <td class='last_updated'>
+                                <span class='date'>${ts[0]}</span>
+                                <span class='time'>${ts[1]}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </tr>
+            `);
+            
+            activateRunStatus();
+            
+            // Start monitor for new layers; will stop once the # of submitted 
+            // evidence_layers == the # of layers in DATALAYERS_LOOKUP that 
+            // match the event_id.
+            syncProcessedLayers(
+                cma_id,
+                evidence_layers.length,
+                response.event_id
+            );
         },
         error: function(response) {
             console.log(response);
             alert(response.responseText);
         },
     });
+    
+}
+
+function activateRunStatus() {
+     // Show the 'status' option in the MODELING navigation
+    $('#model_run_status').removeClass('active');
+    $('#modeling_status_navigation').show();
+    showModelRunStatus();
     
 }
 
@@ -2731,14 +2911,8 @@ function submitModelRun() {
             
             // Toggle data cube if it is open (to clean up UI);
             closeCollapse('.header.datacube');
-//             if ($('.header.datacube .collapse').html() == '-') {
-//                 toggleHeader($('.header.datacube'));
-//             }
             
-            // Show the 'status' option in the MODELING navigation
-            $('#modeling_status_navigation').show();
-            
-            showModelRunStatus();
+            activateRunStatus();
             
             // Start the model run status monitor
             checkModelRunStatus(mrid);
@@ -2848,6 +3022,11 @@ function showDataLayerInfo(layer_name,model_output,processed_layer) {
         attrs += '</table>';
         
     } else {
+        attrs = `
+            <span class='label'>Spatial resolution:</span><br>${sr} m<br><br>
+            <span class='label'>Minimum pixel value:</span><br>${dl.stats_minimum.toFixed(2) || '--'}<br>
+            <span class='label'>Minimum pixel value:</span><br>${dl.stats_maximum.toFixed(2) || '--'}<br>
+        `
         sr += ' m';
     }
     if (sr) {
@@ -2895,7 +3074,7 @@ function showDataLayerInfo(layer_name,model_output,processed_layer) {
         ${dl.data_format}
     `);
     $('#dl_attrs').html(attrs);
-    $('#dl_spatial_resolution_m').html();
+//     $('#dl_spatial_resolution_m').html(`span class='label'>Download URL:</span><br>${sr}`);
     $('#dl_url').html(`<span class='label'>Download URL:</span><br><a href='${dl.download_url}' target='_blank'>${dl.download_url}</a>`);
     $('#dl_source').html(`${src}`);
     
@@ -3863,6 +4042,8 @@ function initiateCMA() {
 }
 
 function addRowToDataLayersTable(dl) {
+//     console.log('adding row:',dl.data_source_id);
+    
     var category = dl.category;
     var subcat = dl.subcategory;
     
@@ -3884,6 +4065,11 @@ function addRowToDataLayersTable(dl) {
     var table_id = `${dl.gui_model}_table_${category}`
     var table = $(`#${table_id}`);
     var div = $(`#${dl.gui_model}_container .content.main`);
+    
+    // Check if the tr already exists and return if so
+    if ($(`#${table_id} tr[data-path="${dl.data_source_id}"]`).length > 0) {
+        return;
+    }
     
     // Add category section if doesn't exist
     if (table.length == 0) {// && dl.gui_model == 'processedlayer') {     
