@@ -668,6 +668,9 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
 
         for i,ds in enumerate(res):
             #print(ds)
+            if 'title' in ds and 'testing' in ds['title']:
+                continue
+            
             if layer_id and ds['layer_id'] != layer_id:
                 continue
             
@@ -692,6 +695,7 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
             category = 'Training'
             subcategory = 'Label rasters'
             if not ds['label_raster']:
+                print(ds)
                 datalayer = datalayer_subcategories[ds['data_source_id']]
                 subcategory = datalayer.subcategory
                 category = datalayer.category
