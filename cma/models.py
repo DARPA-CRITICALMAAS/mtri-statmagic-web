@@ -34,6 +34,7 @@ class DisplayLayer(models.Model):
     download_url = models.CharField(max_length=1000)
     stats_minimum = models.FloatField(null=True,blank=True)
     stats_maximum = models.FloatField(null=True, blank=True)
+    stats_hasnans = models.BooleanField(default=False)
     attribute_stats = models.JSONField(null=True,blank=True,help_text='This field is for vector files; it maps the attribute table columns to min/max values to use for tile server display')
     vector_format = models.CharField(
         choices=(
@@ -50,7 +51,14 @@ class DisplayLayer(models.Model):
     disabled = models.BooleanField(default=False)
     extent_geom = PolygonField(null=True, blank=True)
 
+
 class OutputLayer(DisplayLayer):
+    '''
+    Model for the CDR's ProspectivityOutputLayer class:
+    https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/1aa36a10702468f732a5d4cb15e02b1c41c7a1c0/cdr_schemas/prospectivity_input.py#L75
+    
+    '''
+    
     class Meta:
         db_table = 'outputlayer'
         
@@ -65,6 +73,11 @@ class OutputLayer(DisplayLayer):
     
 
 class DataLayer(DisplayLayer):
+    '''
+    Model for the CDR's CreateDataSource class:
+    https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/1aa36a10702468f732a5d4cb15e02b1c41c7a1c0/cdr_schemas/prospectivity_input.py#L58
+    
+    '''
     class Meta:
         db_table = 'datalayer'
         
@@ -74,25 +87,20 @@ class DataLayer(DisplayLayer):
         null=True,
         blank=True
     )
-    #data_source_id = models.CharField(max_length=300,unique=True)
+
     doi = models.CharField(max_length=200,null=True,blank=True)
-    
-    #source = models.CharField(max_length=400)
-    #external_link = models.CharField(max_length=1000, unique=True)
-    #download_url = models.CharField(max_length=1000, unique=True)
     reference_url = models.CharField(max_length=1000,null=True,blank=True)
     datatype = models.CharField(max_length=60,null=True,blank=True)
     derivative_ops = models.CharField(max_length=200,null=True,blank=True)
-    #subcategory_type = models.CharField(max_length=20)
-    #notes = models.CharField(max_length=200, default=True, blank=True)
-    
-    #stats_minimum = models.FloatField(null=True,blank=True)
-    #stats_maximum = models.FloatField(null=True, blank=True)
-    #spatial_resolution_m = models.FloatField(null=True,blank=True)
-    #color = models.CharField(max_length=20,null=True, blank=True)
-    #disabled = models.BooleanField(default=False)
+
     
 class ProcessedLayer(DisplayLayer):
+    '''
+    Model for the CDR's SaveProcessedDataLayer class:
+    https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/1aa36a10702468f732a5d4cb15e02b1c41c7a1c0/cdr_schemas/prospectivity_input.py#L136
+    
+    '''
+    
     class Meta:
         db_table = 'processedlayer'
         
