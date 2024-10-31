@@ -265,7 +265,7 @@ def write_mapfile(
             classification = f'''
                 CLASS
                     NAME "Color"
-                    EXPRESSION ([pixel] >= {dr[0]} AND [pixel] < {dr[1]})
+                    EXPRESSION ([pixel] >= {dr[0]} AND [pixel] <= {dr[1]})
                     STYLE
                             COLORRANGE 256 256 256 {color}
                             DATARANGE {dr[0]} {dr[1]}

@@ -672,6 +672,11 @@ span.collapse {
     background-color: #222;
     
 }
+#modeling_status_pane {
+    color: #777;
+    vertical-align: top;
+    
+}
 tr.subcategory_label td {
     padding: 14px 4px 4px 4px;
     color: #fdc086;
@@ -1204,6 +1209,7 @@ a:visited {
     font-size: 20px;
     font-weight: 700;
     color: white;
+    text-align: center;
     background-color: #538cc6;
     padding: 6px 26px;
     border-radius: 3px;
@@ -1368,7 +1374,7 @@ table.model_parameters_table {
     margin-bottom: 0px;
 }
 .model_parameters_table input[type="number"] {
-    width: 30px;
+    width: 40px;
     text-align: right;
 }
 .model_parameters_table input[type="number"]::-webkit-outer-spin-button,
@@ -2230,7 +2236,7 @@ a.site_src_link {
 /*     font-weight: bold; */
     margin-left: 14px;
     cursor: pointer;
-    max-width: 40px;
+    max-width: 24px;
 }
 .back_arrow:hover {
     color: white;
@@ -2441,6 +2447,11 @@ tr.site_src_row_extra {
 #message_modal_small .content .highlight {
     font-family: monospace;
     color: #ff8080;
+}
+
+#model_button_status {
+    padding: 0px 20px;
+    color: #d65c5c;
 }
 
 /*.content.training {

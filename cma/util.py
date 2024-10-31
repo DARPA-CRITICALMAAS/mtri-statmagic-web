@@ -47,6 +47,7 @@ def process_params(req,params,post=False,post_json=False):
     r = req.GET if not post else req.POST
     if post_json:
         body = req.body.decode('utf-8')#.replace("'",'"')
+        #print(body)
         r = json.loads(body)
     for param in params:
         if param in r:#.has_key(param):
@@ -576,6 +577,12 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
         if 'user_upload_example' in ds['data_source_id']:
             continue
     
+        if ds['evidence_layer_raster_prefix'] in (
+            '12mhack_upload_20241031_vector',
+            '12mhack_upload_20241031_vectest_c',
+            ):
+            continue
+    
         #if '12a66407aa9e4941a7d67e23c404e357.tif' in ds['download_url']:
         #    continue
         
@@ -624,6 +631,7 @@ def load_new_layers(
     #       model outputs by default on get_metadata
     #if dsids:
     dls = get_datalayers_for_gui(
+        data_source_ids=dsids,
         include_datalayers=False,
         include_outputlayers=include_outputlayers,
         include_processedlayers=include_processedlayers,
@@ -736,6 +744,7 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
         mapfile.write_mapfile()
     
     return dsids
+
 
 def sync_cdr_prospectivity_outputs_to_outputlayer(
         layer_id=None,
@@ -1465,7 +1474,8 @@ def download_model_outputs(urls_to_download, cma_name, model_run_id):
     return response
     
 def clean_line(line):
-    return line.replace('\n','').replace('\r','').split(',')
+    #print(str(line))
+    return line.replace('\n','').replace('\r','').replace('"','').split(',')
     
 def process_transform_methods(transform_methods,processing_steps):
     #  This list can be:

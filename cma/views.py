@@ -1,4 +1,4 @@
-import json, os, sys
+import json, math, os, sys, zipfile
 import pandas as pd
 import geopandas as gpd
 from django.core.exceptions import BadRequest
@@ -18,6 +18,7 @@ from osgeo import gdal, ogr
 from shapely import wkt
 from shapely.geometry import mapping
 import rasterio
+import numpy as np
 from geojson_pydantic import MultiPolygon
 import json
 
@@ -202,27 +203,48 @@ def upload_datalayer(request):
             return HttpResponse(msg, status=400)
     
     f = request.FILES.getlist('file')[0]
+    ext = f.name.split('.')[-1]
     fread = f.read()
 
-    # Extract spatial resolution and prj from file
-    sid = util.getUniqueID()
-    memtif = f'/vsimem/{sid}.tif'
-    gdal.FileFromMemBuffer(memtif, fread)
-    res = int(util.get_tif_resolution(memtif))
-    ds = gdal.Open(memtif)
-    prj = ds.GetProjection()
-    del ds
-    gdal.Unlink(memtif)
-    
-    if not prj:
-        msg = f'upload file "{f.name}" has no projection'
-        return HttpResponse(msg, status=400)
-    
-    # Cogify
-    #gdal.FileFromMemBuffer(memtif, fread)
-    # TODO: add step to convert type based on data type
-    #   * e.g. binary should be a reduced type
-    cogfile_bytes = util.cogify_from_buffer(fread)
+
+    res = 0
+    prj = None
+    if ext == 'tif':
+        # If raster, extract spatial resolution and prj from file
+        sid = util.getUniqueID()
+        memtif = f'/vsimem/{sid}.tif'
+        gdal.FileFromMemBuffer(memtif, fread)
+        res = int(util.get_tif_resolution(memtif))
+        ds = gdal.Open(memtif)
+        prj = ds.GetProjection()
+        del ds
+        gdal.Unlink(memtif)
+        
+        if not prj:
+            msg = f'upload file "{f.name}" has no projection'
+            return HttpResponse(msg, status=400)
+        
+        # Cogify
+        #gdal.FileFromMemBuffer(memtif, fread)
+        # TODO: add step to convert type based on data type
+        #   * e.g. binary should be a reduced type
+        upload_bytes = util.cogify_from_buffer(fread)
+        
+    if ext == 'zip':
+        # If zip, confirm it contains a single shapefile
+        with zipfile.ZipFile(f, 'r') as z:
+            zfiles = z.namelist()
+
+        n_shps = len([x for x in zfiles if x[-4:] == '.shp'])
+        if n_shps != 1:
+            msg = f'.zip files must contain 1 shapefile (.shp). The uploaded .zip contains {n_shps} files with the .shp extension.'
+            return HttpResponse(msg, status=400)
+        
+        upload_bytes = f.read()
+       # with zipfile.ZipFile(f,'r') as z:
+        #    upload_bytes = z
+       
+   
     
     # Get date
     #date = 
@@ -238,17 +260,18 @@ def upload_datalayer(request):
         derivative_ops = params['derivative_ops'],
         type = params['type'],
         resolution = [res,res],
-        format = 'tif',
+        format = 'tif' if ext == 'tif' else 'shp',
         reference_url = params['reference_url'],
         evidence_layer_raster_prefix = params['description'],
     )
-
+    #print(cogfile_bytes.name)
+    print(ds.model_dump_json(exclude_none=True,indent=4))
 
     # Post to CDR
     print('Posting to CDR...')
     cdr = cdr_utils.CDR()
     res = cdr.post_prospectivity_data_source(
-        input_file=cogfile_bytes.read(),#open(cogfile_bytes,'rb'),#open(cogfile,'rb').read(),#fread,#f.read(),
+        input_file=upload_bytes,#.read(),#open(cogfile_bytes,'rb'),#open(cogfile,'rb').read(),#fread,#f.read(),
         metadata=ds.model_dump_json(exclude_none=True)
     )
     #os.remove(cogfile_bytes)
@@ -473,7 +496,7 @@ def check_model_run_status(request):
         json.dumps({
             'params': params,
             'complete': n_complete == len(res),
-            'DATALAYERS_LOOKUP_UPDATES': util.load_model_outputs(dsids),
+            'DATALAYERS_LOOKUP_UPDATES': util.load_new_layers(dsids=dsids),
             'model_run_status': msg,
         })
     )
@@ -602,31 +625,6 @@ def get_geojson_from_file(request):
     response['Content-Type'] = 'application/json'
 
     return response
-
-## Function for handling datacube creation requests
-#def create_datacube(request): 
-    #params = {
-        #'layers': [], # list of layers to include in the data cube
-        #'wkt': '' # WKT representing polygon geometry indicating AOI
-    #}
-    #params = util.process_params(request, params, post=True)
-    
-    ## TODO: some code to send this off to the CDR's MTRI datacube worker 
-    
-    ## TODO: some code to either:
-    ##   (a) if staying attached, process the response
-    ##   (b) if detaching, send a job ID that the browser client can check
-    ##       status of and request outputs once completed
-    
-    
-    ## (if staying attached) Returns JSON w/ datacube_id
-    #response = HttpResponse(json.dumps({
-        #'datacube_id': datacube_id,
-    #}))
-    #response['Content-Type'] = 'application/json'
-    
-    #return response
-    
 
 # Function for handling CMA initiation
 @csrf_exempt
@@ -868,23 +866,13 @@ def submit_model_run(request):
     #       GUI database entries
     model = models.ProspectivityModelType.objects.filter(name=params['model']).first()
    
-   
-    ## TODO: rebuild this using processed layer IDs instead
-    #evidence_layers = [
-        #'05c9f1c74da972e277fc106221845e83__d751713988987e9331980363e24189ce_022fa85caca7865c379b2ecc5af0262f',
-        #'d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851',
-        #'aea6cc3f76f618e5557f10916de96be6__d751713988987e9331980363e24189ce_fccb2a8aba0cbb481929f38444304b03'
-    #]
-   
     train_config = params['train_config']
 
-    #train_config = {'final_learning_rate': None, 'initial_learning_rate': None}
-   
     # Mapping of model name to model config schema
     model_map = {
         'sri_NN': prospectivity_input.NeuralNetUserOptions,
         'beak_som': prospectivity_input.SOMTrainConfig,
-        #'jataware_rf': prospectivity_input.RFUserOptions,
+        'jataware_rf': prospectivity_input.RFUserOptions,
     }
    
     # Build TA3 models metadata instance
@@ -904,12 +892,8 @@ def submit_model_run(request):
     print(model_run)
     #print(model_run.model_dump_json(exclude_none=True))
 
-    #print(model_run.model_type)
-    #blerg
-
     print(model_run.model_dump_json(indent=4))
-    #blerg
-    
+
     cdr = cdr_utils.CDR()
     if params['dry_run']:
         res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
@@ -1069,8 +1053,11 @@ def get_mineral_sites(request):
     #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
     for index, site in sites_df_merged.iterrows():
         # Apply grade/tonnage data filter
-        #print(params['only_gradetonnage'])
-        if params['only_gradetonnage'] in ('true',True,'True','t','T') and not site['grade']:
+        #print(params['only_gradetonnage'], site['grade'])
+        if (params['only_gradetonnage'] in ('true',True,'True','t','T') and (
+             site['grade'] in (None, '') or
+             math.isnan(site['grade']))
+            ):
            # print('skipping!')
             continue
         
@@ -1198,7 +1185,7 @@ def get_fishnet(request):
 @csrf_exempt
 def get_csv_column_names(request):
     lines = request.FILES.getlist('file_csv')[0].readlines()
-    cols = util.clean_line(lines[0])
+    cols = util.clean_line(lines[0].decode('utf-8'))
      
     # Return response as JSON to client
     response = HttpResponse(json.dumps(cols))
@@ -1212,17 +1199,23 @@ def upload_sites_csv(request):
         'csv_longitude_field': '',
         'csv_latitude_field': '',
     }
-    params = util.process_params(request, params, post_json=True)
+    params = util.process_params(request, params, post=True)
+
+    print(params)
 
     lines = request.FILES.getlist('file_csv')[0].readlines()
-    hdr = util.clean_line(lines[0])
-
+    hdr = util.clean_line(lines[0].decode('utf-8'))
+    lat_idx = hdr.index(params['csv_latitude_field'])
+    lon_idx = hdr.index(params['csv_longitude_field'])
     coords = []
     for line in lines[1:]:
-        ln = clean_line(line)
-        lat = ln[hdr.index(params['csv_latitude_field'])]
-        lon = ln[hdr.index(params['csv_longitude_field'])]
-        coords.append([lon,lat])
+        ln = util.clean_line(line.decode('utf-8'))
+        
+        if len(ln) > lat_idx and len(ln) > lon_idx:
+            #print(ln)
+            lat = float(ln[lat_idx])
+            lon = float(ln[lon_idx])
+            coords.append([lon,lat])
         
      # Return response as JSON to client
     response = HttpResponse({

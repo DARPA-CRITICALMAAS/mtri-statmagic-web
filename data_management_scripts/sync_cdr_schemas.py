@@ -14,97 +14,116 @@ import sys
 sys.path.append('/usr/local/project/cdr_schemas/')
 from cdr_schemas import prospectivity_models
 
+
+# map of PG db ModelType name to cdr_schema
+mmap = {
+    'jataware_rf': prospectivity_models.RFUserOptions,
+    'sri_NN': prospectivity_models.NeuralNetUserOptions,
+    'beak_som': prospectivity_models.SOMTrainConfig,
+}
+
 # Map from cdr_schemas type -> models.ProcessParameter.input_type, which indicates HTML input type
 typemap = {
     'integer': 'number',
     'float': 'number',
     'number': 'number',
+    'array': 'range_double',
 }
+
+#model_name = 'jataware_rf'
+
+
+
 
 #################
 # Sync model-level updates <- ***any changes will require migrations***
 
 
-
-
-
-
-
 #################
 # Sync object-level updates
 
-# Sync SOMTrainConfig -> ModelParameter table
+for model_name, cdr_schema_obj in mmap.items():
 
-existing_parameters = {}
-for p in dm_util.models.ModelParameter.objects.filter(model__name='beak_som'):
-    existing_parameters[p.name] = p
+    # Sync SOMTrainConfig -> ModelParameter table
 
-schema = prospectivity_models.SOMTrainConfig.model_json_schema()
-#print(schema.keys())
-#print(schema['$defs'])
+    model = dm_util.models.ProspectivityModelType.objects.filter(name=model_name)[0]
+    #print(model.id)
+    #blerg
 
-for prop,pobj in schema['properties'].items():
-    print(prop,pobj)
-    if prop not in existing_parameters:
-        continue
+    existing_parameters = {}
+    for p in dm_util.models.ProspectivityModelTypeParameter.objects.filter(model__name=model_name):
+        existing_parameters[p.name] = p
 
-    #if prop in existing_parameters:
-    paramobj = existing_parameters[prop]
+    schema = cdr_schema_obj.model_json_schema()
 
-    name_pretty = input_type = options = description  = None
-    html_attributes = {}
 
-    update_fields = {}
+    for prop,pobj in schema['properties'].items():
+        print(prop,pobj)
+        if prop not in existing_parameters:
+            paramobj = dm_util.models.ProspectivityModelTypeParameter(
+                name = prop,
+                model = model,
+                order=99,
+            )
+           # continue
+        else:
+            #if prop in existing_parameters:
+            paramobj = existing_parameters[prop]
 
-    update_fields['optional'] = prop not in schema['required']
+        name_pretty = input_type = options = description  = None
+        html_attributes = {}
 
-    # Get prop type
-    if 'anyOf' in pobj:
-        ptype = pobj['anyOf'][0]
-    elif 'type' in pobj:
-        ptype = pobj['type']
-    else:
-        print('What the type for this one?\n',prop,pobj)
-        sys.exit(1)
-    if 'type' in ptype:
-        input_type = typemap[ptype['type']]
-    elif '$ref' in ptype:
-        ref = ptype['$ref'].split('/')[-1]
+        update_fields = {}
 
-        update_fields['input_type'] = 'select'
-        #print(ptype['$ref'])
-        update_fields['options'] = schema['$defs'][ref]['enum']
+        update_fields['optional'] = 'required' in schema and prop not in schema['required']
 
-    # Get other parameters
-    if 'default' in pobj:
-        html_attributes['value'] = pobj['default']
+        # Get prop type
+        if 'anyOf' in pobj:
+            ptype = pobj['anyOf'][0]
+        elif 'type' in pobj:
+            ptype = pobj['type']
+        else:
+            print('What the type for this one?\n',prop,pobj)
+            sys.exit(1)
+        if 'type' in ptype:
+            input_type = typemap[ptype['type']]
+        elif '$ref' in ptype:
+            ref = ptype['$ref'].split('/')[-1]
 
-    if ptype == 'integer':
-        html_attributes['step'] = 1
+            update_fields['input_type'] = 'select'
+            #print(ptype['$ref'])
+            update_fields['options'] = schema['$defs'][ref]['enum']
 
-    if 'title' in pobj:
-        update_fields['name_pretty'] = pobj['title']
+        # Get other parameters
+        if 'default' in pobj:
+            html_attributes['value'] = pobj['default']
 
-    if 'description' in pobj:
-        update_fields['description'] = pobj['description']
+        if ptype == 'integer':
+            html_attributes['step'] = 1
 
-    # Update the model instance
-    for field,value in update_fields.items():
-        if value and value != getattr(paramobj,field):
-            setattr(paramobj,field,value)
+        if 'title' in pobj:
+            update_fields['name_pretty'] = pobj['title']
 
-    # html_attributes is a special case b/c we just want to update the
-    # individual keys that are updated, NOT replace the whole JSON dict
-    for attr,v in html_attributes.items():
-        print(attr,v)
-        if paramobj.html_attributes is None:
-            paramobj.html_attributes = {}
-        paramobj.html_attributes[attr] = v
+        if 'description' in pobj:
+            update_fields['description'] = pobj['description']
 
-    print('Updating: ',update_fields)
+        # Update the model instance
+        for field,value in update_fields.items():
+            if value and value != getattr(paramobj,field):
+                setattr(paramobj,field,value)
 
-    # Save updates to the instance
-    paramobj.save()
+        # html_attributes is a special case b/c we just want to update the
+        # individual keys that are updated, NOT replace the whole JSON dict
+        for attr,v in html_attributes.items():
+            print(attr,v)
+            if paramobj.html_attributes is None:
+                paramobj.html_attributes = {}
+            paramobj.html_attributes[attr] = v
+
+        print('Updating: ',update_fields)
+
+        # Save updates to the instance
+        paramobj.save()
 
 
 

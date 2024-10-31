@@ -398,6 +398,10 @@ function clearMineralSites() {
     // Add 'disabled' class back to clear button
     $('#clear_sites_button').addClass('disabled');
     
+    // Add warning back to TRAINING DATA label
+    // TODO: don't do this if there are user-uploaded sites loaded
+    $('.header_info.training').addClass('warning');
+    
 }
 
 // Adds loading spinner control to map
@@ -820,8 +824,6 @@ function clearCMA() {
     );
     
     // Close any model outputs currently in the viewer
-    
-
     // Hide "Choose existing MPM" modal
     $('#load_cma_modal').hide();
     
@@ -829,6 +831,11 @@ function clearCMA() {
     
     // Clear mineral sites
     clearMineralSites();
+    
+    // Clear extent
+    if (drawnLayer && MAP.hasLayer(drawnLayer)) {
+        MAP.removeLayer(drawnLayer);
+    }
 }
 
 // Performs various tasks to load a selected CMA into the GUI
@@ -1885,7 +1892,6 @@ function loadMineralSites() {
     setLoadingLoadSitesButton();
     
     
-    
     AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
         data: JSON.stringify(getMineralSitesRequestFilters()),
         type: 'POST',
@@ -1912,6 +1918,13 @@ function loadMineralSites() {
             // Update query results n
             $('.mineral_sites_n_results').html(response.mineral_sites.length);
             $('.mineral_sites_download_link').show();
+            
+            // Update TRAINING_DATA warning class 
+            if (response.mineral_sites.length > 0) {
+                $('.header_info.training').removeClass('warning');
+            } else {
+                $('.header_info.training').addClass('warning');
+            }
             
             enableLoadSitesButton();
             
@@ -2226,7 +2239,7 @@ function toggleExcludeChk(id) {
         }
     });
     
-    // Update the '.mineral_sites_n_results.training' span
+    // Update the '.mineral_sites_n_results.training' spans
     var n_included= GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.reduce(function(total,s) {
         return total + !s.properties.exclude;
     }, 0);
@@ -2838,10 +2851,11 @@ function submitModelRun() {
             $.each(parr, function(i,p) {
                 train_config[p.name] = p.value;//p.html_attributes.value;
                 
-//                 // TODO: range_double types require a different way of getting the val
-//                 if (p.input_type == 'range_double') {
-// //                     var vmin = $(`${model}__`).val()
-//                 }
+                // Tuples get special processing- represented as string
+                // Determines tuple by checking for 'tuple' in the param name
+                if (p.name.indexOf('tuple') > -1) {
+                    train_config[p.name] = p.value.split(',');
+                }
             });
         });
     });
@@ -3232,6 +3246,9 @@ function addLayerToDataCube(datalayer) {
 
 // Enables/disables model buttons according to selected layers
 function validateModelButtons() {
+    var model = MODELS[$('#model_select').val()];
+    
+    var msg = '';
     
     // If DATACUBE is empty, disable all buttons
     if (DATACUBE_CONFIG.length == 0) {
@@ -3242,6 +3259,7 @@ function validateModelButtons() {
         return;
     }
 
+    // Check if all layers in cube are processed
     var all_processed = true;
     $.each(DATACUBE_CONFIG, function(i,dl) {
         var l = DATALAYERS_LOOKUP[dl.data_source_id];
@@ -3250,6 +3268,15 @@ function validateModelButtons() {
         }
     });
    
+    // Check if a label raster is needed (i.e. 'supervised' model selected and  
+    // NOT in cube)
+    var label_raster_needed = false;
+    var label_raster_included = DATACUBE_CONFIG.reduce(function(tot,l) {
+        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
+    },false);
+    label_raster_needed = model.uses_training && !label_raster_included;
+    
+    
     if (all_processed) {
         // If all DATACUBE layers are processed:
         //  * disable pre-process and pre-process+run buttons
@@ -3267,6 +3294,13 @@ function validateModelButtons() {
         $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
         $('.button.model_process_submit.run').addClass('disabled');
     }
+    if (label_raster_needed) {
+         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+         $('.button.model_process_submit.run').addClass('disabled');
+         msg += 'The selected model requires a <b>training label raster</b> to be included in INPUT LAYERS';
+    }
+    
+    $('#model_button_status').html(msg);
 }
 
 function onRadioCubeClick(cmp) {
@@ -3577,10 +3611,70 @@ function updateSHPlabel(shp,el_id,msg) {
     }
 }
 
+function editDistance(s1, s2) {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+
+    var costs = new Array();
+    for (var i = 0; i <= s1.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= s2.length; j++) {
+        if (i == 0)
+            costs[j] = j;
+        else {
+            if (j > 0) {
+            var newValue = costs[j - 1];
+            if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                newValue = Math.min(Math.min(newValue, lastValue),
+                costs[j]) + 1;
+            costs[j - 1] = lastValue;
+            lastValue = newValue;
+            }
+        }
+        }
+        if (i > 0)
+        costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
+}
+
+function stringSimilarity(s1, s2) {
+    var longer = s1;
+    var shorter = s2;
+    if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+    }
+    var longerLength = longer.length;
+    if (longerLength == 0) {
+        return 1.0;
+    }
+    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
+
+function validateUploadSitesCSV() {
+    var fileinput = $('#file_csv');
+    var filename = fileinput.val().split('\\').pop();
+   
+    updateSHPlabel(filename,'file_csv');
+    
+    if (
+            $('#csv_latitude_field').val() &&
+            $('#csv_longitude_field').val() && 
+            $('#file_csv').get(0).files.length > 0
+       ) {
+        $('#uploadFormCSV .button.submit').removeClass('disabled');
+    } else {
+        $('#uploadFormCSV .button.submit').addClass('disabled');
+    } 
+}
+
 function getCSVcolumnHeaders() {
     var shp, dbf;
     var formData = new FormData($('#uploadFormCSV')[0]);
 
+    validateUploadSitesCSV();
+    
     $.each($('#file_csv')[0].files, function(i,file) {
         formData.append('file',file);
     });
@@ -3593,12 +3687,24 @@ function getCSVcolumnHeaders() {
         success: function(response) {
             console.log(this.url,response);
             
-            var opts = `<option disabled value='' selected hidden>Select...</option>`;
-            $.each(response, function(colname) {
-                opts += `<option value="${colname}">${colname}</option>`;
+            $.each(['longitude','latitude'], function(j,ll) {
+                var opts = `<option disabled value='' selected hidden>Select...</option>`;
+                var similarities = [];
+                $.each(response, function(i,colname) {
+                    similarities.push(stringSimilarity(ll,colname));
+                    opts += `<option value="${colname}">${colname}</option>`;
+                });
+                $(`#csv_${ll}_field`).html(opts);
+                
+                // Set the name with the most similarity to the word 'latitude'
+                // to selected
+                var most_similar = similarities.indexOf(
+                    Math.max.apply(Math,similarities)
+                );  
+                $(`#csv_${ll}_field`).val(response[most_similar]);
             });
-            $('#csv_longitude_field').html(opts);
-            $('#csv_latitude_field').html(opts);
+            
+            validateUploadSitesCSV();
             
         },
         error: function(response) {
@@ -3664,6 +3770,10 @@ function uploadCSV() {
 
     $.each($('#file_csv')[0].files, function(i,file) {
         formData.append('file',file);
+    });
+    
+    $.each(['latitude','longitude'], function(i,ll) {
+        formData.append(`csv_${ll}_field`,$(`#csv_${ll}_field`).val());
     });
 
     AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_sites_csv', {
@@ -4307,25 +4417,25 @@ function createGradeTonnageScatterplot() {
             "transform",
             `translate(${margin.left},${margin.top})`);
         
-    // X axis: scale and draw:
-    var x = d3.scaleLinear()
+    // Y axis: scale and draw:
+    var y = d3.scaleLinear()
         .domain([
             d3.min(data, function(d) { return +d.grade }),
             d3.max(data, function(d) { return +d.grade})
         ])
+        .range([height, 0]);
+        
+    svg.append("g")
+        .call(d3.axisLeft(y));
+    
+    // X axis: scale and draw:
+    var x = d3.scaleLinear()
         .range([0, width]);
+    x.domain([0, d3.max(data, function(d) { return +d.tonnage})]);   
         
     svg.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(x));
-    
-    // Y axis: scale and draw:
-    var y = d3.scaleLinear()
-        .range([height, 0]);
-        y.domain([0, d3.max(data, function(d) { return +d.tonnage})]);   
-        
-    svg.append("g")
-        .call(d3.axisLeft(y));
 
     // append the points
     svg.append('g')
@@ -4333,8 +4443,8 @@ function createGradeTonnageScatterplot() {
         .data(data)
         .enter()
         .append('circle')
-            .attr('cx', function(d) { return x(d.grade);})
-            .attr('cy', function(d) { return y(d.tonnage);})
+            .attr('cx', function(d) { return x(d.tonnage);})
+            .attr('cy', function(d) { return y(d.grade);})
             .attr('r', 6)
             .style('fill','#69b3a2');
    
@@ -4345,7 +4455,7 @@ function createGradeTonnageScatterplot() {
         .attr('text-anchor','middle')
         .attr('class','camera_header')
         .attr('transform', `translate(${width/2},${height+40}) `)
-        .text('grade (%)');
+        .text('million tonnes');
         
     // y-axis label
     svg.append('text')
@@ -4353,7 +4463,7 @@ function createGradeTonnageScatterplot() {
         .attr('text-anchor','middle')
         .attr('class','camera_header')
         .attr('transform', `translate(-40,${height/2}) rotate(-90)`)
-        .text('million tonnes');
+        .text('grade (%)');
         
         
     $('#graph_modal_header').html('Grade/tonnage');

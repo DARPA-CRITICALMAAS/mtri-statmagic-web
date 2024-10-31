@@ -287,7 +287,7 @@
                         <span class='start_cma_link' onClick="$('#load_model_run').show();">load run</span> <span id='modeling_status_navigation'>| <span id="model_run_status" class='start_cma_link' onClick='showModelRunStatus();'>status</span></span>
                     </div>
                     <div id='modeling_status_pane'>
-                        <div class='back_arrow' onclick='showModelingMainPane();' title='Go back to model configuration options'>&#129032;</div>
+                        <div class='back_arrow' onclick='showModelingMainPane();' title='Go back to model configuration options'>&#129032;</div>back to model configuration
                         <!--<div class='model_run_status_title modeling_message' title='Stay on this page to see modeling status updates'>Status for model runs submitted during this session:</div>-->
                         <div id='model_run_status_list'>
                             <!--<thead>
@@ -375,11 +375,11 @@
                         <!--</div>--> <!--content model-->
                    <!-- </div>--> <!--collapse sub (model)-->
                     <div class='collapse sub collapse_training'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> Training data<span class='header_info training warning'>[<span class='mineral_sites_n_results training'>--</span> training sites selected]</span></div>
+                        <div class='header topbar sub'><span class="collapse">+ </span> Training data <span class='header_info training warning'>[<span class='mineral_sites_n_results training'>--</span> training sites selected]</span></div>
                         <div class='content training'>
                             <div class='modeling_instructions'>
-                            The model will use the <span id='n_training'></span> sites selected in the <b>KNOWN DEPOSIT SITES</b> section above for training. To filter out specific sites, click on the site or <span class='link' onclick="loadMineralSitesToTable();$('#show_sites').show();">open the sites table</span> and click on the <b>exclude</b> checkbox.<br>
-                            Users can also <span class='link' onclick='$(".modal_uploadcsv").show();'>upload a CSV file</span> of additional sites they would like to include.
+                            The model will use the <span id='n_training'></span> sites selected in the <b>KNOWN DEPOSIT SITES</b> section above for training. To filter out specific sites, click on the site or <span class='link' onclick="loadMineralSitesToTable();$('#show_sites').show();">open the sites table</span> and click on the <b>exclude</b> checkbox.<br><br>
+                            Users can also <span class='link' onclick='$(".modal_uploadcsv").show();'>upload a CSV file</span> containing lat/lons of additional sites they would like to include.
                             </div>
                         
                         </div> <!--content training-->
@@ -395,6 +395,7 @@
                                 <td><div class='button predict'>Predict</div></td>
                             </tr>
                             </table>
+                            <div id='model_button_status' class='warning'></div>
 <!--                         </div> <!--content model_run--> 
                   <!--  </div> <!--collapse sub (model_run)-->
                 </div> <!--modeling_main_pane-->
