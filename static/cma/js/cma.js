@@ -947,10 +947,10 @@ function loadModelOutputs(cma_id,model_run_id) {
 }
 
 function downloadModelOutputsBulk() {
-    console.log("in bulk download function")
+//     console.log("in bulk download function")
 
     let dl_urls = [];
-    $("#model_outputs_table .download a").each(function() {
+    $("#outputlayer_container .download a").each(function() {
         dl_urls.push($(this).attr('href'));
     });
     let cma_name = $("#cma_loaded")[0].innerText;
@@ -1051,11 +1051,13 @@ function loadModelRuns(cma_id) {
 
 // Process updates to datalayers received from backend, e.g. when checking for 
 function processDataLayersUpdates(response) {
+    var dls_to_add = [];
     $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
         if (!DATALAYERS_LOOKUP[dsid]) {
+            dls_to_add.push(dl);
             DATALAYERS_LOOKUP[dsid] = dl;
             
-            console.log('adding layer: ',dsid);
+//             console.log('adding layer: ',dsid);
             
             // Create WMS map layer so it can be loaded to map
             createMapLayer(dl.data_source_id,dl)
@@ -1065,9 +1067,14 @@ function processDataLayersUpdates(response) {
             
             // TODO If it's a processed layer that is replacing a raw layer, update
             // the DATACUBE to reflect this
-            
-            addRowToDataLayersTable(dl);
         }
+    });
+    
+    // Add rows AFTER all new layers have been processed into DATALAYERS_LOOKUP
+    // b/c some of the added layers may reference other layers (e.g. outputs or 
+    // processed layers based on raw layers) that haven't been added yet.
+    $.each (dls_to_add, function(i,dl) {
+        addRowToDataLayersTable(dl);
     });
 }
 
@@ -3170,7 +3177,7 @@ function onToggleLayerClick(target,layer_name) {
         
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
-                ${datalayer.name_pretty}
+                ${getLayerNameLabel(datalayer)}
                 <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name}')">
                     <img class="close-top-img" height=24 
                         src="/static/cma/img/close-dark.png" 
@@ -3207,12 +3214,49 @@ function onToggleLayerClick(target,layer_name) {
     }
 }
 
+// Function for parsing out the data label, linking back to the raw label
+// if required
+function getLayerNameLabel(dl) {
+    var name_pretty = dl.name_pretty;
+    
+    if (dl.gui_model == 'outputlayer') {
+        if (dl.name.indexOf('Codebook Map:') > -1 ) {
+            var pl = DATALAYERS_LOOKUP[dl.name.split(': ')[1]];
+            name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+        } else if (dl.name.length > 60) {
+            var pl = DATALAYERS_LOOKUP[dl.name.split('.')[0]];
+            name_pretty = `${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+        }
+        name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
+    }
+    if (dl.gui_model == 'processedlayer' && dl.category != 'Training') {
+        name_pretty = DATALAYERS_LOOKUP[dl.data_source_id_orig].name_pretty;
+        var tms = dl.transform_methods.map(function(tm) {
+            var v = tm;
+            if (tm.indexOf('impute') > -1) {
+                var tmp = JSON.parse(tm.replaceAll("'",'"'));
+                v = `impute[${tmp.window_size.join('x')}]`;
+            }
+            return v;
+        }).join('|');
+        if (tms) {
+            tms  = `|${tms}`;
+        }
+        name_pretty = `${DATALAYERS_LOOKUP[dl.data_source_id_orig].name_pretty} <span class='datalayer_lowlight'> MPM resample${tms}`;
+    }
+    return name_pretty
+    
+}
+
 function addLayerToDataCube(datalayer) {
     var dsid = datalayer.data_source_id;
     
     DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
         
     var psteps = `<td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>`
+    
+    var name_pretty = getLayerNameLabel(datalayer);
+    
     
     if (datalayer.gui_model == 'processedlayer') {
         psteps = `<td class='processing complete' onclick="showDataLayerInfo('${dsid}',false,true);">complete &#10003;</td>`;
@@ -3226,7 +3270,7 @@ function addLayerToDataCube(datalayer) {
     var icon_height = 13;
     $('#datacube_layers tr.cube_layer:last').after(`
         <tr class='cube_layer' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
-            <td class='name'>${datalayer.name_pretty}</td>
+            <td class='name'>${name_pretty}</td>
             ${psteps}
             <td class='remove'>
                 <div class='img_hover' onclick=''>
@@ -3311,7 +3355,6 @@ function onRadioCubeClick(cmp) {
     }
     var radio = $(`input[name='${for_radio}']`);
     var valnew = el.prop('class');
-//     console.log(valnew);
     var dsid = for_radio.replace('radiocube_','');
     var datalayer = DATALAYERS_LOOKUP[dsid];
     
@@ -4152,8 +4195,6 @@ function initiateCMA() {
 }
 
 function addRowToDataLayersTable(dl) {
-//     console.log('adding row:',dl.data_source_id);
-    
     var category = dl.category;
     var subcat = dl.subcategory;
     
@@ -4196,21 +4237,14 @@ function addRowToDataLayersTable(dl) {
         table = $(`${table.selector}`);
     }
     
-    
-//     var subcat = model_output ? dl.subcategory.toUpperCase() : dl.category;
     var subcat = subcat.toUpperCase();
-    var name_pretty = dl.name_pretty;
-    if (dl.gui_model == 'outputlayer') {
-        name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
-    }
+    var name_pretty = getLayerNameLabel(dl);
     var show_chk = `
         <input type='checkbox' 
                onChange='onToggleLayerClick(this,"${dl.data_source_id}");' />
     `;
     var ext = dl.download_url.split('.').slice(-1)[0];
-//     console.log(ext);
     if (dl.data_format != 'tif') {
-//         console.log(dl);
         show_chk = `${dl.download_url.split('.').slice(-1)[0]}`;
     }
     
