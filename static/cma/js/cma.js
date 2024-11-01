@@ -1841,6 +1841,8 @@ function addDrawControl() {
         console.log('deleted!');
         drawnLayer = null;
         validateLoadSitesButton();
+
+        toggleIntersectingLayers();
     });
 }
 
@@ -1858,6 +1860,8 @@ function finishDraw(layer) {
     
     // Validate CMA initialization form
     validateCMAinitializeForm();
+
+    toggleIntersectingLayers();
 }
 
 function getMineralSitesRequestFilters() {
@@ -4192,6 +4196,62 @@ function initiateCMA() {
             console.log(response);
         }
     });
+}
+
+function toggleIntersectingLayers() {
+    // Loop over and toggle each datalayer row
+    $('tr[data-path]').each(function () {
+        if (drawnLayer && $('#hide_intersecting_cb').is(':checked') && !boundsOverlap($(this).attr('data-path'))) {
+            $(this).hide();
+        } else {
+            $(this).show();
+        }
+    });
+    hideSubcategoryLabels();
+}
+
+function hideSubcategoryLabels() {
+    // This function will return true if an element has been manually hidden with $(el).hide()
+    // and not when an element is hidden because of it's ancestor
+    const isExplicitlyHidden = (el) => $(el).css('display') === 'none' || $(el).css('visibility') === 'hidden';
+
+    $('tr.subcategory_label').each(function(idx, subcat_row) {
+        var next_rows = [];
+        $(subcat_row).nextUntil('tr.subcategory_label').each(function(idxn, next_row) {
+            next_rows.push(next_row);
+        });
+        if (next_rows.every(row => isExplicitlyHidden(row)) || next_rows.length == 0) {
+            $(subcat_row).hide();
+        }
+        else {
+            $(subcat_row).show();
+        }
+    });
+}
+
+function boundsOverlap(dl_id) {
+    var dl = DATALAYERS_LOOKUP[dl_id]
+    var dl_layer = L.geoJSON({
+        properties: {},
+        geometry: JSON.parse(dl.extent_geom),
+        type: 'Feature',
+    }, {
+        style: {
+            color: 'rgb(red)',
+            weight: 6,
+            opacity: 0.5,
+            fillOpacity: 0.00,
+            pointerEvents: 'None'
+        }
+    });
+
+    // This is a hacky? way to check if the returned bounds object is empty
+    if (JSON.stringify(dl_layer.getBounds()) === "{}") {
+        return true;
+    }
+    else {
+        return drawnLayer.getBounds().overlaps(dl_layer.getBounds());
+    }
 }
 
 function addRowToDataLayersTable(dl) {
