@@ -4343,14 +4343,8 @@ function uploadDataLayer() {
         error: function(response) {
             console.log(response);
 //             AUDIO.error.play();
-            resetButton('submit_upload_datalayer_button');
+            resetButton('submit_upload_datalayer_button','Submit');
             alert(response.responseText);
-//             $('.submission_opts').show();
-//             $('#burn_id_filter').show();
-//             $('.modal_uploadshp').show();
-//             $('.loading_user_submission').hide();
-            
-//             updateSHPlabel();
         },
     });
 }

@@ -563,8 +563,6 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
         x[0] for x in 
         models.DataLayer.objects.all().values_list('data_source_id')
     ]
-    #print(existing_dsids)
-    #blerg
 
     for ds in res:
 
@@ -575,6 +573,7 @@ def sync_cdr_prospectivity_datasources_to_datalayer(
             continue
         
         if 'user_upload_example' in ds['data_source_id']:
+            #print(ds)
             continue
     
         if ds['evidence_layer_raster_prefix'] in (

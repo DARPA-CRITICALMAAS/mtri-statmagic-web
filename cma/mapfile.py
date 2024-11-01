@@ -61,7 +61,7 @@ def openRaster(ds_path):
 
 def write_mapfile(
         mapfile_title = 'StatMAGIC data layers',
-        processing_scale_buckets = 100,
+        processing_scale_buckets = 101,
     ):
     from .models import DataLayer, OutputLayer, ProcessedLayer
     '''
@@ -243,13 +243,13 @@ def write_mapfile(
                 del ds
                 #if td:
                     #td.cleanup()
-                dr = [stats[0],stats[1]]
+                dr = [stats[0],stats[1]+(stats[1]*0.0000001)]
                 dataset.stats_minimum = stats[0]
                 dataset.stats_maximum = stats[1]
                 dataset.save()
                             
             else:
-                dr = [r['stats_minimum'], r['stats_maximum']]
+                dr = [r['stats_minimum'], r['stats_maximum']+(r['stats_maximum']*0.0000001)]
                 
             # Retrieve spatial resolution if not already loaded
             # This just needs to be an approximation for setting templates
@@ -259,7 +259,7 @@ def write_mapfile(
                 dataset.save()
     
        
-            # For rastesr, color scale is the assigned color stretched b/t
+            # For rasters, color scale is the assigned color stretched b/t
             # the min/max pixel values.
 
             classification = f'''
