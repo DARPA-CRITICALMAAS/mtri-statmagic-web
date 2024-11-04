@@ -382,6 +382,22 @@ function loadCMAresolutionFromLayers() {
     
 }
 
+function clearUserUploadSites() {
+    // Remove map layer
+    if (MAP.hasLayer(MINERAL_SITES_LAYER_USER_UPLOAD)) {
+        MAP.removeLayer(MINERAL_SITES_LAYER_USER_UPLOAD);
+    }
+    
+    // Hide tools
+    $('#user_upload_sites_tools').hide();
+    
+    // Reset the store
+    GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT = null;
+    
+    updateNsitesLabels();
+    
+}
+
 // Removes any queried KNOWN DEPOSIT SITES
 function clearMineralSites() {
     // Remove map legend
@@ -1928,7 +1944,8 @@ function loadMineralSites() {
             $('#clear_sites_button').removeClass('disabled');
             
             // Update query results n
-            $('.mineral_sites_n_results').html(response.mineral_sites.length);
+
+            updateNsitesLabels();
             $('.mineral_sites_download_link').show();
             
             // Update TRAINING_DATA warning class 
@@ -1946,6 +1963,52 @@ function loadMineralSites() {
             enableLoadSitesButton();
         }
     });
+    
+}
+
+function toggleUserUploadSitesVisibility(e) {
+
+    if ($('#user_upload_sites_show').is(':checked')) {
+        MINERAL_SITES_LAYER_USER_UPLOAD.addTo(MAP);
+    } else {
+        // Remove current layer if it exists
+        if (MAP.hasLayer(MINERAL_SITES_LAYER_USER_UPLOAD)) {
+            MAP.removeLayer(MINERAL_SITES_LAYER_USER_UPLOAD);
+        }
+    }
+}
+
+function updateNsitesLabels() {
+    $('.mineral_sites_n_results').html(
+        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length
+    );
+    
+    // Update the '.mineral_sites_n_results.training' spans
+    var n_included= GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.reduce(function(total,s) {
+        return total + !s.properties.exclude;
+    }, 0);
+    
+    var n_total = n_included;
+    if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+        var n_upload_sites = GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length
+        
+        // Add any user-uploaded sites
+        n_total += n_upload_sites;
+        
+         // Update user upload label
+        $('.n_user_upload_sites').html(n_upload_sites);
+        
+        $('#training_data_user_sites_label').show();
+        
+    } else {
+        $('.n_user_upload_sites').html('--');
+        $('#training_data_user_sites_label').hide();
+    }
+        
+    $('.mineral_sites_n_included').html(n_included);
+    $('.mineral_sites_n_results.training').html(n_total);
+    
+   
     
 }
 
@@ -2251,11 +2314,7 @@ function toggleExcludeChk(id) {
         }
     });
     
-    // Update the '.mineral_sites_n_results.training' spans
-    var n_included= GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.reduce(function(total,s) {
-        return total + !s.properties.exclude;
-    }, 0);
-    $('.mineral_sites_n_results.training').html(n_included);
+    updateNsitesLabels();
     
     // Reset display (in case 'included in training' is selected
     onMineralSitesDisplayByChange();
@@ -3847,12 +3906,19 @@ function uploadCSV() {
                      
             // Show "show user uploaded sites" checkbox in the KNOWN DEPOSIT
             // SITES layer control 
+            // ^^^ for now just adding a toggle checkbox in the TRAINING SITES section
             
             // Show "include XX user uploaded sites" and "include XX KNOWN  
             // DEPOSIT SITES checkboxes in the TRAINING section
            
             // Close the upload modal
             $('.overlay.modal_uploadcsv').hide();
+            
+            // Show upload sites tools
+            $('#user_upload_sites_tools').show();
+            
+            // Upload sites labels
+            updateNsitesLabels();
             
         },
         error: function(response) {
