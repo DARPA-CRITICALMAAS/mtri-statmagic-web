@@ -19,7 +19,8 @@ var drawnItems = new L.FeatureGroup();
 var drawnLayer;
 var extentPreviewLayer;
 var DATACUBE_CONFIG = [];
-var GET_MINERAL_SITES_RESPONSE_MOST_RECENT
+var GET_MINERAL_SITES_RESPONSE_MOST_RECENT;
+var GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT;
 var GET_MODEL_RUNS_MOST_RECENT;
 var MINERAL_SITES_LAYER;
 var MINERAL_SITES_LAYER_USER_UPLOAD;
@@ -2864,7 +2865,7 @@ function submitModelRun() {
                 
                 // Tuples get special processing- represented as string
                 // Determines tuple by checking for 'tuple' in the param name
-                if (p.name.indexOf('tuple') > -1) {
+                if (p.name.indexOf('tuple') > -1 && p.value) {
                     train_config[p.name] = p.value.split(',');
                 }
             });
@@ -3229,7 +3230,9 @@ function getLayerNameLabel(dl) {
             name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
         } else if (dl.name.length > 60) {
             var pl = DATALAYERS_LOOKUP[dl.name.split('.')[0]];
-            name_pretty = `${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+            if (pl.data_source_id_orig) {
+                name_pretty = `${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+            }
         }
         name_pretty += ` <span class='datalayer_lowlight'>(${dl.system} v${dl.system_version})</span>`;
     }
@@ -3768,12 +3771,13 @@ function loadUserUploadSitesToMap() {
     
     // Create new layer
     MINERAL_SITES_LAYER_USER_UPLOAD = L.geoJSON(
-        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites,{
+        GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords_gj,{
 
         pointToLayer: function(feature,latlng) {
             return L.circleMarker(latlng,{
-                radius: 6,
-                fillOpacity: 0.9,
+                radius: 5,
+                fillColor: '#fff',
+                fillOpacity: 0.5,
                 opacity: 1,
                 color: '#000',
                 weight: 0.5,
@@ -3799,10 +3803,11 @@ function loadUserUploadSitesToMap() {
     });
     MINERAL_SITES_LAYER_USER_UPLOAD.on('click', function(e) {
         var exclude_chk = '';
+        console.log(e);
         e.layer._popup.setContent(`
             <b>User-uploaded site</b>
-    
             <br><br>
+            Coordinates:<br><b>${e.latlng}</b>
             ${exclude_chk} 
         `);
         
@@ -3822,25 +3827,32 @@ function uploadCSV() {
     $.each(['latitude','longitude'], function(i,ll) {
         formData.append(`csv_${ll}_field`,$(`#csv_${ll}_field`).val());
     });
+    if ($('#csv_filter_by_extent').is(':checked')) {
+        formData.append('wkt',getWKT());
+    }
 
     AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_sites_csv', {
         processData: false,
         contentType: false,
+        dataType: 'text json',
         data: formData,
         type: 'POST',
         success: function(response) {
             console.log(this.url,response);
             
+            GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT = response;
+            
             // Process the uploaded site points
-            
-            // Load as layer to map
-            
+            loadUserUploadSitesToMap();
+                     
             // Show "show user uploaded sites" checkbox in the KNOWN DEPOSIT
             // SITES layer control 
             
             // Show "include XX user uploaded sites" and "include XX KNOWN  
             // DEPOSIT SITES checkboxes in the TRAINING section
            
+            // Close the upload modal
+            $('.overlay.modal_uploadcsv').hide();
             
         },
         error: function(response) {

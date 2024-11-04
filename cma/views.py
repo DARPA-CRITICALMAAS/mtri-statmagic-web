@@ -1,5 +1,6 @@
 import json, math, os, sys, zipfile
 import pandas as pd
+import shapely
 import geopandas as gpd
 from django.core.exceptions import BadRequest
 from datetime import datetime as dt
@@ -810,23 +811,11 @@ def submit_preprocessing(request):
         vector_layers=vector_layers,
     )
     
-    #print(vector_layers)
-
-    print('POSTing model run to CDR:')
-    #print(process_data_layers)
-    #print(model_run.model_dump_json(exclude_none=True))
-
-    
-    #print(process_data_layers.model_dump_json(indent=4))
-    #print(params['dry_run'])
-    #blerg
+    print('POSTing preprocessing run to CDR:')
     
     cdr = cdr_utils.CDR()
     print(process_data_layers.model_dump_json())
-    #blerg
-    #if params['dry_run']:
-        #res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
-    #else:
+
     # Post to CDR
     res = cdr.post_prospectivity_preprocess(
         process_data_layers.model_dump_json()
@@ -834,13 +823,10 @@ def submit_preprocessing(request):
     )
         
     print(res)
-    #blerg
-    #res2 = cdr.get_model_run(res['event_id'])
 
     # Return JSON w/ ID indicating model run
     response = HttpResponse(json.dumps({
         'event_id': res['event_id'],
-       #'model_run': res2
     }))
     response['Content-Type'] = 'application/json'
     
@@ -893,7 +879,7 @@ def submit_model_run(request):
     #print(model_run.model_dump_json(exclude_none=True))
 
     print(model_run.model_dump_json(indent=4))
-
+    #blerg
     cdr = cdr_utils.CDR()
     if params['dry_run']:
         res = {'model_run_id': 'd9260cb9832f4c63abbe1f82fc4729bb'}
@@ -1047,8 +1033,6 @@ def get_mineral_sites(request):
     
     # Apply non-CDR-based filters
     #   * TODO: also trim out unncessary properties
-
-    
     sites_filtered = []
     #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
     for index, site in sites_df_merged.iterrows():
@@ -1090,9 +1074,7 @@ def get_mineral_sites(request):
        
 
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
-    
-    #print('n sites filtered:',len(sites_filtered))
-    
+      
     if params['format'] == 'csv':
         sites_df_filtered = pd.DataFrame(sites_filtered,columns=sites_df_merged.columns)
         buff = StringIO()
@@ -1198,34 +1180,69 @@ def upload_sites_csv(request):
     params = {
         'csv_longitude_field': '',
         'csv_latitude_field': '',
+        'wkt': '',
     }
     params = util.process_params(request, params, post=True)
 
-    print(params)
+    if params['wkt']:
+        params['wkt'] = shapely.from_wkt(util.validate_wkt_geom(params['wkt']))
+        #extent = ogr.CreateGeometryFromWkt(params['wkt'])#util.convert_wkt_to_geojson(params['wkt'])
 
-    lines = request.FILES.getlist('file_csv')[0].readlines()
-    hdr = util.clean_line(lines[0].decode('utf-8'))
-    lat_idx = hdr.index(params['csv_latitude_field'])
-    lon_idx = hdr.index(params['csv_longitude_field'])
+    csv_file =request.FILES.getlist('file_csv')[0]
+    df = pd.read_csv(csv_file,header=0)
+
     coords = []
-    for line in lines[1:]:
-        ln = util.clean_line(line.decode('utf-8'))
+    for i,row in df.iterrows():
+        msg = ''
+        if params['csv_latitude_field'] not in row:
+            msg =f'latitude field ("{params["csv_latitude_field"]}") does not exist in CSV file: {csv_file}'
+        if params['csv_longitude_field'] not in row:
+            msg = f'longitude field ("{params["csv_longitude_field"]}") does not exist in CSV file: {csv_file}'
+        if msg:
+            return HttpResponse(msg,status=400)
         
-        if len(ln) > lat_idx and len(ln) > lon_idx:
-            #print(ln)
-            lat = float(ln[lat_idx])
-            lon = float(ln[lon_idx])
-            coords.append([lon,lat])
+        lat = round(float(row[params['csv_latitude_field']]),5)
+        lon = round(float(row[params['csv_longitude_field']]),5)
+
+        if params['wkt']:
+            point = shapely.Point(lon,lat)
+            if not params['wkt'].contains(point):
+                continue
+        
+        coords.append([lon,lat])
+        
+    # Create geoJSON version of coords
+    gj = [{
+        'type': 'Feature',
+        'properties': {},
+        'geometry': {
+            'coordinates': c,
+            'type': 'Point',
+        }} for c in coords
+    ]
+        
+    ## Check if sites intersect with MPM extent 
+    #points1 = ogr.CreateGeometryFromJson(json.dumps(gj))
+    #print(points1)
+    #if params['wkt']:
+        #params['wkt'] = util.validate_wkt_geom(params['wkt'])
+        #poly2 ogr.CreateGeometryFromWkt(params['wkt'])#util.convert_wkt_to_geojson(params['wkt'])
+        
+    #intersection = points1.Intersection(poly2)
+    #print(intersection)
+    
+    #blerg
+        
         
      # Return response as JSON to client
-    response = HttpResponse({
-        'site_coords': json.dumps(coords)
-    })
+    response = HttpResponse(json.dumps({
+        'site_coords': coords,
+        'site_coords_gj': gj,
+    }))
     response['Content-Type'] = 'application/json'
 
     return response 
-        
-                 
+
 
 @csrf_exempt
 def download_model_outputs(request):
