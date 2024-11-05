@@ -3482,10 +3482,11 @@ function updateDataCubeLabelInfo() {
 function editProcessingSteps(cmp) {
     var tr = $(cmp).closest('tr');
     var dsid = tr.attr('data-layername');
+    var current_dl = DATALAYERS_LOOKUP[dsid];
     
     // Update layername 
     $('#processingsteps_layername').html(
-        DATALAYERS_LOOKUP[dsid].name_pretty
+        current_dl.name_pretty
     );
     
     // Update datacube layer index 
@@ -3508,6 +3509,32 @@ function editProcessingSteps(cmp) {
         var v = $(tr0).find('td').attr('data-value');
         onAddProcessingStep(v,PROCESSING_STEPS[v].name_pretty);
     });
+
+    // Populate tooltip div with recommended processing steps
+    var rec_div = $('#recommended_proc_steps');
+    rec_div.empty();
+
+    var rec_list = $("<ul></ul>");
+
+    if (current_dl.data_format == 'shp') {
+        rec_list.append($(`<li class="rec-warning"><b>Warning</b>: This is a .shp file, applied processing steps may not work as intended.</li>`))
+    }
+    else {
+        // check for the 3 processing step cases
+        if (current_dl.stats_hasnans) { // Impute
+            rec_list.append($("<li><b>Impute</b>: Datalayer has NaNs</li>"));
+        }
+        if (current_dl.stats_maximum != 1 && current_dl.stats_minimum != 0) { // Scale
+            rec_list.append($(`<li><b>Scale</b>: Datalayer has a minimum of ${current_dl.stats_minimum} and maximum of ${current_dl.stats_maximum}</li>`));
+        }
+        if (current_dl.stats_minimum == 0) { // Transform
+            rec_list.append($(`<li class="rec-warning"><b>Transform</b>: Datalayer has values less than 0, shouldn't log transform</li>`));
+        } else if (current_dl.stats_minimum < 0) { // Transform
+            rec_list.append($("<li class='rec-warning'></li>").text(`Transform: Datalayer has values less than 0, shouldn't take log or sqrt transform`));
+        }
+    }
+    rec_div.append($("<p></p>").text("Recommended processing steps:"))
+    rec_div.append(rec_list);
    
     $('#datacube_processingsteps').show();
 }
