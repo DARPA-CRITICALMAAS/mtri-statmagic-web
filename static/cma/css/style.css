@@ -959,6 +959,13 @@ div.img_hover:hover div:first-child {
     color: #f2f2f2;
     padding: 4px 4px;
 }
+#datacube_layers tr.label_raster {
+    background-image: repeating-linear-gradient(135deg, #666666, #666666 14px, rgb(106, 106, 106) 14px, rgb(106, 106, 106) 28px);
+}
+#datacube_layers tr.label_raster:hover {
+    background-image: none;
+    background-color: #444;
+}
 #datacube_layers tbody tr:hover {
     background-color: #444;
 }
@@ -2474,13 +2481,21 @@ div.download {
 #training_data_user_sites_label .mineral_sites_n_included, 
 #training_data_user_sites_label .n_user_upload_sites {
     color: #fff;
-    
+}
+#training_info_using_processed_lr {
+    display: none;
 }
 /*.content.training {
     padding: 0px 40px 8px 10px;
     color: #c3c3c3;
     width: calc(100%-26px);
 }*/
+
+.lr_asterisk {
+    color: #ff33cc;
+    font-size: 1.0rem;
+    font-weight: bold;
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
