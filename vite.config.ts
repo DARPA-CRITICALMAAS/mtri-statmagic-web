@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve, join } from 'path';
 
-const PROJ_ROOT = "/usr/local/project/mtri-statmagic-web";
+const PROJ_ROOT = "/usr/local/project/mtri-statmagic-web-dev";
 const INPUT_DIR = `${PROJ_ROOT}/static/react`;
 const OUTPUT_DIR = `${INPUT_DIR}/dist`;
 

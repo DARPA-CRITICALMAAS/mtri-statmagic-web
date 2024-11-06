@@ -701,12 +701,17 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
             datalayer = None
             category = 'Training'
             subcategory = 'Label rasters'
+
+            # Try to pull category/subcategory info from the original datasource
             if not ds['label_raster']:
                 print(ds)
-                datalayer = datalayer_subcategories[ds['data_source_id']]
-                subcategory = datalayer.subcategory
-                category = datalayer.category
-                
+                if ds['data_source_id']:
+                    datalayer = datalayer_subcategories[ds['data_source_id']]
+                    subcategory = datalayer.subcategory
+                    category = datalayer.category
+                else:
+                    subcategory = 'TA1'
+                    category = 'TA1 Data'
             dl, created = models.ProcessedLayer.objects.get_or_create(
                 data_source_id = ds['layer_id'],
                 #download_url = ds['download_url'],

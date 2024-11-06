@@ -1162,7 +1162,7 @@ def get_fishnet(request):
     response = HttpResponse(json.dumps(data))
     response['Content-Type'] = 'application/json'
     
-    return respons
+    return response
 
 @csrf_exempt
 def get_csv_column_names(request):
