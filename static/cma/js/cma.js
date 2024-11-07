@@ -2841,13 +2841,17 @@ function submitPreprocessing() {
         return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
     },false);
     if (!label_raster_included && model.uses_training) {
-        training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
-                return !s.properties.exclude;
-        }).map(
-                function(s) {return s.properties.id;}
-        );
+        if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT) {
+            training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
+                    return !s.properties.exclude;
+            }).map(function(s) {return s.properties.id;});
+        }
+        if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+            $.each(GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords, function(i,s) {
+                training_sites.push(s);
+            });
+        }
     }
-
     
     var evidence_layers = DATACUBE_CONFIG.filter(function(l) {
         var d = DATALAYERS_LOOKUP[l.data_source_id];
@@ -3425,47 +3429,11 @@ function validateModelButtons() {
     var model = MODELS[$('#model_select').val()];
 
     if (!model) {return;}
-
-    var n_training_sites_selected = Number($('.mineral_sites_n_results.training').html());
-    
-    // Check if a label raster is needed (i.e. 'supervised' model selected and  
-    // NOT in cube)
-    var label_raster_needed = false;
-    var label_raster_included = DATACUBE_CONFIG.reduce(function(tot,l) {
-        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
-    },false);
-    if (model) {
-        label_raster_needed = model.uses_training && !label_raster_included;
-    }
-
     var msg = '';
-
-    var training_sites_selected = (
-        (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
-        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
-        (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
-        GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
-
-    var training_sites_avail_to_process = training_sites_selected && model.uses_training;
     
-    // If DATACUBE is empty, ...
-    if (DATACUBE_CONFIG.length == 0) {
-        // start by disabling all buttons
-        $('.button.model_process_submit.preprocess').addClass('disabled');
-        $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-        $('.button.model_process_submit.run').addClass('disabled');
-        
-        // ...but if training sites are selected and a label raster is needed, 
-        // enable the preprocess button to process the training sites
-        if (label_raster_needed && n_training_sites_selected > 0) {
-            $('.button.model_process_submit.preprocess').removeClass('disabled');
-        }
-
-        return;
-        
-    }
-
-    // Check if all layers in cube are processed
+    // Derive conditionals common to both supervised and unsupervised models
+    
+   //  Check if all layers in cube are processed
     var all_processed = true;
     $.each(DATACUBE_CONFIG, function(i,dl) {
         var l = DATALAYERS_LOOKUP[dl.data_source_id];
@@ -3473,54 +3441,192 @@ function validateModelButtons() {
             all_processed = false;
         }
     });
+    // Check if a label raster is needed (i.e. 'supervised' model selected and  
+    // NOT in cube)
+    var label_raster_included = DATACUBE_CONFIG.reduce(function(tot,l) {
+        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
+    },false);
     
-    if (all_processed) {
-        // If all DATACUBE layers are processed:
-        //  * disable pre-process and pre-process+run buttons
-        //  * enable run model
+    // For supervised models....
+    if (model.uses_training) {
+        var n_training_sites_selected = Number($('.mineral_sites_n_results.training').html());
+    
         
-        $('.button.model_process_submit.preprocess').addClass('disabled');
-        $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-        $('.button.model_process_submit.run').removeClass('disabled');
-        
-//         if 
-        
-        // ...but if training sites are selected and a label raster is needed, 
-        // enable the preprocess button to process the training sites
-        if (label_raster_needed && n_training_sites_selected > 0) {
-            $('.button.model_process_submit.preprocess').removeClass('disabled');
-        }
-        
-    } else {
-        // Otherwise:
-        //  * disable run model
-        //  * enable the other two
-        
-        $('.button.model_process_submit.preprocess').removeClass('disabled');
-        $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
-        $('.button.model_process_submit.run').addClass('disabled');
-    }
-    if (label_raster_needed) {
-        // Check if training sites are selected
-        if (training_sites_selected) {
-            $('.button.model_process_submit.preprocess').removeClass('disabled');
 
-            if (DATACUBE_CONFIG.length > 0) {
-                $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
-            } else {
-                $('.button.model_process_submit.run').addClass('disabled');
-                $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-                msg += 'Add at least one INPUT layer';
-            }
+        var training_sites_selected = (
+            (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
+            GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
+            (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
+            GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
+
+//         var training_sites_avail_to_process = training_sites_selected && model.uses_training;
             
-        } else {
-
+        // If no layers in cube and no training sites, disable all buttons
+        if (DATACUBE_CONFIG.length == 0 && !training_sites_selected) {
+            $('.button.model_process_submit.preprocess').addClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
-            msg += 'The selected model requires a <b>training label raster</b> to be included in INPUT LAYERS';
-
+            
+            msg = 'Select at least 1 INPUT LAYER and >0 TRAINING SITES';
+            $('#model_button_status').html(msg);
+            
+            return;
         }
+        
+        // If the only layer in the cube is the label raster
+        if (DATACUBE_CONFIG.length == 1 && label_raster_included) {
+            $('.button.model_process_submit.preprocess').addClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+            
+            msg = 'Select at least 1 non-training INPUT LAYER';
+        }
+        
+        // Enable ONLY 'pre-process' button IF unprocessed layers exist and 
+        // no training data is selected:
+        if (!all_processed && !training_sites_selected && !label_raster_included) {
+            $('.button.model_process_submit.preprocess').removeClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+            
+            msg = 'No training data selected; query or upload training sites or add PROCESSED label raster to enable model RUN buttons';
+            
+        }
+        // Enable ONLY 'pre-process' button IF training sites are selected BUT 
+        // no other INPUT LAYERS are selected
+        if (training_sites_selected && DATACUBE_CONFIG.length == 0) {
+            $('.button.model_process_submit.preprocess').removeClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+            
+            msg = 'Select at least 1 non-training INPUT LAYER';
+        }
+        
+        // Disable ONLY 'run' button 
+        if (!all_processed || 
+            (!label_raster_included && 
+              training_sites_selected && 
+              DATACUBE_CONFIG.length > 0)
+           ) {
+            $('.button.model_process_submit.preprocess').removeClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+        }
+        
+        // Enable ONLY 'run' if all layers are processed and a label raster is
+        // included
+        if (all_processed && label_raster_included && DATACUBE_CONFIG.length > 1) {
+            $('.button.model_process_submit.preprocess').addClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').removeClass('disabled');
+        }
+        
+  
+    } else { // For unsupervised models...
+        
+        // If no layers in cube, disable all buttons
+        if (DATACUBE_CONFIG.length == 0 ||
+            (DATACUBE_CONFIG.length == 1 && label_raster_included)) {
+            $('.button.model_process_submit.preprocess').addClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+            
+            msg = 'Select at least 1 INPUT LAYER';
+            $('#model_button_status').html(msg);
+            
+            return;
+        }
+        
+        // If unprocessed layers in cube, disable RUN  only
+        if (!all_processed) {
+            $('.button.model_process_submit.preprocess').removeClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
+            $('.button.model_process_submit.run').addClass('disabled');
+        } else { // If all processed, enable RUN only
+            $('.button.model_process_submit.preprocess').addClass('disabled');
+            $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+            $('.button.model_process_submit.run').removeClass('disabled');
+        }
+        
+        
+        
     }
+
+   
+    
+//     // If DATACUBE is empty, ...
+//     if (DATACUBE_CONFIG.length == 0) {
+//         // start by disabling all buttons
+//         $('.button.model_process_submit.preprocess').addClass('disabled');
+//         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+//         $('.button.model_process_submit.run').addClass('disabled');
+//         
+//         // ...but if training sites are selected and a label raster is needed, 
+//         // enable the preprocess button to process the training sites
+//         if (label_raster_needed && n_training_sites_selected > 0) {
+//             $('.button.model_process_submit.preprocess').removeClass('disabled');
+//         }
+// 
+//         return;
+//         
+//     }
+// 
+//     // Check if all layers in cube are processed
+//     var all_processed = true;
+//     $.each(DATACUBE_CONFIG, function(i,dl) {
+//         var l = DATALAYERS_LOOKUP[dl.data_source_id];
+//         if (l.gui_model != 'processedlayer') {
+//             all_processed = false;
+//         }
+//     });
+//     
+//     if (all_processed) {
+//         // If all DATACUBE layers are processed:
+//         //  * disable pre-process and pre-process+run buttons
+//         //  * enable run model
+//         
+//         $('.button.model_process_submit.preprocess').addClass('disabled');
+//         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+//         $('.button.model_process_submit.run').removeClass('disabled');
+//         
+// //         if 
+//         
+//         // ...but if training sites are selected and a label raster is needed, 
+//         // enable the preprocess button to process the training sites
+//         if (label_raster_needed && n_training_sites_selected > 0) {
+//             $('.button.model_process_submit.preprocess').removeClass('disabled');
+//         }
+//         
+//     } else {
+//         // Otherwise:
+//         //  * disable run model
+//         //  * enable the other two
+//         
+//         $('.button.model_process_submit.preprocess').removeClass('disabled');
+//         $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
+//         $('.button.model_process_submit.run').addClass('disabled');
+//     }
+//     if (label_raster_needed) {
+//         // Check if training sites are selected
+//         if (training_sites_selected) {
+//             $('.button.model_process_submit.preprocess').removeClass('disabled');
+// 
+//             if (DATACUBE_CONFIG.length > 0) {
+//                 $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
+//             } else {
+//                 $('.button.model_process_submit.run').addClass('disabled');
+//                 $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+//                 msg += 'Add at least one INPUT layer';
+//             }
+//             
+//         } else {
+// 
+//             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+//             $('.button.model_process_submit.run').addClass('disabled');
+//             msg += 'The selected model requires a <b>training label raster</b> to be included in INPUT LAYERS';
+// 
+//         }
+//     }
 
     
     $('#model_button_status').html(msg);
