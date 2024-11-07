@@ -826,9 +826,10 @@ def submit_preprocessing(request):
     print(res)
 
     # Return JSON w/ ID indicating model run
-    response = HttpResponse(json.dumps({
-        'event_id': res['event_id'],
-    }))
+    response = HttpResponse(json.dumps(res))
+    #{
+        #'event_id': res['event_id'],
+    #}))
     response['Content-Type'] = 'application/json'
     
     return response

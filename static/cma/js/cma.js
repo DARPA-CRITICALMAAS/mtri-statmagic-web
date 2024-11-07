@@ -2874,6 +2874,9 @@ function submitPreprocessing() {
             
             var expected_layers = evidence_layers.length + (training_sites.length > 0 ? 1 : 0);
             
+            // Check for previously processed layers
+            
+            
             // Load event ID to status table
             var ts = getDateAsYYYYMMDD(new Date(),true,true).split(' ');
             $('#model_run_status_list').append(`
@@ -3410,10 +3413,10 @@ function validateModelButtons() {
     var msg = '';
 
     var training_sites_selected = (
-	(GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
-	 GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
+        (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
+        GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
         (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
-         GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
+        GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
 
     var training_sites_avail_to_process = training_sites_selected && model.uses_training;
     
@@ -3429,7 +3432,6 @@ function validateModelButtons() {
         if (label_raster_needed && n_training_sites_selected > 0) {
             $('.button.model_process_submit.preprocess').removeClass('disabled');
         }
-        
 
         return;
         
@@ -3452,6 +3454,8 @@ function validateModelButtons() {
         $('.button.model_process_submit.preprocess').addClass('disabled');
         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
         $('.button.model_process_submit.run').removeClass('disabled');
+        
+//         if 
         
         // ...but if training sites are selected and a label raster is needed, 
         // enable the preprocess button to process the training sites
