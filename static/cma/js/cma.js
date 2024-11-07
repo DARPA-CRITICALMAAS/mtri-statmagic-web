@@ -743,12 +743,27 @@ function clearModelUIselections(){
     
 }
 
+function toggleLabelRasterEnable(toggle) {
+    if (toggle == true) {
+        $('#datacube_message_div').html('');
+        $('tr.cube_layer.label_raster').removeClass('disabled');
+    } else {
+        $('tr.cube_layer.label_raster').addClass('disabled');
+        $('#datacube_message_div').html(`
+            <span class='lr_asterisk'>*</span> Label raster layer will be ignored for unsupervised models
+        `);
+    }
+}
+
 // What happens when 'Select model type' changes
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
+    
 
     // First hide everything
     resetModelUI();
+    
+    console.log(model, MODELS[$('#model_select').val()]);
     
     // Then build everything back up
 //     $('.selected_model_description').html(model.description);
@@ -762,8 +777,14 @@ function onModelSelect() {
         $('.collapse_datacube').show();
     }
     
+    toggleLabelRasterEnable(true);
     if (model.uses_training == true) {
         $('.collapse_training').show();
+        $('tr.cube_layer.label_raster').removeClass('disabled');
+    } else if (isLabelRasterInDataCube()) {
+        // If a label raster is in the datacube and an unsupervised model is 
+        // selected, gray it out 
+        toggleLabelRasterEnable(false);
     }
     
     // Show selection buttons in Data Layers
@@ -792,6 +813,8 @@ function onModelSelect() {
     $('.collapse_parameters').show();
     $('.collapse_model_run').show();
     $('#modeling_buttons_table').show();
+
+    
     
     // Enable/disable buttons as needed
     validateModelButtons();
@@ -923,42 +946,95 @@ function loadModelOutputs(cma_id,model_run_id) {
     cma_id = cma_id || getActiveCMAID();
     model_run_id = model_run_id || $('#model_output_layers_filter select').val();
     
+    var cma = CMAS_EXISTING[cma_id];
+    
     // Remove existing content
     resetModelOutputs();
     
-    // TODO: get this download thing working again
-    var table = $('#model_outputs_table');
-    table.empty();
-    table.append(`
-        <tr class="subcategory_label">
-            <td></td>
-            <td></td>
-            <td></td>
-            <td class="colname">Download ALL</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td class='download'>
-                <img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk()" height=12 width=12 />
-            </td>
-        </tr>
-    `);
+//     var table = $('#model_outputs_table');
+//     table.empty();
+//     table.append(`
+//         <tr class="subcategory_label">
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td class="colname">Download ALL</td>
+//         </tr>
+//         <tr>
+//             <td></td>
+//             <td></td>
+//             <td></td>
+//             <td class='download'>
+//                 <img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk()" height=12 width=12 />
+//             </td>
+//         </tr>
+//     `);
+    var dls = [];
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
+        var cats = getLayerControlCategories(d);
+        d.category_sort = cats.category;
+        d.subcategory_sort = cats.subcat;
+        
         if (d.gui_model == 'outputlayer' && 
             d.cma_id && d.cma_id == cma_id &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
         ) {
-            addRowToDataLayersTable(d);
+            // Don't add outputs from model run objects not loaded. 
+            // Model runs are filtered by date to exclude early test runs, 
+            // but outputs are not
+            if (model_run_id != 'all' && (!cma.model_run_objects || !cma.model_run_objects[model_run_id])) {
+                return;
+            }
+           
+            dls.push(d);
+//             addRowToDataLayersTable(d);
         }
+        
         // Also add processed layers
         if (d.gui_model == 'processedlayer' &&
             d.cma_id && d.cma_id == cma_id
         ) {
-            addRowToDataLayersTable(d);
+             dls.push(d);
+//             addRowToDataLayersTable(d);
         }
     });
+    dls.sort(function(a,b) {
+        if (a.category_sort == b.category_sort) {
+            return a.subcategory_sort < b.subcategory_sort ? -1 : 1;
+        }
+        return a.category_sort < b.category_sort ? -1 : 1;
+        
+    });
+    
+//     var dls_red = dls.map(function(dl,i) {
+//         return [dl.category_sort,dl.subcategory_sort];
+//     });
+
+    
+    $.each(dls, function(i,d) {
+        addRowToDataLayersTable(d);
+    });
+    
+//     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
+//         if (d.gui_model == 'outputlayer' && 
+//             d.cma_id && d.cma_id == cma_id &&
+//             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
+//         ) {
+//             // Don't add outputs from model run objects not loaded. 
+//             // Model runs are filtered by date to exclude early test runs, 
+//             // but outputs are not
+//             if (model_run_id != 'all' && (!cma.model_run_objects || !cma.model_run_objects[model_run_id])) {
+//                 return;
+//             }
+//             addRowToDataLayersTable(d);
+//         }
+//         // Also add processed layers
+//         if (d.gui_model == 'processedlayer' &&
+//             d.cma_id && d.cma_id == cma_id
+//         ) {
+//             addRowToDataLayersTable(d);
+//         }
+//     });
     
     // Toggle header to expand if model_run_id specified
     if (model_run_id != 'all') {
@@ -1048,7 +1124,7 @@ function getMetadata() {
 }
 
 // Requests list of model runs for a given CMA_id from backend
-function loadModelRuns(cma_id) {
+function loadModelRuns(cma_id,mrid_selected) {
     $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
     $.ajax(`/get_model_runs`, {
         data: {
@@ -1060,8 +1136,9 @@ function loadModelRuns(cma_id) {
             GET_MODEL_RUNS_MOST_RECENT = response.model_runs;
             
             // Load outputs
+            processModelRunsFromCDR(response.model_runs,mrid_selected);
             loadModelOutputs(cma_id);
-            processModelRunsFromCDR(response.model_runs);
+
         },
         error: function(response) {
             console.log(response);
@@ -1093,8 +1170,11 @@ function processDataLayersUpdates(response) {
     // Add rows AFTER all new layers have been processed into DATALAYERS_LOOKUP
     // b/c some of the added layers may reference other layers (e.g. outputs or 
     // processed layers based on raw layers) that haven't been added yet.
-    $.each (dls_to_add, function(i,dl) {
-        addRowToDataLayersTable(dl);
+    loadModelOutputs();
+    $.each(dls_to_add, function(i,dl) {
+        if (dl.gui_model == 'datalayer') {
+            addRowToDataLayersTable(dl);
+        }
     });
 }
 
@@ -1218,12 +1298,15 @@ function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
 
 // From the return of the 'get_model_runs' endpoint, populates the 
 // table that shows when "load an existing model run" is clicked
-function processModelRunsFromCDR(model_runs) {
+function processModelRunsFromCDR(model_runs,mrid_selected) {
     model_runs = model_runs || GET_MODEL_RUNS_MOST_RECENT;
     
     var trs = '';
-    var opts = `<option value="all" selected}>all</option>`;
+    var all_sel = mrid_selected ? '' : ' selected';
+    var opts = `<option value="all" ${all_sel}>all</option>`;
     $.each(model_runs, function(mrid, mobj) {
+        
+//         console.log(mrid,mobj);
         
         // Skip model runs w/ zero evidence layers
         if (!mobj.event || mobj.event.payload.evidence_layers.length == 0) {
@@ -1267,14 +1350,13 @@ function processModelRunsFromCDR(model_runs) {
         `;
 //         }
         //var sel = opts_filter == mrid ? ' selected' : '';
-        var sel = '';
+        var sel = mrid_selected == mrid ? ' selected' : '';
         opts += `
             <option value='${mrid}'${sel}>Model run: ${mrid} (${mobj.model_type},${cleanTimestamp(mobj.event.timestamp)}, ${n_outputs} outputs)</option>
         `;
         
     });
-//     console.log(opts);
-//     console.log(model_runs);
+
     $('#model_runs_table tbody').html(trs);
     $('#model_output_layers_filter select').html(opts);
 
@@ -1312,6 +1394,7 @@ function loadModelRun(cma_id,model_run_id) {
         SOM: 'beak_som',
         sri_NN: 'sri_NN',
         'Neural Net': 'sri_NN',
+        jataware_rf: 'jataware_rf',
     }
     var mtype = mtypemap[model_run.model_type];
     
@@ -2992,8 +3075,14 @@ function submitModelRun() {
     });
 
     // This is now just a list of ProcessedLayer IDs
-    var evidence_layers = DATACUBE_CONFIG.map(function(l) {
-        return l.data_source_id;
+    var evidence_layers = []
+    $.each(DATACUBE_CONFIG,function(i,l) {
+        // Ignore layer if it's an unsupervised model and the layer is a label 
+        // raster
+        if (isLabelRasterInDataCube() && !model.uses_training) {
+            return;
+        }
+        evidence_layers.push(l.data_source_id);
     });
     
     var cma_id = getActiveCMAID();
@@ -3052,12 +3141,16 @@ function submitModelRun() {
             `);
             
             // Now re-query the CDR so the new model run shows up in the table
-            loadModelRuns(cma_id);
+            loadModelRuns(cma_id,mrid);
             
             // Toggle data cube if it is open (to clean up UI);
             closeCollapse('.header.datacube');
             
             activateRunStatus();
+            
+            // Set the MODEL OUTPUTs filter to the provided model_run_id
+            // ^^^ don't need this b/c will run after loadModelRuns
+//             loadModelOutputs(cma_id,mri);
             
             // Start the model run status monitor
             checkModelRunStatus(mrid);
@@ -3098,6 +3191,11 @@ function checkModelRunStatus(model_run_id) {
             console.log(this.url,response);
             
             processDataLayersUpdates(response);
+            
+            // Reload model runs/outputs if udpates
+            if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
+                loadModelRuns(getActiveCMAID(),model_run_id);
+            }
             
             // Update model run status message
             var ts = getDateAsYYYYMMDD(null,true,true).split(' ');
@@ -3346,9 +3444,13 @@ function getLayerNameLabel(dl) {
     var name_pretty = dl.name_pretty;
     
     if (dl.gui_model == 'outputlayer') {
+        
         if (dl.name.indexOf('Codebook Map:') > -1 ) {
             var pl = DATALAYERS_LOOKUP[dl.name.split(': ')[1]];
-            name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+            //console.log(pl);
+            if (pl && pl.data_source_id_orig) {
+                name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
+            }
         } else if (dl.name.length > 60) {
             var pl = DATALAYERS_LOOKUP[dl.name.split('.')[0]];
             if (pl && pl.data_source_id_orig) {
@@ -3378,8 +3480,12 @@ function getLayerNameLabel(dl) {
     
 }
 
+function checkLabelRasterWithUnsupervised() {
+}
+
 function addLayerToDataCube(datalayer) {
     var dsid = datalayer.data_source_id;
+    var table_id = '#datacube_layers';
     
     DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
         
@@ -3394,17 +3500,27 @@ function addLayerToDataCube(datalayer) {
         psteps = `<td class='processing complete' onclick="showDataLayerInfo('${dsid}',false,true);">complete &#10003;</td>`;
         
         if (datalayer.label_raster) {
+            
+            // If there's already a label_raster added, toggle that one out 
+            onRemoveDataCubeLayerClick($('tr.cube_layer.label_raster')[0]);
+            
             cls2 = ' label_raster';
+            if (!MODELS[$('#model_select').val()].uses_training) {
+                cls2 += ' disabled';
+                toggleLabelRasterEnable(false);
+            } else {
+                toggleLabelRasterEnable(true);
+            }
             ast = '<span class="lr_asterisk">* </span>';
         }   
     }
     
     // Hide instructions 
-    $('#datacube_layers tr.instructions').hide();
+    $(`${table_id} tr.instructions`).hide();
     
     // Add row 
     var icon_height = 13;
-    $('#datacube_layers tr.cube_layer:last').after(`
+    $(`${table_id} tr.cube_layer:last`).after(`
         <tr class='cube_layer${cls2}' data-layername='${dsid}' data-datacubeindex=${DATACUBE_CONFIG.length-1}>
             <td class='name'>${ast}${name_pretty}</td>
             ${psteps}
@@ -3422,6 +3538,12 @@ function addLayerToDataCube(datalayer) {
     `);
     
     validateModelButtons();
+}
+
+function isLabelRasterInDataCube() {
+    return DATACUBE_CONFIG.reduce(function(tot,l) {
+        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
+    },false);
 }
 
 // Enables/disables model buttons according to selected layers
@@ -3443,15 +3565,11 @@ function validateModelButtons() {
     });
     // Check if a label raster is needed (i.e. 'supervised' model selected and  
     // NOT in cube)
-    var label_raster_included = DATACUBE_CONFIG.reduce(function(tot,l) {
-        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
-    },false);
+    var label_raster_included = isLabelRasterInDataCube();
     
     // For supervised models....
     if (model.uses_training) {
         var n_training_sites_selected = Number($('.mineral_sites_n_results.training').html());
-    
-        
 
         var training_sites_selected = (
             (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
@@ -3674,12 +3792,13 @@ function onRadioCubeClick(cmp) {
             DATACUBE_CONFIG.splice(s,1);
         });
         
-        $(`#datacube_layers tr[data-layername='${dsid}']`).remove();
+        $(`.datacube_layers_table tr[data-layername='${dsid}']`).remove();
         
         // If label raster was removed, update TRAINING header_info
         if (datalayer.gui_model == 'processedlayer' && datalayer.label_raster) {
             $('#training_info_using_processed_lr').hide();
             $('#training_info_using_sites').show();
+            $('#datacube_message_div').html('');
         }
         
         
@@ -4601,7 +4720,7 @@ function boundsOverlap(dl_id) {
     }
 }
 
-function addRowToDataLayersTable(dl) {
+function getLayerControlCategories(dl) {
     var category = dl.category;
     var subcat = dl.subcategory;
     
@@ -4613,6 +4732,29 @@ function addRowToDataLayersTable(dl) {
         category = 'User upload';
         subcat = dl.category;
     }
+    
+    return {
+        category: category.toUpperCase(),
+        subcat: subcat.toUpperCase(),
+    }
+    
+}
+
+function addRowToDataLayersTable(dl) {
+    var cats = getLayerControlCategories(dl);
+    var category = cats.category;
+    var subcat = cats.subcat;
+//     var category = dl.category;
+//     var subcat = dl.subcategory;
+//     
+//     if (dl.gui_model == 'outputlayer') {
+//         category = dl.model;//dl.subcategory;
+//         subcat = dl.model_run_id;
+//     }
+//     if (dl.subcategory == 'User upload') {
+//         category = 'User upload';
+//         subcat = dl.category;
+//     }
     
 //     var gmap = {
 //         outputlayer: 'outputlayer_container',
@@ -4658,6 +4800,9 @@ function addRowToDataLayersTable(dl) {
     // Add columns headers if date-based subcategory is empty
     var radiocube_header = dl.gui_model == 'outputlayer' ? '' : `Add to cube`;
     if (table.find(`tr.subcategory_label td:contains("${subcat}")`).length == 0) {
+        
+        
+        
         table.append(`
             <tr class='subcategory_label'>
                 <td>${subcat}</td>

@@ -234,7 +234,7 @@ class CDR():
             files={'input_file': input_file}
         )
 
-    def get_prospectivity_output_layers(self,cma_id='',page=0,size=10000,model_run_id=''):
+    def get_prospectivity_output_layers(self,cma_id='',page=0,size=100000,model_run_id=''):
         return self.run_query(
             f'prospectivity/prospectivity_output_layers?page={page}&size={size}&cma_id={cma_id}&model_run_id={model_run_id}'
         )

@@ -620,12 +620,12 @@ span.collapse {
     padding: 2px 4px;
 }
 .datalayer_table td.name,
-#datacube_layers td.name {
+.datacube_layers_table td.name {
     font-family: 'Open Sans Condensed';
     font-size: 0.95rem;
     max-width: 140px;
 }
-#datacube_layers td.name {
+.datacube_layers_table td.name {
     vertical-align: top;
     
 }
@@ -685,7 +685,7 @@ tr.subcategory_label td {
     text-align: left;
 }
 tr.subcategory_label td.colname,
-.content.datacube #datacube_layers thead td,
+.content.datacube .datacube_layers_table thead td,
 .cmamodelrun thead td,
 .mineral_site_info_table td.colname
 {
@@ -708,7 +708,7 @@ tr.subcategory_label td.colname,
 }
 
 
-.content.datacube #datacube_layers thead td {
+.content.datacube .datacube_layers_table thead td {
     text-align: left;
     padding-left: 4px;
     
@@ -861,10 +861,10 @@ select:invalid {
 table.modeling_params {
     background-color: transparent;
     color: white;
-    margin: 10px auto 20px auto;
+    margin: 10px auto 8px auto;
     width: 80%;
 }
-.content.datacube #datacube_layers tbody {
+.content.datacube .datacube_layers_table tbody {
     background-color: #666;
     border: 2px dashed #478556;
 }
@@ -941,35 +941,35 @@ div.img_hover:hover div:last-child {
 div.img_hover:hover div:first-child {
   display: none;  
 }
-#datacube_layers tbody td {
+.datacube_layers_table tbody td {
     padding: 2px 6px;
     vertical-align: middle;
     border-bottom: 0.5px solid #777;
     
 }
-#datacube_layers td.name {
+.datacube_layers_table td.name {
     font-size: 0.95rem;
     font-weight: 500;
     color: #fff;
     padding: 6px 8px;
     overflow-wrap: normal;
 }
-#datacube_layers tr.instructions td {
+.datacube_layers_table tr.instructions td {
     font-style: italic;
     color: #f2f2f2;
     padding: 4px 4px;
 }
-#datacube_layers tr.label_raster {
+.datacube_layers_table tr.label_raster {
     background-image: repeating-linear-gradient(135deg, #666666, #666666 14px, rgb(106, 106, 106) 14px, rgb(106, 106, 106) 28px);
 }
-#datacube_layers tr.label_raster:hover {
+.datacube_layers_table tr.label_raster:hover {
     background-image: none;
     background-color: #444;
 }
-#datacube_layers tbody tr:hover {
+.datacube_layers_table tbody tr:hover {
     background-color: #444;
 }
-#datacube_layers td.remove {
+.datacube_layers_table td.remove {
     padding: 0px 6px;
 }
 .link {
@@ -1176,18 +1176,18 @@ a:visited {
     background-color: #24422b; 
 /*     border-width: 4px; */
 }
-.content.datacube #datacube_layers .processingsteps_list table {
+.content.datacube .datacube_layers_table .processingsteps_list table {
     margin: 0px;
     width: 100%;
 }
-.content.datacube #datacube_layers .processingsteps_list table tbody {
+.content.datacube .datacube_layers_table .processingsteps_list table tbody {
     border: none;
     background-color: transparent;
 }
-.content.datacube #datacube_layers .processingsteps_list table tr:hover {
+.content.datacube .datacube_layers_table .processingsteps_list table tr:hover {
     background-color: transparent;
 }
-#datacube_layers .processingsteps_list table td {
+.datacube_layers_table .processingsteps_list table td {
     font-size: 0.70rem;
     border: none;
     color: #ffffcc;
@@ -2009,7 +2009,7 @@ div.topbar_button img {
     color: #999;
 }
 
-.datalayer_table td.name:hover, #datacube_layers td.name:hover {
+.datalayer_table td.name:hover, .datacube_layers_table td.name:hover {
     color: white;
     font-weight: bold;
 }
@@ -2421,12 +2421,12 @@ tr.site_src_row_extra {
     
 }
 
-#datacube_layers tbody td.complete {
+.datacube_layers_table tbody td.complete {
     color: #9cc9ab;
     font-style: italic;
     cursor: pointer;
 }
-#datacube_layers tbody td.complete:hover {
+.datacube_layers_table tbody td.complete:hover {
     color: #75f09e;
 }
 
@@ -2491,11 +2491,22 @@ div.download {
     width: calc(100%-26px);
 }*/
 
+
+.datacube_layers_table tr.label_raster.disabled td {
+    color: #999;
+    
+}
+
 .lr_asterisk {
     color: #ff33cc;
     font-size: 1.0rem;
     font-weight: bold;
 }
+#datacube_message_div {
+    margin-bottom: 10px;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -2508,7 +2519,7 @@ div.download {
 /*#btn_cma_load {
     color: #ffb366;
 }*/
-/*.content.datacube #datacube_layers tbody {
+/*.content.datacube .datacube_layers_table tbody {
     box-shadow: 10px -5px rgba(90,90,90,0.5 );
 }*/
 

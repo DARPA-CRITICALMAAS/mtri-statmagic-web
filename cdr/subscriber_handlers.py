@@ -62,6 +62,7 @@ def run_ta3_pipeline(model_run_id):
     # [(path_to_raster1, ProspectivityOutputLayer1), (path_to_raster2, ProspectivityOutputLayer2), ...]
     output_layers = run_som(
         input_layers=input_file_list,
+        input_labels=None,
         config_file=config_file,
         output_folder=output_folder
     )
