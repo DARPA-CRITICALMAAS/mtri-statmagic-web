@@ -30,6 +30,7 @@ if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
 #sys.path.append('/usr/local/project/cdr_schemas/')
 from cdr_schemas import prospectivity_models
 from cdr_schemas import prospectivity_input
+from cdr_schemas.common import GeomType
 
 # Functions for handling requests
 
@@ -785,7 +786,7 @@ def submit_preprocessing(request):
         
         # extra_geometries will be provided as list of coordinates [x,y]
         extra_geometries = [
-            prospectivity_input.Point(coordinates = x)
+            prospectivity_input.Point(coordinates=x,type='Point')
             for x in params['training_sites'] if type(x) == list
         ]
             
@@ -799,7 +800,7 @@ def submit_preprocessing(request):
             extra_geometries = extra_geometries,
             transform_methods = tms,
         )
-        
+
         vector_layers.append(l)
         
         
