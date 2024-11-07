@@ -1129,6 +1129,17 @@ function getNlayersByEventID(event_id) {
     return n;
 }
 
+function processNewProcessedLayer(l) {
+    // Replace raw layer with processed layer in datacube
+    onRadioCubeClick(
+        $(`label[for='radiocube_${l.data_source_id_orig}'][class='no']`)[0]
+    );
+    onRadioCubeClick(
+        $(`label[for='radiocube_${l.data_source_id}'][class='yes']`)[0]
+    );
+    
+}
+
 function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
 
     $.ajax(`/sync_processed_layers`, {
@@ -1151,19 +1162,13 @@ function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
             // Update DATALAYERS_LOOKUP
             processDataLayersUpdates(response);
             
+            // For some reason these seem to be hidden when added
+            // dynamically
+            $('.radiocube').show();
+            
             // Process new layers 
             $.each(new_layers, function(i,l) {
-                // For some reason these seem to be hidden when added
-                // dynamically
-                $('.radiocube').show();
-//                 console.log(l);
-                // Replace raw layer with processed layer in datacube
-                onRadioCubeClick(
-                    $(`label[for='radiocube_${l.data_source_id_orig}'][class='no']`)[0]
-                );
-                onRadioCubeClick(
-                    $(`label[for='radiocube_${l.data_source_id}'][class='yes']`)[0]
-                );
+                processNewProcessedLayer(l);
             });
             
             // Update status message
@@ -2816,6 +2821,11 @@ function getActiveCMAID() {
     
 }
 
+function submitPreprocessAndRun() {
+    alert('Button functionality in progress');
+    
+}
+
 // Send POST request to backend
 function submitPreprocessing() {
      var model = MODELS[$('#model_select').val()];
@@ -2875,6 +2885,17 @@ function submitPreprocessing() {
             var expected_layers = evidence_layers.length + (training_sites.length > 0 ? 1 : 0);
             
             // Check for previously processed layers
+            var n_processed = 0;
+            if (response.previously_processed) {
+                n_processed = response.previously_processed.length;
+                $('#message_modal_small .content').html(`
+                    ${n_processed} layers previously processed for event ID:<br><span class='highlight'>${event_id}</span>
+                `);
+                $('#message_modal_small').show();
+                $.each(response.previously_processed, function(i,lobj) {
+                    processNewProcessedLayer(DATALAYERS_LOOKUP[lobj.layer_id]);
+                });
+            }
             
             
             // Load event ID to status table
@@ -2899,7 +2920,7 @@ function submitPreprocessing() {
                         </tr>
                         <tr>
                             <td class='label'>Layers complete:</td>
-                            <td><span class='event_n_complete' id='event_n_complete_${event_id}'>0</span> of ${expected_layers}
+                            <td><span class='event_n_complete' id='event_n_complete_${event_id}'>${n_processed}</span> of ${expected_layers}
                             </td>
                         </tr>
                         <tr>
@@ -2914,6 +2935,13 @@ function submitPreprocessing() {
             `);
             
             activateRunStatus();
+            
+             // If all requested layers already processed....
+            if (expected_layers == n_processed) {
+                $('#model_run_status').removeClass('active');
+                showModelingMainPane();
+                return;
+            }
             
             // Start monitor for new layers; will stop once the # of submitted 
             // evidence_layers == the # of layers in DATALAYERS_LOOKUP that 
