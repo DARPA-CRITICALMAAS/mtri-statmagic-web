@@ -1304,7 +1304,11 @@ function processModelRunsFromCDR(model_runs,mrid_selected) {
     var trs = '';
     var all_sel = mrid_selected ? '' : ' selected';
     var opts = `<option value="all" ${all_sel}>all</option>`;
-    $.each(model_runs, function(mrid, mobj) {
+    var mrid_sort = Object.keys(model_runs).sort(function(a,b) {
+        return model_runs[a].event.timestamp > model_runs[b].event.timestamp ? -1 : 1;
+    });
+    $.each(mrid_sort, function(i,mrid) {
+        var mobj = model_runs[mrid];
         
 //         console.log(mrid,mobj);
         
@@ -1605,9 +1609,6 @@ function createLayerControl() {
             };
         });
     });
-    
-    // NOTE: commenting macrostrat out temporarily b/c leaflet.vectorgrid not loading:
-    // <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
     
      // Create a popup 
     var popup2 = L.popup({
