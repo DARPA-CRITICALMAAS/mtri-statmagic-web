@@ -13,6 +13,7 @@ else:
 import cdr_utils
 
 def run_ta3_pipeline(model_run_id):
+    datalayer_cache_dir = os.environ["DATALAYER_CACHE_DIR"]
     output_folder = None
     
     @atexit.register
@@ -43,7 +44,7 @@ def run_ta3_pipeline(model_run_id):
         pl = cdr.get_processed_data_layer(l['layer_id'])
         ext = pl['download_url'].split('.')[-1]
         
-        download_file = os.path.join(output_folder,f"{l['layer_id']}.{ext}")
+        download_file = os.path.join(datalayer_cache_dir,f"{l['layer_id']}.{ext}")
         input_file_list.append(download_file)  
         if os.path.exists(download_file):
             continue
@@ -51,7 +52,6 @@ def run_ta3_pipeline(model_run_id):
         # Download file to temporary directory
         with requests.get(pl['download_url']) as r,open(download_file,'wb') as f:
             f.write(r.content)
-    
     
     # Save json to temporary file b/c that's what run_som takes in
     with tempfile.NamedTemporaryFile() as tmpfile:
