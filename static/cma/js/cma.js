@@ -751,7 +751,7 @@ function toggleLabelRasterEnable(toggle) {
     } else {
         $('tr.cube_layer.label_raster').addClass('disabled');
         $('#datacube_message_div').html(`
-            <span class='lr_asterisk'>*</span> Label raster layer will be ignored for unsupervised models
+            <span class='lr_asterisk'>*</span> Label raster layer will only be used for label correlation analysis in unsupervised models
         `);
     }
 }
@@ -760,7 +760,6 @@ function toggleLabelRasterEnable(toggle) {
 function onModelSelect() {
     var model = MODELS[$('#model_select').val()];
     
-
     // First hide everything
     resetModelUI();
     
@@ -4804,8 +4803,6 @@ function addRowToDataLayersTable(dl) {
     var radiocube_header = dl.gui_model == 'outputlayer' ? '' : `Add to cube`;
     if (table.find(`tr.subcategory_label td:contains("${subcat}")`).length == 0) {
         
-        
-        
         table.append(`
             <tr class='subcategory_label'>
                 <td>${subcat}</td>
@@ -4831,7 +4828,7 @@ function addRowToDataLayersTable(dl) {
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
             <td class='download'>
-                <a href='${dl.download_url}' target='_blank'><img src="/static/cma/img/download-32.png" height=12 width=12 /></a>
+                <a href='${dl.download_url}' target='_blank'>${dl.data_format}</a>
             </td>
             <td>${radiocube}</td>
         </tr>
