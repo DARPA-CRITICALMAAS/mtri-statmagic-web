@@ -40,12 +40,19 @@ def run_ta3_pipeline(model_run_id):
         
     # Extract list of download_urls from the model run payload
     input_file_list = []
+    input_labels = None
     for l in res['event']['payload']['evidence_layers']:
         pl = cdr.get_processed_data_layer(l['layer_id'])
+        
         ext = pl['download_url'].split('.')[-1]
         
         download_file = os.path.join(datalayer_cache_dir,f"{l['layer_id']}.{ext}")
-        input_file_list.append(download_file)  
+        
+        if 'label_raster' in pl and pl['label_raster']: 
+            input_labels = download_file
+        else:
+            input_file_list.append(download_file)  
+            
         if os.path.exists(download_file):
             continue
         
@@ -64,7 +71,7 @@ def run_ta3_pipeline(model_run_id):
     # [(path_to_raster1, ProspectivityOutputLayer1), (path_to_raster2, ProspectivityOutputLayer2), ...]
     output_layers = run_som(
         input_layers=input_file_list,
-        input_labels=None,
+        input_labels=input_labels,
         config_file=config_file,
         output_folder=output_folder
     )
