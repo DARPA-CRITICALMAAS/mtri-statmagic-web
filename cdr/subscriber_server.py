@@ -73,7 +73,7 @@ async def event_handler(
                 print(evt.payload)
                 subscriber_handlers.run_ta3_pipeline(evt.payload['model_run_id'])
             case _:
-                print("Nothing to do for event: %s", evt)
+                print("Nothing to do for event: %s", evt.split('event=')[1].split(' ')[0])
 
     except Exception:
         print("background processing event: %s", evt)
