@@ -1609,118 +1609,118 @@ function createLayerControl() {
     // NOTE: commenting macrostrat out temporarily b/c leaflet.vectorgrid not loading:
     // <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
     
-//      // Create a popup 
-//     var popup2 = L.popup({
-//         minWidth: 260,
-//         autoPan: false,
-//     });
-//     var macrostrat_layer_units = L.vectorGrid.protobuf(
-//         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
-//         attribution: 'Macrostrat',
-//         interactive: true,
-//         vectorTileLayerStyles: {
-//             units: function (properties) {
-//                 return {
-//                     weight: 0.1,
-//                     color: properties.color,
-//                     fillColor: properties.color,
-//                     fillOpacity: 0.5,
-//                     fill: true,
-//                 };
-//             },
-//             lines: {
-//                 weight: 0,
-//                 
-//             }
-//         },
-//     });
-//     macrostrat_layer_units.bindPopup(popup2);
-//     macrostrat_layer_units.on('click', function(e) {
-//         var prop = e.layer.properties;
-//         
-//         // Special parsing of the 'lith' property b/c sometimes it's just a
-//         // list and sometimes it's divided between Major/Minor/etc.
-//         var lith = prop.lith;
-//         if (lith.indexOf('Major') > -1) {
-//             lith = lith.replaceAll('{',' ').replaceAll('},','}');
-//             if (lith.slice(-1) == '}') {
-//                 lith = lith.slice(0,-1);
-//             }
-//             lith = lith.split('}');
-//         } else {
-//             lith = lith.split(',');
-//         }
-//     
-//         var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
-//     
-//         popup2.setContent(`
-//             <b>${prop.name}</b>
-//             <br><br>
-//             <span class='label'>Age:</span> <b>${prop.age}</b><br>
-//             <span class='label'>Best age (top):</span> <b>${prop.best_age_top.toFixed(1)}</b><br>
-//             <span class='label'>Best age (bottom):</span> <b>${prop.best_age_bottom.toFixed(1)}</b><br>
-//             ${desc}
-//             <br><br>
-//             <span class='label'>Lithology:</span><br><span class='emri_keyword'>${lith.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-//             <br><br>
-//             <span class='label'>Comments:</span>
-//             <div class='macrostrat_source'>${prop.comments}</div>
-//             <br><br>
-//             <span class='label'>Source:</span><br>
-//             <div class='macrostrat_source'><a href='${prop.ref_url}' target='_blank' >${prop.ref_authors} ${prop.ref_year}. ${prop.ref_title}. ${prop.ref_source}. ${prop.ref_isbn}</a>
-//             </div>
-//             <br>
-//             
-//             
-//         `);
-//         console.log(e.layer.properties);
-//         macrostrat_layer_units.openPopup();
-// 
-//     });
-//     macrostrat_layer_units.on('mouseover', function(e) {
-//         e.layer.setStyle({fillOpacity: 0.9});
-//     });
-//     macrostrat_layer_units.on('mouseout', function(e) {
-//         e.layer.setStyle({fillOpacity: 0.5,});
-//     });
-//     
-//      // Create a popup 
-//     var popup = L.popup({
-//         minWidth: 260,
-//         autoPan: false,
-//     });
-//     var macrostrat_layer_lines = L.vectorGrid.protobuf(
-//         'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
-//         attribution: 'Macrostrat',
-//         interactive: true,
-//         vectorTileLayerStyles: {
-//             units: {
-//                 fillOpacity: 0,
-//                 weight: 0,
-//             },
-//             lines: {
-//                 weight: 1,
-//                 color: '#222',
-//             }
-//         },
-//     });
-//     
-//     images2.Layers.macrostrat_units = {
-//         group: 'Reference Layers',
-//         label: 'Macrostrat - units',
-//         as_checkbox: true,
-//         title: '',
-//         layers: [macrostrat_layer_units],
-//         legend: '',
-//     };
-//     images2.Layers.macrostrat_lines = {
-//         group: 'Reference Layers',
-//         label: 'Macrostrat - lines',
-//         as_checkbox: true,
-//         title: '',
-//         layers: [macrostrat_layer_lines],
-//         legend: '',
-//     }
+     // Create a popup 
+    var popup2 = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
+    var macrostrat_layer_units = L.vectorGrid.protobuf(
+        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+        attribution: 'Macrostrat',
+        interactive: true,
+        vectorTileLayerStyles: {
+            units: function (properties) {
+                return {
+                    weight: 0.1,
+                    color: properties.color,
+                    fillColor: properties.color,
+                    fillOpacity: 0.5,
+                    fill: true,
+                };
+            },
+            lines: {
+                weight: 0,
+                
+            }
+        },
+    });
+    macrostrat_layer_units.bindPopup(popup2);
+    macrostrat_layer_units.on('click', function(e) {
+        var prop = e.layer.properties;
+        
+        // Special parsing of the 'lith' property b/c sometimes it's just a
+        // list and sometimes it's divided between Major/Minor/etc.
+        var lith = prop.lith;
+        if (lith.indexOf('Major') > -1) {
+            lith = lith.replaceAll('{',' ').replaceAll('},','}');
+            if (lith.slice(-1) == '}') {
+                lith = lith.slice(0,-1);
+            }
+            lith = lith.split('}');
+        } else {
+            lith = lith.split(',');
+        }
+    
+        var desc = prop.descrip ? `<span class='link' onclick="showMessage('${prop.name} - description','${prop.descrip}');">Description</span>` : '';
+    
+        popup2.setContent(`
+            <b>${prop.name}</b>
+            <br><br>
+            <span class='label'>Age:</span> <b>${prop.age}</b><br>
+            <span class='label'>Best age (top):</span> <b>${prop.best_age_top.toFixed(1)}</b><br>
+            <span class='label'>Best age (bottom):</span> <b>${prop.best_age_bottom.toFixed(1)}</b><br>
+            ${desc}
+            <br><br>
+            <span class='label'>Lithology:</span><br><span class='emri_keyword'>${lith.join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            <br><br>
+            <span class='label'>Comments:</span>
+            <div class='macrostrat_source'>${prop.comments}</div>
+            <br><br>
+            <span class='label'>Source:</span><br>
+            <div class='macrostrat_source'><a href='${prop.ref_url}' target='_blank' >${prop.ref_authors} ${prop.ref_year}. ${prop.ref_title}. ${prop.ref_source}. ${prop.ref_isbn}</a>
+            </div>
+            <br>
+            
+            
+        `);
+        console.log(e.layer.properties);
+        macrostrat_layer_units.openPopup();
+
+    });
+    macrostrat_layer_units.on('mouseover', function(e) {
+        e.layer.setStyle({fillOpacity: 0.9});
+    });
+    macrostrat_layer_units.on('mouseout', function(e) {
+        e.layer.setStyle({fillOpacity: 0.5,});
+    });
+    
+     // Create a popup 
+    var popup = L.popup({
+        minWidth: 260,
+        autoPan: false,
+    });
+    var macrostrat_layer_lines = L.vectorGrid.protobuf(
+        'https://dev.macrostrat.org/tiles/carto/{z}/{x}/{y}', {
+        attribution: 'Macrostrat',
+        interactive: true,
+        vectorTileLayerStyles: {
+            units: {
+                fillOpacity: 0,
+                weight: 0,
+            },
+            lines: {
+                weight: 1,
+                color: '#222',
+            }
+        },
+    });
+    
+    images2.Layers.macrostrat_units = {
+        group: 'Reference Layers',
+        label: 'Macrostrat - units',
+        as_checkbox: true,
+        title: '',
+        layers: [macrostrat_layer_units],
+        legend: '',
+    };
+    images2.Layers.macrostrat_lines = {
+        group: 'Reference Layers',
+        label: 'Macrostrat - lines',
+        as_checkbox: true,
+        title: '',
+        layers: [macrostrat_layer_lines],
+        legend: '',
+    }
     
     
     // Mapping of 'program' property to color, as used in: https://ngmdb.usgs.gov/emri/#20041
@@ -1743,57 +1743,57 @@ function createLayerControl() {
         minWidth: 260,
         autoPan: false,
     });
-//     var emri_layer = L.vectorGrid.protobuf(
-//         'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
-//         fetchOptions: {
-//             headers: {
-// //                 Authorization: `Bearer ${CDR_BEARER}`
-//             },
-//         },
-//         rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
-//         attribution: 'Earth MRI',
-//         interactive: true,
-//         vectorTileLayerStyles: {
-//             'acquisitions-1ug54m': function(properties) {
-//                 return {
-//                     weight: 0.5,
-//                     color: '#cccccc',
-//                     fillColor: emri_color_map[parseEMRIprogram(properties)],
-//                     fillOpacity: 0.5,
-//                     fill: true,
-//                 };
-//             },
-//         },
-//     });
-//     emri_layer.bindPopup(popup);
-//     emri_layer.on('click', function(e) {
-//         console.log(e.layer.properties);
-//         var prop = e.layer.properties;
-//         var contact = JSON.parse(prop.contact)[0];
-//         console.log(contact);
-//         popup.setContent(`
-//             <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
-//             <br><br>
-//             <span class='label'>Year started:</span> <b>${prop.yearstart}</b>
-//             <br><br>
-//             <span class='label'>Contact name:</span> <b>${contact.cname}</b><br>
-//             <span class='label'>Contact email:</span> <b>${contact.cmail}</b><br>
-//             <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
-//             <br><br>
-//             <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
-//             
-//         `);
-//         emri_layer.openPopup();
-//     });
-//     
-//     images2.Layers.emri_layer = {
-//         group: 'Reference Layers',
-//         label: 'Earth MRI Acquisitions',
-//         as_checkbox: true,
-//         title: '',
-//         layers: [emri_layer],
-//         legend: '',
-//     };
+    var emri_layer = L.vectorGrid.protobuf(
+        'https://api.mapbox.com/v4/cgarrity.273objnx/{z}/{x}/{y}.vector.pbf?sku=101MMCEfKe5HO&access_token=pk.eyJ1IjoiY2dhcnJpdHkiLCJhIjoiM1RMUGpLcyJ9.jZ7CdJD_QpjsRuygD4un7w', {
+        fetchOptions: {
+            headers: {
+//                 Authorization: `Bearer ${CDR_BEARER}`
+            },
+        },
+        rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+        attribution: 'Earth MRI',
+        interactive: true,
+        vectorTileLayerStyles: {
+            'acquisitions-1ug54m': function(properties) {
+                return {
+                    weight: 0.5,
+                    color: '#cccccc',
+                    fillColor: emri_color_map[parseEMRIprogram(properties)],
+                    fillOpacity: 0.5,
+                    fill: true,
+                };
+            },
+        },
+    });
+    emri_layer.bindPopup(popup);
+    emri_layer.on('click', function(e) {
+        console.log(e.layer.properties);
+        var prop = e.layer.properties;
+        var contact = JSON.parse(prop.contact)[0];
+        console.log(contact);
+        popup.setContent(`
+            <b>${prop.alias}</b> | ${prop.affiliatio} | <b>${parseEMRIprogram(prop)}</b>
+            <br><br>
+            <span class='label'>Year started:</span> <b>${prop.yearstart}</b>
+            <br><br>
+            <span class='label'>Contact name:</span> <b>${contact.cname}</b><br>
+            <span class='label'>Contact email:</span> <b>${contact.cmail}</b><br>
+            <a href='${prop.website}' target='_blank'>Website</a> | <a href='https://mrdata.usgs.gov/earthmri/data-acquisition/project.php?f=html&pid=${prop.pid}' target='_blank'>More info</a>
+            <br><br>
+            <span class='label'>Keywords:</span><br><span class='emri_keyword'>${prop.pkeyword.split(';').join('</span><span class="emri_keyword_break"> | </span><span class="emri_keyword">')}</span>
+            
+        `);
+        emri_layer.openPopup();
+    });
+    
+    images2.Layers.emri_layer = {
+        group: 'Reference Layers',
+        label: 'Earth MRI Acquisitions',
+        as_checkbox: true,
+        title: '',
+        layers: [emri_layer],
+        legend: '',
+    };
     
 
     var groups = Object.keys(images2).sort();
