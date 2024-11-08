@@ -3448,6 +3448,9 @@ function getLayerNameLabel(dl) {
         
         if (dl.name.indexOf('Codebook Map') > -1 ) {
             var pl = DATALAYERS_LOOKUP[dl.name.split(' ').slice(-1)];
+            if (pl) {
+                name_pretty = `Codebook Map: ${pl.name_pretty}`;
+            }
             if (pl && pl.data_source_id_orig) {
                 name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
             }
