@@ -30,7 +30,7 @@ import subscriber_handlers
 
 
 SETTINGS = {
-    'system_name': 'beak_via_mtri',#os.environ["SYSTEM_NAME"],
+    'system_name': 'beak_via_mtri_b',#os.environ["SYSTEM_NAME"],
     'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
     #'ml_model_name': '',#os.environ["MODEL_NAME"],
     #'ml_model_version': os.environ["MODEL_VERSION"],
