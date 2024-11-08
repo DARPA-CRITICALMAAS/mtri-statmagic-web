@@ -13,7 +13,7 @@ cdr = CDR()
 #res = cdr.run_query('prospectivity/cmas')
 #print(res)
 
-res = cdr.get_model_run('d494c5f58006463bac584952bc9bba4a')
+res = cdr.get_model_run('3a18f814011e4ab89efe8831d20d7620')
 print(res)
 blerg
 

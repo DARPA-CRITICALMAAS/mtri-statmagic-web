@@ -220,6 +220,7 @@ function onLoad() {
     
     toggleHeader($('.header.modeling'));
     toggleHeader($('.header.datacube'));
+    toggleHeader($('.header.training'));
     
     toggleHeader($('.header.model_outputs'));
     
@@ -3079,7 +3080,7 @@ function submitModelRun() {
     $.each(DATACUBE_CONFIG,function(i,l) {
         // Ignore layer if it's an unsupervised model and the layer is a label 
         // raster
-        if (isLabelRasterInDataCube() && !model.uses_training) {
+        if (isLabelRasterInDataCube() && !MODELS[model].uses_training) {
             return;
         }
         evidence_layers.push(l.data_source_id);
