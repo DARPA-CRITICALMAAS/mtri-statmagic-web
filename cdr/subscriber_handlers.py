@@ -32,8 +32,10 @@ def run_ta3_pipeline(model_run_id):
         print('\tNot Beak SOM type; ignoring...')
 
     # Set temporary output folder                                                        
-    output_folder = Path('/tmp',res['model_run_id'])
-    output_folder.mkdir(parents=True, exist_ok=True)      
+    output_folder = os.path.join('/tmp',res['model_run_id'])#Path('/tmp',res['model_run_id'])
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    #output_folder.mkdir(parents=True, exist_ok=True)      
         
     # Extract list of download_urls from the model run payload
     input_file_list = []
