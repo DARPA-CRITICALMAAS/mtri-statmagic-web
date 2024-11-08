@@ -56,7 +56,7 @@ def run_ta3_pipeline(model_run_id):
         config_file = tmpfile.name
         
     with open(config_file,'w') as f:
-        f.write(json.dumps(res))
+        f.write(json.dumps(res['event']['payload']))
     
     # Would like the output from run_som to be a list of tuples
     # [(path_to_raster1, ProspectivityOutputLayer1), (path_to_raster2, ProspectivityOutputLayer2), ...]
