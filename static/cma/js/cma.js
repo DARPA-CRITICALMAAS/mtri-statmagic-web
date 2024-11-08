@@ -3080,9 +3080,9 @@ function submitModelRun() {
     $.each(DATACUBE_CONFIG,function(i,l) {
         // Ignore layer if it's an unsupervised model and the layer is a label 
         // raster
-        if (isLabelRasterInDataCube() && !MODELS[model].uses_training) {
-            return;
-        }
+//         if (isLabelRasterInDataCube() && !MODELS[model].uses_training) {
+//             return;
+//         }
         evidence_layers.push(l.data_source_id);
     });
     
@@ -3446,9 +3446,8 @@ function getLayerNameLabel(dl) {
     
     if (dl.gui_model == 'outputlayer') {
         
-        if (dl.name.indexOf('Codebook Map:') > -1 ) {
-            var pl = DATALAYERS_LOOKUP[dl.name.split(': ')[1]];
-            //console.log(pl);
+        if (dl.name.indexOf('Codebook Map') > -1 ) {
+            var pl = DATALAYERS_LOOKUP[dl.name.split(' ').slice(-1)];
             if (pl && pl.data_source_id_orig) {
                 name_pretty = `Codebook Map: ${DATALAYERS_LOOKUP[pl.data_source_id_orig].name_pretty}`;
             }

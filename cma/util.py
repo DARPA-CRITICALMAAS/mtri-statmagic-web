@@ -710,8 +710,8 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
                     subcategory = datalayer.subcategory
                     category = datalayer.category
                 else:
-                    subcategory = 'TA1'
-                    category = 'TA1 Data'
+                    subcategory = 'Features'
+                    category = 'Geology'
             dl, created = models.ProcessedLayer.objects.get_or_create(
                 data_source_id = ds['layer_id'],
                 #download_url = ds['download_url'],
