@@ -912,7 +912,7 @@ def get_datalayers_for_gui(
                 'category','subcategory','name'
             ):
             
-            if '12m_hack' in d.description or '12mhack' in d.description or '20240905' in d.description or 'cma-lithium-' in d.description:
+            if '12m_hack' in d.description or '12mhack' in d.description or '20240905' in d.description: #or 'cma-lithium-' in d.description:
                 continue
             
             cat = d.category if d.subcategory != 'User upload' else 'User uploads'
