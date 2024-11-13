@@ -197,76 +197,13 @@
                     </div>
                 </div>
                 <div class='content main'>
-    
-                   <!-- <div class='collapse sub'>
-                        <div class='header topbar sub'><span class="collapse">+ </span> User layers</div>
-                        <div class='content'>
-                             <div class='button load_sites upload' title='Upload a data layer' onclick="$('.modal_uploaddatalayer').show();">Upload</div>
-                            
-                        </div> <!--content-->
-                     <!--collapse_sub-->
- 
-                {% for category,cobj in datalayers.items %}
-                    <div class='collapse sub'>
-                        <div class='header topbar sub {{category}}'><span class="collapse">+ </span> {{category}}{% if category == "User uploads" %}<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div>{% endif %}</div>
-                        <div class='content'>
-                            {% if category == "model outputs" %} 
-                                <div id='model_output_layers_filter'>
-                                    Filter MPM outputs: <select onchange='loadModelOutputs();'>
-                                        <option value='all'>all</option>
-                                    </select>
-                                </div>
-                            {% endif %}
-                            <table class='datalayer_table'
-                                {% if category == "User uploads" %} id='user_upload_layers_table'{% endif %}
-                                {% if category == "model outputs" %} id='model_outputs_table'{% endif %}
-                            >
-                            {% if category != 'model outputs' %}
-                            {% for subcategory,layers in cobj.items %}
-                                <tr class='subcategory_label'>
-                                    <td>{{subcategory}}</td>
-                                    <td class='colname'>Info</td>
-                                    <td class='colname'>Show</td>
-                                    <td class='colname'>Download</td>
-                                    <td class='colname radiocube'>Add to cube</td>
-
-                                </tr>
-                                {% for layer in layers %}
-                                    <tr data-path="{{layer.data_source_id}}"  onmouseover='showLayerExtentPreview("{{layer.data_source_id}}");' onmouseout='hideLayerExtentPreview();'>
-    <!--                                     <td class='subcategory'>{{layer.subcategory}}</td> -->
-                                        <td class='name' title='{{layer.name}}'>{{layer.name_pretty}}{% if layer.data_format == 'shp' %}*{% endif %}</td>
-                                        <td class='info' onclick='showDataLayerInfo("{{layer.data_source_id}}");'><img src="{% static 'cma/img/information.png' %}" height="16px" class="download_icon"></td>
-                                        <td class='show_chk'>
-                                            {% if layer.data_format != 'shp2' %}
-                                            
-                                            <input type='checkbox' onChange='onToggleLayerClick(this,"{{layer.data_source_id}}");' />
-                                            {% else %}
-                                                <a href='{{layer.download_url}}' target='_blank'>{{ layer.data_format }}</a>
-                                            {% endif %}
-                                        </td>
-                                        <td class='download'>
-                                            <a href='{{layer.download_url}}' target='_blank'>
-                                                {{ layer.data_format }}
-                                                <!--<img src="{% static 'cma/img/download-32.png' %}" height=12 width=12 />-->
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <div class="radiocube" align="left">
-                                                <input type="radio" name="radiocube_{{layer.data_source_id}}" value="no" checked>
-                                                <label class='no' for="radiocube_{{layer.data_source_id}}" onclick="onRadioCubeClick(this);">N</label>
-                                                <input type="radio" name="radiocube_{{layer.data_source_id}}" value="yes" >
-                                                <label class='yes' for="radiocube_{{layer.data_source_id}}" onclick="onRadioCubeClick(this);">Y</label>
-                                            </div>
-                                        </td>
-                  
-                                    </tr>
-                                {% endfor %}
-                            {% endfor %}
-                            {% endif %}
-                            </table>
-                        </div>
-                    </div>
-                {% endfor %}
+                <div class="collapse sub">
+                <div class="header topbar sub USER_UPLOAD"><span class="collapse">+ </span> USER UPLOAD<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div></div>
+                <div class="content">
+                    <table class="datalayer_table" id="datalayer_table_USER_UPLOAD">
+                    </table>
+                </div> <!--content-->
+            </div>
                 </div>
             </div>
  

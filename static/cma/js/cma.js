@@ -128,7 +128,6 @@ function onLoad() {
     
     // Build map layer control
     createLayerControl();
-    
         
     // Add top CMA choose control
     addCMAControl();
@@ -168,7 +167,7 @@ function onLoad() {
     // Trigger CRS select to load units/resolution  
     onCRSselect();
     
-    // Populate ProcessinStep options
+    // Populate ProcessingStep options
     populateAddProcessingStep();
     
     // Create legend control for mineral sites
@@ -176,6 +175,11 @@ function onLoad() {
     
     // Create legend control for standard layers
     createLegendControl('legend_content','topright');
+    
+    // Add layers to layer control
+    $.each(DATALAYERS_LOOKUP, function(dsid,dl) {
+        addRowToDataLayersTable(dl);
+    });
     
     // Have the leaflet map update it's size after the control_panel show/hide
     // transition completes
@@ -4765,7 +4769,8 @@ function addRowToDataLayersTable(dl) {
 //         datalayer: 'datalayer_container',
 //     }
     
-    var table_id = `${dl.gui_model}_table_${category}`
+    var category_clean = category.replaceAll(' ','_');
+    var table_id = `${dl.gui_model}_table_${category_clean}`;
     var table = $(`#${table_id}`);
     var div = $(`#${dl.gui_model}_container .content.main`);
     
@@ -4778,7 +4783,7 @@ function addRowToDataLayersTable(dl) {
     if (table.length == 0) {// && dl.gui_model == 'processedlayer') {     
         var category_html = `
             <div class='collapse sub'>
-                <div class='header topbar sub ${category}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${category}</div>
+                <div class='header topbar sub ${category_clean}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${category}</div>
                 <div class='content'>
                     <table class='datalayer_table' id='${table_id}'>
                     </table>
@@ -4796,7 +4801,7 @@ function addRowToDataLayersTable(dl) {
                onChange='onToggleLayerClick(this,"${dl.data_source_id}");' />
     `;
     var ext = dl.download_url.split('.').slice(-1)[0];
-    if (dl.data_format != 'tif') {
+    if (['tif','shp'].indexOf(dl.data_format) == -1) {// != 'tif') {
         show_chk = `${dl.download_url.split('.').slice(-1)[0]}`;
     }
     

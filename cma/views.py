@@ -77,7 +77,7 @@ def home(request):
         #'commodities': commodities,
         'MODELS': json.dumps(model_opts),
         'DATALAYERS_LOOKUP': json.dumps(dls['datalayers_lookup']),
-        'datalayers': dls['datalayers'],
+       # 'datalayers': dls['datalayers'],
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
         'crs_options': crs_opts,
         'CRS_OPTIONS': json.dumps(crs_opts),
