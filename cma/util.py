@@ -779,11 +779,12 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
         if not update_all and ds['layer_id'] in existing_dsids:
             continue
         
-        if ds['download_url'].split('.')[-1] != 'tif':
-            continue
+        #if ds['download_url'].split('.')[-1] != 'tif':
+        #    continue
         
         if cma_id and ds['cma_id'] != cma_id:
             continue
+        ext = ds['download_url'].split('.')[-1] 
 
         print(i, 'get/creating:',ds['layer_id'])
         #continue
@@ -805,7 +806,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
                 #'publication_date': ds['publication_date'],
                 #'doi': ds['DOI'],
                 #'datatype': ds['type'],
-                'data_format': 'tif',
+                'data_format': ext,
                 'category': 'model outputs',
                 'subcategory': ds['model'].capitalize().rstrip('s'),
                 #'spatial_resolution_m': ds['resolution'][0],
@@ -872,13 +873,15 @@ def sync_remote_outputs_to_local(dsid=None,do_processed_layers=False):
                     #print(r.content)
                     f.write(r.content)
 
-            # Compress and add overviews
-            temp_tif = 'temp_compress.tif'
-            cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'
-            os.system(cmd)
-            shutil.move(temp_tif, ofile)
+            # Do extra stuff for rasters
+            if  datalayer.format == 'tif':
+                # Compress and add overviews
+                temp_tif = 'temp_compress.tif'
+                cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'
+                os.system(cmd)
+                shutil.move(temp_tif, ofile)
 
-            os.system(f'gdaladdo {ofile} 2 4 8 16')
+                os.system(f'gdaladdo {ofile} 2 4 8 16')
 
     
 def get_datalayers_for_gui(
