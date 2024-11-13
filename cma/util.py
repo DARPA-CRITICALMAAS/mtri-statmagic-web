@@ -876,7 +876,7 @@ def sync_remote_outputs_to_local(dsid=None,do_processed_layers=False):
                     f.write(r.content)
 
             # Do extra stuff for rasters
-            if  datalayer.format == 'tif':
+            if  datalayer.data_format == 'tif':
                 # Compress and add overviews
                 temp_tif = 'temp_compress.tif'
                 cmd = f'gdal_translate -co "COMPRESS=LZW" -co "BIGTIFF=YES" {ofile} {temp_tif}'

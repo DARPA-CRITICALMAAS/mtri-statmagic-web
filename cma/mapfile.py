@@ -131,7 +131,7 @@ def write_mapfile(
                 ds_path = f'/vsicurl_streaming/{ds_path}'
             else:
                
-                if ext == 'zip': # assume .zip data sources are shapefiles
+                if ext == 'zip' and 'plots' not in r['download_url']: # assume .zip data sources are shapefiles
                     ext = 'shp'
                 
                 # NOTE: for now sync'ing these locally '
@@ -218,7 +218,7 @@ def write_mapfile(
                     END
                 '''
             
-        else:
+        elif ext in ('tif','upload'):
 
             # Retrieve extent_geom if not already loaded
             if r['extent_geom'] is None:
@@ -274,6 +274,10 @@ def write_mapfile(
                     END
                 END
             '''
+        
+        else:
+            del rasters[rkey]
+            continue
             
         rasters[rkey]['data_range'] = dr
         rasters[rkey]['processing'] = proc
@@ -307,6 +311,7 @@ def write_mapfile(
             layer_type = robj['layer_type']
 
         # Get extent and process aggregate extent
+        #print(robj)
         te = robj['extent']
         te_str = ' '.join([str(q) for q in te])
         te_str_abbrev = ','.join(['{:.4f}'.format(x) for x in te])
