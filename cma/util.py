@@ -862,9 +862,11 @@ def sync_remote_outputs_to_local(dsid=None,do_processed_layers=False):
 
         if dsid and datalayer.data_source_id != dsid:
             continue
+        
+        ext = datalayer.download_url.split('.')[-1]
 
         #ofile = os.path.join(dd,f'{datalayer.data_source_id}.tif')
-        ofile = get_output_layer_local_sync_path(datalayer.data_source_id)
+        ofile = get_output_layer_local_sync_path(datalayer.data_source_id,ext=ext)
         if not os.path.exists(ofile):
             print('syncing to local:',datalayer.download_url)
             bn = os.path.basename(datalayer.download_url)
