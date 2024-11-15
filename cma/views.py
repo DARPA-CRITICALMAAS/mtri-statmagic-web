@@ -473,6 +473,7 @@ def check_model_run_status(request):
         for ol in res:
             #print(ol)
             dsid = ol['layer_id']
+            ext = ol['download_url'].split('.')[-1]
             
             # Check if layer is in database
             if dsid not in dsids:
@@ -482,12 +483,12 @@ def check_model_run_status(request):
                 break
 
             # Check if layer is sync'd locally 
-            if not os.path.exists(util.get_output_layer_local_sync_path(dsid)):
+            if not os.path.exists(util.get_output_layer_local_sync_path(dsid,ext=ext)):
                 msg = 'Unprocessed model outputs available; optimizing for visualization...'
                 break
         
             # Check to see if all layers are in mapfile
-            if mapfile.scrub_wms_layername(dsid) not in mapfile_content:
+            if ext in ('tif','shp') and mapfile.scrub_wms_layername(dsid) not in mapfile_content:
                 msg = 'Extracting model output stats/extent for map visualization...'
                 break
 

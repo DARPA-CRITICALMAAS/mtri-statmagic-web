@@ -666,7 +666,7 @@ span.collapse {
     background-color: transparent;
     
 }
-.datalayer_table tbody tr:hover,
+.datalayer_table tr:hover,
 .model_parameters_table tbody tr:hover,
 #modeling_status_pane .model_run_status_table tr:hover {
     background-color: #222;

@@ -1224,7 +1224,7 @@ function processNewProcessedLayer(l) {
     
 }
 
-function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
+function syncProcessedLayers(cma_id,awaiting_n_layers,event_id,run_model_on_complete) {
 
     $.ajax(`/sync_processed_layers`, {
         data: {
@@ -1261,8 +1261,6 @@ function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
             var curmsg = $(`${sel0} td.status`).html();
             if (curmsg != response.model_run_status) {
                 $(`${sel0} td.status`).html(response.model_run_status);
-                
-                
             }
              
             // Check to see if the # of existing layers for the event_id match 
@@ -1280,17 +1278,28 @@ function syncProcessedLayers(cma_id,awaiting_n_layers,event_id) {
                     <span class='time'>${ts[1]}</span>
                 `)
             }
-            
-//             console.log(event_id, awaiting_n_layers, n_event_layers)
-            
+                      
             // Wait 3 seconds and then check again
             if (n_event_layers < awaiting_n_layers) {
                 sleep(3000).then(() => {
-                     syncProcessedLayers(cma_id,awaiting_n_layers, event_id);
+                     syncProcessedLayers(
+                         cma_id,
+                         awaiting_n_layers,
+                         event_id,
+                         run_model_on_complete
+                     );
                 });
             } else {
                 $('#model_run_status').removeClass('active');
+                $(`${sel0} td.status`).html('Complete.');
                 showModelingMainPane();
+                if (run_model_on_complete) {
+                    $('#message_modal_small .content').html(`
+                        Pre-processing complete; submitting model run.
+                    `);
+                    $('#message_modal_small').show();
+                    submitModelRun();
+                }
             }
             
         },
@@ -2910,12 +2919,15 @@ function getActiveCMAID() {
 }
 
 function submitPreprocessAndRun() {
-    alert('Button functionality in progress');
+//     alert('Button functionality in progress');
+    submitPreprocessing(true);
+    
+    
     
 }
 
 // Send POST request to backend
-function submitPreprocessing() {
+function submitPreprocessing(process_and_run) {
      var model = MODELS[$('#model_select').val()];
 
     // TODO: account for if 'ignore extent' is checked; b/c training sites 
@@ -3032,6 +3044,14 @@ function submitPreprocessing() {
             if (expected_layers == n_processed) {
                 $('#model_run_status').removeClass('active');
                 showModelingMainPane();
+                
+                if (process_and_run) {
+                    $('#message_modal_small .content').html(`
+                        Pre-processing complete; submitting model run.
+                    `);
+                    $('#message_modal_small').show();
+                    submitModelRun();
+                }
                 return;
             }
             
@@ -3041,8 +3061,9 @@ function submitPreprocessing() {
             
             syncProcessedLayers(
                 cma_id,
-                expected_layers,
-                response.event_id
+                expected_layers-n_processed,
+                response.event_id,
+                process_and_run
             );
         },
         error: function(response) {
@@ -3050,7 +3071,6 @@ function submitPreprocessing() {
             alert(response.responseText);
         },
     });
-    
 }
 
 function activateRunStatus() {
@@ -3556,9 +3576,12 @@ function isLabelRasterInDataCube() {
 // Enables/disables model buttons according to selected layers
 function validateModelButtons() {
     var model = MODELS[$('#model_select').val()];
-
-    if (!model) {return;}
+    var cma_id = getActiveCMAID();
     var msg = '';
+    if (!model || !cma_id) {
+        $('#model_button_status').html(msg);
+        return;
+    }
     
     // Derive conditionals common to both supervised and unsupervised models
     
