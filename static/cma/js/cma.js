@@ -44,7 +44,7 @@ resetModelCache();
 function getSpecifyExtentTR(ignore) {
     var ig = '';
     if (ignore) {
-        ig = `/ <label title='If checked, will query all of North America'>ignore <input type='checkbox' id='sites_ignoreextent' onchange='validateLoadSitesButton();'></label>`;
+        ig = `/ <label title='If checked, will query all of North America'>global <input type='checkbox' id='sites_ignoreextent' onchange='validateLoadSitesButton();'></label>`;
             
     }
     return `
@@ -219,7 +219,7 @@ function onLoad() {
 //     createMineralSitesControl();
     
     // Toggle open the DATA LAYERS panel by default
-    toggleHeader($('#datalayer_container .header.toptop'));
+//     toggleHeader($('#datalayer_container .header.toptop'));
 //     toggleHeader($('#datalayer_container .header.Geophysics'));
     
     toggleHeader($('.header.modeling'));
@@ -464,12 +464,12 @@ function buildParametersTable(mobj, table_selector, dobj) {
     if (do_hypertune) {
         // If hypertune option, add header to table
         ptable_html += `
-            <tr class='hypertune_labels'>
+            <tr class='hypertune_labels' title="Choose 'customize to anually set the value for a parameter; if 'optimize' is selected, the value of the parameter will be determined via hyperparameter tuning" >
                 <td></td>
                 <td></td>
                 <td>
                     <div class='rotate_container'><div class='rotate'>customize</div></div>
-                    <div class='rotate_container'><div title='With this option, the value of the parameter will be determined via hyperparameter tuning' class='rotate'>optimize</div></div>
+                    <div class='rotate_container' ><div class='rotate'>optimize</div></div>
                 </td>
             </tr>
         `;
