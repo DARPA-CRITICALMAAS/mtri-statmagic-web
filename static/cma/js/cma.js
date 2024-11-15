@@ -3415,6 +3415,18 @@ function onToggleLayerClick(target,layer_name) {
                 </linearGradient>
                 <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name_scrubbed})" />
             `;
+            
+            if (datalayer.color == 'diverging') {
+                svg = `
+                <linearGradient id="gradient_${layer_name_scrubbed}">
+                    <stop stop-color="rgb(${COLORS_DIVERGING[0].join(',')})" offset="0%" />
+                    <stop stop-color="rgb(${COLORS_DIVERGING[parseInt(COLORS_DIVERGING.length/2)].join(',')})" offset="50%" />
+                    <stop stop-color="rgb(${COLORS_DIVERGING[COLORS_DIVERGING.length-1].join(',')}" offset="100%" />
+                </linearGradient>
+                <rect width="${w}" height="${h}" fill="url(#gradient_${layer_name_scrubbed})" />
+            `;
+            }
+            
         } else {
             svg = VECTOR_LEGENDS[datalayer.vector_format](
                 datalayer.color,

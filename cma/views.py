@@ -84,6 +84,7 @@ def home(request):
         'PROCESSING_STEPS': json.dumps(processing_steps),
         'CDR_API_TOKEN': os.environ['CDR_API_TOKEN'],
         'TA1_SYSTEMS': json.dumps(ta1_systems),
+        'COLORS_DIVERGING': json.dumps(mapfile.COLORS_DIVERGING),
     }
     
     return render(request, 'cma/cma.html', context)

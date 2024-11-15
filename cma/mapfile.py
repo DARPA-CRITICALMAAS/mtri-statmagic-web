@@ -8,6 +8,21 @@ from osgeo import gdal, osr
 from . import util
 import numpy as np
 
+# From: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=11
+COLORS_DIVERGING = [
+    [165,0,38],
+    [215,48,39],
+    [244,109,67],
+    [253,174,97],
+    [254,224,144],
+    [255,255,191],
+    [224,243,248],
+    [171,217,233],
+    [116,173,209],
+    [69,117,180],
+    [49,54,149],
+]
+
 
 def get_mapfile_path():
     mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
@@ -57,6 +72,69 @@ def openRaster(ds_path):
         ds = gdal.Open(ds_path2)
         
     return ds
+
+def getClassesForRange(
+        data_rng,
+        break_colors,
+    ):
+    '''
+        data_rng: [min data, max data]
+    '''
+    numClasses = len(break_colors)#10
+
+    breaks = list(reversed([break_colors[int(i*len(break_colors)/numClasses)] 
+                for i in range(numClasses)
+            ] + [break_colors[-1]]))
+
+    # build default rainbow stretch from the provided data range
+    raster_class = ''
+    
+    # Tack on the first class         
+    # name, expression for last value
+    upper = data_rng[1]
+    color = ' '.join([str(x) for x in break_colors[-1]])
+    name = f'{upper}+'
+    expression = f'[pixel] > {upper}'
+    raster_class += f'''
+        CLASS 
+            NAME "{name}"
+            EXPRESSION ({expression})
+            STYLE
+                COLOR {color}
+            END 
+        END
+    '''
+    
+    rng = data_rng[1] - data_rng[0]
+    for i in range(len(breaks)-1):
+        b = breaks[i]
+    
+        high_color = ' '.join([str(x) for x in b])
+        low_color = break_colors[-1]
+        
+        upper = data_rng[1] - rng*(i/float(numClasses))
+        lower = data_rng[1] - rng*((i+1)/float(numClasses))
+        
+        if i < len(breaks)-1:
+            low_color = ' '.join([str(x) for x in breaks[i+1]])
+        
+        # default name, expression
+        name = f'{lower} - {upper}'
+        expression = f'[pixel] >= {lower} AND [pixel] < {upper}'
+        raster_class += f'''
+            CLASS 
+                NAME "{name}"
+                EXPRESSION ({expression})
+                STYLE
+                    COLORRANGE {low_color} {high_color}
+                    DATARANGE {lower} {upper}
+                    RANGEITEM "pixel"
+                    COLOR {low_color}
+                END 
+            END
+        '''
+        
+    return raster_class
 
 
 def write_mapfile(
@@ -115,6 +193,7 @@ def write_mapfile(
     rasters = {}
     for i,dataset in enumerate(datasets):
         r = model_to_dict(dataset)
+        is_likelihood_layer = 'ikelihood' in r['description']
         
         # Ignore any non-rasters for now
         if not r['download_url']:# or r['data_format'] != 'tif':
@@ -155,7 +234,14 @@ def write_mapfile(
         if not dataset.color:
             color = colors[i % len(colors)]
             dataset.color = ','.join([str(c) for c in color])
+            if is_likelihood_layer:
+                dataset.color = 'diverging'
             dataset.save()
+            
+        if is_likelihood_layer:
+            dataset.color = 'diverging'
+            dataset.save()
+            
         color = dataset.color.replace(',',' ') 
 
         
@@ -274,6 +360,10 @@ def write_mapfile(
                     END
                 END
             '''
+            
+            # For likelihood rasters, use diverging color scale
+            if is_likelihood_layer:
+                classification = getClassesForRange(dr, COLORS_DIVERGING);
         
         else:
             del rasters[rkey]
