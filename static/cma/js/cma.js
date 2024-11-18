@@ -3945,11 +3945,12 @@ function editProcessingSteps(cmp) {
         if (current_dl.stats_maximum != 1 && current_dl.stats_minimum != 0) { // Scale
             rec_list.append($(`<li><b>Scale</b>: Datalayer has a minimum of ${current_dl.stats_minimum} and maximum of ${current_dl.stats_maximum}</li>`));
         }
-        if (current_dl.stats_minimum == 0) { // Transform
-            rec_list.append($(`<li class="rec-warning"><b>Transform</b>: Datalayer has values less than 0, shouldn't log transform</li>`));
-        } else if (current_dl.stats_minimum < 0) { // Transform
-            rec_list.append($("<li class='rec-warning'></li>").text(`Transform: Datalayer has values less than 0, shouldn't take log or sqrt transform`));
-        }
+        // Transform suggestions moved to processing step modal in showProcessingStepParameters() function
+        // if (current_dl.stats_minimum == 0) { // Transform
+        //     rec_list.append($(`<li class="rec-warning"><b>Transform</b>: Datalayer has values less than 0, shouldn't log transform</li>`));
+        // } else if (current_dl.stats_minimum < 0) { // Transform
+        //     rec_list.append($("<li class='rec-warning'></li>").text(`Transform: Datalayer has values less than 0, shouldn't take log or sqrt transform`));
+        // }
     }
     rec_div.append($("<p></p>").text("Recommended processing steps:"))
     rec_div.append(rec_list);
@@ -4017,7 +4018,24 @@ function showProcessingStepParameters(el) {
             getParametersFromHTMLattrs(tr[0])
         );
     }
-    
+
+    if (
+        DATALAYERS_LOOKUP[$('#processingsteps_layername').attr('data-data_source_id')].stats_minimum <= 0 &&
+        pstep === "transform"
+    ) {
+        // Set up onChange event on transform select. Shows warning when log/abs selected and raster min <= 0
+        $('#transform__method').on('change', function() {
+            $('.parameters_form_warn').empty();
+            var selected = $(this).val();
+            if (selected === "log" || selected === "sqrt") {
+                $('.parameters_form_warn').append($(`<li class='rec-warning'><b>Warning</b>: Datalayer has values less than or equal to 0, shouldn't take ${selected} transform</li>`));
+            }
+        });
+        $('#transform__method').trigger('change');
+    } else {
+        $('.parameters_form_warn').empty();
+    }
+
     // Now show the modal interface
     $('.overlay.parameters_form').show();
     
