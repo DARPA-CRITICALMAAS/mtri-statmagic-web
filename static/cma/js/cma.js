@@ -37,6 +37,17 @@ const DRAW_STYLE = {
 }
 var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
+var PROCESSING_PARAMS_DESCS = {
+    log: "Takes the log transform of the raster data",
+    abs: "Takes the abs transform of the raster data",
+    sqrt: "Takes the sqrt transform of the raster data",
+    mean: "Missing values are imputed by the mean of raster data",
+    median: "Missing values are imputed by the median of raster data",
+    minmax: "Scales and translates raster data such that it is in the given range (min-max) on the training set",
+    maxabs: "Scales each feature individually such that the maximal absolute value of each feature in the training set will be 1.0",
+    standard: "Standardize features by removing the mean and scaling to unit variance"
+};
+
 // Cache for storing saved model parameters
 var MODELS_CACHE;
 resetModelCache();
@@ -581,7 +592,11 @@ function buildParametersTable(mobj, table_selector, dobj) {
                             ) {
                                 selected = ' selected';
                             }
-                            opts += `<option value="${opt}"${selected}>${opt}</option>`;
+                            let title="";
+                            if (opt in PROCESSING_PARAMS_DESCS) {
+                                title=` title=\"${PROCESSING_PARAMS_DESCS[opt]}\" `;
+                            }
+                            opts += `<option ${title}value="${opt}"${selected}>${opt}</option>`;
                         });
                     }
                     input_html = `
