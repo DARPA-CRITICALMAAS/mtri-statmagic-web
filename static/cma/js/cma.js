@@ -3443,7 +3443,7 @@ function onToggleLayerClick(target,layer_name) {
         // Add legend content
         var w = 60;
         var h = 14;
-        
+        var is_categorical_data = datalayer.description.indexOf('est Matching Un') > -1;
         var vmin = '';
         var vmax = '';
         var svg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];
@@ -3482,6 +3482,23 @@ function onToggleLayerClick(target,layer_name) {
             );
         }
         
+        if (!is_categorical_data) {
+            svg = `
+                <td>${vmin}</td>
+                <td>
+                    <div class='colorbar'>
+                        <svg height='${h}' width='${w}'>
+                            ${svg}
+                        </svg>
+                    </div>
+                </td>
+                <td>${vmax}</td>
+            `;
+            
+        } else {
+            svg = `<td>[categorical; ${Math.round(vmax+1)} classes]</td>`
+            
+        }
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
                 ${getLayerNameLabel(datalayer)}
@@ -3493,15 +3510,7 @@ function onToggleLayerClick(target,layer_name) {
                 </div>
                 <table>
                     <tr>
-                        <td>${vmin}</td>
-                        <td>
-                            <div class='colorbar'>
-                                <svg height='${h}' width='${w}'>
-                                    ${svg}
-                                </svg>
-                            </div>
-                        </td>
-                        <td>${vmax}</td>
+                        ${svg}
                     </tr>
                 </table>
             </div>
