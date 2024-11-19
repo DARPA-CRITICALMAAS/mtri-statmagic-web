@@ -587,7 +587,7 @@ def write_mapfile(
         m.write(mapfile_text)
 
     #blerg
-    print(mapfile_text)
+    #print(mapfile_text)
 
     # Tell user how to access things for testing
     print('\n\nGetMap examples:\n')
