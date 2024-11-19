@@ -967,6 +967,10 @@ function loadModelOutputs(cma_id,model_run_id) {
     
     var cma = CMAS_EXISTING[cma_id];
     
+    // First store which layers are visible
+    var showing_outputs = $(`#outputlayer_container .collapse.sub tr td.show_chk input:checked`).closest('tr').map(function(i,tr) { return $(tr).attr('data-path');
+    });
+    
     // Remove existing content
     resetModelOutputs();
     
@@ -1059,6 +1063,11 @@ function loadModelOutputs(cma_id,model_run_id) {
     if (model_run_id != 'all') {
         toggleHeader($(`#outputlayer_container .header.topbar.sub`));
     }
+    
+    // Re-show the originally shown layers
+    $.each(showing_outputs, function(i,dsid) {
+        $(`#outputlayer_container tr[data-path="${dsid}"] td.show_chk input`).trigger('click');
+    });
 }
 
 function downloadURLsToZip(urls, zipname, loading_container) {

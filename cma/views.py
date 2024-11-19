@@ -196,6 +196,8 @@ def upload_datalayer(request):
         'derivative_ops': '',
     }
     params = util.process_params(request,params,post=True)
+    #print(params)
+    
     if not params['publication_date']:
         params['publication_date'] = dt.now().strftime('%Y-%m-%d')
     else:
