@@ -37,6 +37,17 @@ const DRAW_STYLE = {
 }
 var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
 
+var PROCESSING_PARAMS_DESCS = {
+    log: "Takes the log transform of the raster data",
+    abs: "Takes the abs transform of the raster data",
+    sqrt: "Takes the sqrt transform of the raster data",
+    mean: "Missing values are imputed by the mean of raster data",
+    median: "Missing values are imputed by the median of raster data",
+    minmax: "Scales and translates raster data such that it is in the given range (min-max) on the training set",
+    maxabs: "Scales each feature individually such that the maximal absolute value of each feature in the training set will be 1.0",
+    standard: "Standardize features by removing the mean and scaling to unit variance"
+};
+
 // Cache for storing saved model parameters
 var MODELS_CACHE;
 resetModelCache();
@@ -581,7 +592,11 @@ function buildParametersTable(mobj, table_selector, dobj) {
                             ) {
                                 selected = ' selected';
                             }
-                            opts += `<option value="${opt}"${selected}>${opt}</option>`;
+                            let title="";
+                            if (opt in PROCESSING_PARAMS_DESCS) {
+                                title=` title=\"${PROCESSING_PARAMS_DESCS[opt]}\" `;
+                            }
+                            opts += `<option ${title}value="${opt}"${selected}>${opt}</option>`;
                         });
                     }
                     input_html = `
@@ -3952,11 +3967,12 @@ function editProcessingSteps(cmp) {
         if (current_dl.stats_maximum != 1 && current_dl.stats_minimum != 0) { // Scale
             rec_list.append($(`<li><b>Scale</b>: Datalayer has a minimum of ${current_dl.stats_minimum} and maximum of ${current_dl.stats_maximum}</li>`));
         }
-        if (current_dl.stats_minimum == 0) { // Transform
-            rec_list.append($(`<li class="rec-warning"><b>Transform</b>: Datalayer has values less than 0, shouldn't log transform</li>`));
-        } else if (current_dl.stats_minimum < 0) { // Transform
-            rec_list.append($("<li class='rec-warning'></li>").text(`Transform: Datalayer has values less than 0, shouldn't take log or sqrt transform`));
-        }
+        // Transform suggestions moved to processing step modal in showProcessingStepParameters() function
+        // if (current_dl.stats_minimum == 0) { // Transform
+        //     rec_list.append($(`<li class="rec-warning"><b>Transform</b>: Datalayer has values less than 0, shouldn't log transform</li>`));
+        // } else if (current_dl.stats_minimum < 0) { // Transform
+        //     rec_list.append($("<li class='rec-warning'></li>").text(`Transform: Datalayer has values less than 0, shouldn't take log or sqrt transform`));
+        // }
     }
     rec_div.append($("<p></p>").text("Recommended processing steps:"))
     rec_div.append(rec_list);
@@ -4024,7 +4040,24 @@ function showProcessingStepParameters(el) {
             getParametersFromHTMLattrs(tr[0])
         );
     }
-    
+
+    if (
+        DATALAYERS_LOOKUP[$('#processingsteps_layername').attr('data-data_source_id')].stats_minimum <= 0 &&
+        pstep === "transform"
+    ) {
+        // Set up onChange event on transform select. Shows warning when log/abs selected and raster min <= 0
+        $('#transform__method').on('change', function() {
+            $('.parameters_form_warn').empty();
+            var selected = $(this).val();
+            if (selected === "log" || selected === "sqrt") {
+                $('.parameters_form_warn').append($(`<li class='rec-warning'><b>Warning</b>: Datalayer has values less than or equal to 0, shouldn't take ${selected} transform</li>`));
+            }
+        });
+        $('#transform__method').trigger('change');
+    } else {
+        $('.parameters_form_warn').empty();
+    }
+
     // Now show the modal interface
     $('.overlay.parameters_form').show();
     
