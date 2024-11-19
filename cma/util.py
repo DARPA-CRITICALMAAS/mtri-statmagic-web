@@ -1339,7 +1339,11 @@ def process_vector_for_mapfile(dataset):
         resp = urlopen(dataset.download_url)
         
         # Open zipfile
-        myzip = zipfile.ZipFile(BytesIO(resp.read()))
+        try:
+            myzip = zipfile.ZipFile(BytesIO(resp.read()))
+        except:
+            print(f'Problem opening zipfile: date_source_id={dsid}; download_url={dataset.download_url}')
+            return
         
         # Extract contents to temporary directory
         with tempfile.TemporaryDirectory() as tempdir:

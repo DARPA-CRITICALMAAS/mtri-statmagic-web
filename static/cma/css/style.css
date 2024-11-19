@@ -2504,12 +2504,10 @@ div.download {
 }
 #datacube_message_div {
     margin-bottom: 10px;
-    
 }
 
 #uploaddl_subcategory_tr {
     display: none;
-    
 }
 
 @keyframes spin {
