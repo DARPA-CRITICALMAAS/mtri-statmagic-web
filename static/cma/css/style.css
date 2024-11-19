@@ -2510,6 +2510,10 @@ div.download {
     display: none;
 }
 
+#recommended_proc_steps {
+    color: #d6b85c;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
