@@ -1249,17 +1249,17 @@ def upload_sites_csv(request):
 
 
 @csrf_exempt
-def download_model_outputs(request):
+def download_urls_to_zip(request):
     params = {
         'urls': [],
-        'cma_name': '',
-        'model_run_id': '',
+        'zipname': '', # name of output zip file, e.g. 'model_outputs.zip'
+        #'cma_name': '',
+        #'model_run_id': '',
     }
     params = util.process_params(request, params, post_json=True)
-
-    return util.download_model_outputs(
+   
+    return util.download_urls_to_zip(
         params['urls'],
-        params['cma_name'],
-        params['model_run_id']
+        params['zipname']
     )
 

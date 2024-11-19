@@ -281,18 +281,18 @@
                             Use the <b>DATA LAYERS</b> 'Add to cube' column to add layers to the input data cube
                            <!-- Load an existing <span class='goto' onclick='$("#datacube_id").trigger("focus");'>data cube ID</span>, or use the <b>DATA LAYERS</b> selector to add layers to build a new data cube-->
                             </div>
-          <!--                  <table class='modeling_params'>
-                                <tr>
-                                    <td class='label'>Data cube ID:</td>
-                                    <td><input type='text' id='datacube_id' /></td>
-                                </tr>
-                        
-                            </table>-->
                             <table id='datacube_layers' class='datacube_layers_table'>
                                 <thead><tr>
                                     <td class='layer'>Data layer</td>
                                     <td>Processing steps</td>
-                                    <td></td>
+                                    <td style='text-align:right;'>
+                                        <img src="/static/cma/img/download-32.png" 
+                                             height="14px"
+                                             class="download_icon"
+                                             title="Click to bulk download all INPUT LAYERS"
+                                             onclick="downloadDataCubeLayers(this);"
+                                        >
+                                    </td>
                                 </tr></thead>
                                 <tbody>
                                     <tr class='cube_layer instructions'>
@@ -301,11 +301,6 @@
                                 </tbody>
                             </table>
                             <div id='datacube_message_div' class='modeling_instructions'></div>
-
-                            
-<!--                             <div id="datacube_btn_build" class='button load_sites disabled' onClick=''>Build</div> -->
-                   <!--         </div> <!--content datacube (build)-->
-<!--                             </div> <!--'collapse sub sub2'--> 
                         </div> <!--content datacube-->
                     </div> <!--collapse sub-->
     <!--                <div class='collapse sub collapse_parameters'>
@@ -376,7 +371,7 @@
                         Filter MPM layers: <select onchange='loadModelOutputs();'>
                             <option value='all'>all</option>
                         </select>
-                        <div class='download' title='Download all model outputs listed below'><img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk()" height=14 width=14 /></div>
+                        <div class='download' title='Download all model outputs listed below'><img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk(this)" height=14 width=14 /></div>
                     </div>
                 </div> <!--content main-->
             </div> <!--collapse model_results-->

@@ -1461,7 +1461,7 @@ def process_vector_for_mapfile(dataset):
     
     
 
-def download_model_outputs(urls_to_download, cma_name, model_run_id):
+def download_urls_to_zip(urls_to_download, zipname):
     from zipfile import ZipFile, ZIP_DEFLATED
     from io import BytesIO, StringIO
     import requests
@@ -1480,11 +1480,11 @@ def download_model_outputs(urls_to_download, cma_name, model_run_id):
     bytes_io.seek(0)
     response = HttpResponse(bytes_io.read(), content_type='application/zip')
     bytes_io.close()
-    zipname = f'{cma_name}.zip' if not model_run_id else f'{cma_name}_{model_run_id}.zip'
-    print(model_run_id);
+    print(zipname)
     response['Content-Disposition'] = f'attachment; filename="{zipname}"'
 
     return response
+    
     
 def clean_line(line):
     #print(str(line))

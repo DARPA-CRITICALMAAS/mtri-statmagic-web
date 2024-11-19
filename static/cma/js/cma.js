@@ -1046,23 +1046,15 @@ function loadModelOutputs(cma_id,model_run_id) {
     }
 }
 
-function downloadModelOutputsBulk() {
-//     console.log("in bulk download function")
+function downloadURLsToZip(urls, zipname, loading_container) {
+     data = {
+        urls: urls,
+        zipname: zipname,
+    };
 
-    let dl_urls = [];
-    $("#outputlayer_container .download a").each(function() {
-        dl_urls.push($(this).attr('href'));
-    });
-    let cma_name = $("#cma_loaded")[0].innerText;
-
-    var model_run_id = $('#model_output_layers_filter select').val();
+    var lsid = 'outputs_bulk_download_spinner';
+    loading_container.append(`<div id='${lsid}' class='loading_spinner'></div>`);
     
-    data = {
-        urls: dl_urls,
-        cma_name: cma_name,
-        model_run_id: model_run_id,
-    }
-
     // Use XMLHttpRequest instead of Jquery $ajax
     xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
@@ -1072,18 +1064,48 @@ function downloadModelOutputsBulk() {
             a = document.createElement('a');
             a.href = window.URL.createObjectURL(xhttp.response);
             // Give filename you wish to download
-            a.download = `${cma_name}_${model_run_id}_model_outputs.zip`;
+            a.download = zipname;
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
+            $(`#outputs_bulk_download_spinner`).remove();
+            a.remove();
         }
     };
     // Post data to URL which handles post request
-    xhttp.open("POST", `/download_model_outputs`);
+    xhttp.open("POST", `/download_urls_to_zip`);
     xhttp.setRequestHeader("Content-Type", "application/json");
     // You should set responseType as blob for binary responses
     xhttp.responseType = 'blob';
     xhttp.send(JSON.stringify(data));
+}
+
+function downloadModelOutputsBulk(cmp) {
+    var loading_container = $(cmp).parent();
+    
+    let dl_urls = [];
+    $("#outputlayer_container .download a").each(function() {
+        dl_urls.push($(this).attr('href'));
+    });
+    let cma_name = $("#cma_loaded")[0].innerText;
+    var model_run_id = $('#model_output_layers_filter select').val();
+    var zipname = model_run_id ? 
+        `${cma_name}_${model_run_id}_outputs.zip` :
+        `${cma_name}_outputs.zip` ;
+    
+   downloadURLsToZip(dl_urls,zipname,loading_container);
+}
+
+function downloadDataCubeLayers(cmp) {
+    var loading_container = $(cmp).parent();
+    
+    var urls = DATACUBE_CONFIG.map(function(ds) {
+        return DATALAYERS_LOOKUP[ds.data_source_id].download_url;
+    });
+   
+    var zipname = `StatMaGIC_model_input_layers_${getDateAsYYYYMMDD(null,true)}.zip` ;
+    
+   downloadURLsToZip(urls,zipname,loading_container);
 }
 
 // Retrieves GUI metadata (e.g. list of existing CMAs/MPMs, commodity list)
