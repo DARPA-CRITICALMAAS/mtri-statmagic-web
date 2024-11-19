@@ -23,6 +23,20 @@ COLORS_DIVERGING = [
     [49,54,149],
 ]
 
+# From: https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
+COLORS_QUALITATIVE = [
+    [166,206,227],
+    [31,120,180],
+    [178,223,138],
+    [51,160,44],
+    [251,154,153],
+    [227,26,28],
+    [253,191,111],
+    [255,127,0],
+    [202,178,214],
+    [106,61,154],
+]
+
 
 def get_mapfile_path():
     mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
@@ -72,6 +86,34 @@ def openRaster(ds_path):
         ds = gdal.Open(ds_path2)
         
     return ds
+
+
+def getClassesForQualitative(data_rng):
+    '''
+    Returns mapfile CLASS specifications for a given data range for
+    qualitative data.  Assumes classes are represented as successive integers
+    in the provided data range.
+
+        data_rng: [min data, max data]
+    '''
+
+    cls = ''
+    for i,pval in enumerate(range(int(data_rng[0]),int(data_rng[1])+1,1)):
+        color_index = i % len(COLORS_QUALITATIVE)
+        color = ' '.join([str(c) for c in COLORS_QUALITATIVE[color_index]])
+        cls += f'''
+           CLASS
+               EXPRESSION ([pixel] == {pval})
+               STYLE
+                   COLOR {color}
+               END
+           END
+       '''
+
+    return cls
+    
+    
+    
 
 def getClassesForRange(
         data_rng,
@@ -194,6 +236,7 @@ def write_mapfile(
     for i,dataset in enumerate(datasets):
         r = model_to_dict(dataset)
         is_likelihood_layer = 'ikelihood' in r['description']
+        is_qualitative_layer = 'est Matching Units' in r['description']
         
         # Ignore any non-rasters for now
         if not r['download_url']:# or r['data_format'] != 'tif':
@@ -363,7 +406,10 @@ def write_mapfile(
             
             # For likelihood rasters, use diverging color scale
             if is_likelihood_layer:
-                classification = getClassesForRange(dr, COLORS_DIVERGING);
+                classification = getClassesForRange(dr, COLORS_DIVERGING)
+        
+            if is_qualitative_layer:
+                classification = getClassesForQualitative(dr)
         
         else:
             del rasters[rkey]

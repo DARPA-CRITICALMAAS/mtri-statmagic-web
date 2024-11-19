@@ -2240,7 +2240,7 @@ a.site_src_link {
     display: inline-block;
     font-size: 1.2rem;
     line-height: 1.2rem;
-/*     font-weight: bold; */
+    font-weight: bold;
     margin-left: 14px;
     cursor: pointer;
     max-width: 24px;
