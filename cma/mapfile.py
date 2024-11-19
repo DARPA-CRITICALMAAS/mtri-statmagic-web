@@ -104,7 +104,7 @@ def getClassesForQualitative(data_rng):
         cls += f'''
            CLASS
                NAME "{pval}" 
-               EXPRESSION ([pixel] = {pval})
+               EXPRESSION ([pixel] > {pval-1} AND [pixel] < {pval+1})
                STYLE
                    COLOR {color}
                END
