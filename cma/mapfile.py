@@ -103,7 +103,8 @@ def getClassesForQualitative(data_rng):
         color = ' '.join([str(c) for c in COLORS_QUALITATIVE[color_index]])
         cls += f'''
            CLASS
-               EXPRESSION ([pixel] == {pval})
+               NAME "{pval}" 
+               EXPRESSION ([pixel] = {pval})
                STYLE
                    COLOR {color}
                END
