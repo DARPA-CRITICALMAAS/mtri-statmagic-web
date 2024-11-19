@@ -389,7 +389,7 @@ def write_mapfile(
     agg_extent = []
     getmaps = []
     for raster in sorted(rasters, reverse=True):
-        print(raster)
+        #print(raster)
 
         robj = rasters[raster]
         raster_path = robj['download_url']
@@ -587,12 +587,12 @@ def write_mapfile(
         m.write(mapfile_text)
 
     #blerg
-    print(mapfile_text)
+    #print(mapfile_text)
 
     # Tell user how to access things for testing
-    print('\n\nGetMap examples:\n')
-    for getmap in getmaps:
-        print('\n{}'.format(getmap))
+    #print('\n\nGetMap examples:\n')
+    #for getmap in getmaps:
+    #    print('\n{}'.format(getmap))
 
 
     print(('\n\nGetCapabilities for your mapfile:\n\n'
