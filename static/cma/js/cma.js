@@ -4897,7 +4897,6 @@ function hideLayerExtentPreview() {
     if (extentPreviewLayer && MAP.hasLayer(extentPreviewLayer)) {
         MAP.removeLayer(extentPreviewLayer);
     }
-    
 }
     
     
@@ -4910,6 +4909,14 @@ function uploadDataLayer() {
             formData.append(id, $(input).val());
         }
     });
+    $('#uploadForm_datalayer select').each(function(i,input) {
+        var id = input.id;
+        if (id.indexOf('uploaddl') > -1) {
+            id = id.split('__')[1];
+            formData.append(id, $(input).val());
+        }
+    });
+
     formData.append('file',$('#file_datalayer')[0].files[0]);
 
 //     $('.modal_uploaddatalayer').hide();
