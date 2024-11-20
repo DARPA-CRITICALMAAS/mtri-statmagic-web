@@ -2514,6 +2514,16 @@ div.download {
     color: #d6b85c;
 }
 
+.toggle_intersecting {
+    color: #999;
+    display: none;
+    font-size: 0.75rem;
+    text-align: center;
+    direction: ltr;
+    padding: 0px 8px 2px 8px;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

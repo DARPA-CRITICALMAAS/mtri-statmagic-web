@@ -800,10 +800,10 @@ function onModelSelect() {
     if (model.uses_datacube) {
         $('.collapse_datacube').show();
     }
-    
+    $('.collapse_training').show();
     toggleLabelRasterEnable(true);
     if (model.uses_training == true) {
-        $('.collapse_training').show();
+
         $('tr.cube_layer.label_raster').removeClass('disabled');
     } else if (isLabelRasterInDataCube()) {
         // If a label raster is in the datacube and an unsupervised model is 
@@ -903,6 +903,10 @@ function clearCMA() {
     if (drawnLayer && MAP.hasLayer(drawnLayer)) {
         MAP.removeLayer(drawnLayer);
     }
+    
+    $('#hide_intersecting_cb').prop('checked',false);
+    $('.toggle_intersecting').hide();
+    toggleIntersectingLayers();
 }
 
 // Performs various tasks to load a selected CMA into the GUI
@@ -1971,7 +1975,8 @@ function addDrawControl() {
         console.log('deleted!');
         drawnLayer = null;
         validateLoadSitesButton();
-
+        $('.toggle_intersecting').hide();
+        $('#hide_intersecting_cb').prop('checked',false);
         toggleIntersectingLayers();
     });
 }
@@ -1991,6 +1996,9 @@ function finishDraw(layer) {
     // Validate CMA initialization form
     validateCMAinitializeForm();
 
+    // Show the checkbox for toggling by extent intersection
+    $('.toggle_intersecting').show();
+    
     toggleIntersectingLayers();
 }
 
@@ -2005,7 +2013,7 @@ function getMineralSitesRequestFilters() {
         types.push(chk.id.split('__')[1].replace('_',' '));
     });
     
-    var ignore_extent = $('#sites_ignoreextent').is(':checked');
+    var ignore_extent = $('#sites_ignoreextent').is(':checked') || !drawnLayer;
     var wkt = ignore_extent ? null : getWKT();
     
     return {
@@ -2856,13 +2864,12 @@ function createLegendControl(element_id,position) {
     MAP.addControl(new legendControl());
 }
 
- 
+
 // Checks that, at minimum, a *commodity* and *extent* is selected in order to
 // send the sites query.
-
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
-    var ignore_extent = $('#sites_ignoreextent').is(':checked');
+    var ignore_extent = $('#sites_ignoreextent').is(':checked') || !drawnLayer;
     if (v != undefined && (drawnLayer || ignore_extent)) {
         $('#load_sites_button').removeClass('disabled');
         loadMineralSites();
@@ -2878,6 +2885,8 @@ function drawStart(layerType) {
 // Get the WKT version of the layer on the map that is drawn
 // (for sending extent geometries via URL)
 function getWKT() {
+    
+    if (!drawnLayer) { return;}
     
     // Convert the drawn layer to WKT so that it can be sent as a URL parameter
     var gj = drawnLayer.toGeoJSON();
@@ -3639,9 +3648,7 @@ function validateModelButtons() {
             GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
             (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
             GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
-
-//         var training_sites_avail_to_process = training_sites_selected && model.uses_training;
-            
+          
         // If no layers in cube and no training sites, disable all buttons
         if (DATACUBE_CONFIG.length == 0 && !training_sites_selected) {
             $('.button.model_process_submit.preprocess').addClass('disabled');
@@ -3728,87 +3735,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').removeClass('disabled');
         }
-        
-        
-        
     }
-
-   
-    
-//     // If DATACUBE is empty, ...
-//     if (DATACUBE_CONFIG.length == 0) {
-//         // start by disabling all buttons
-//         $('.button.model_process_submit.preprocess').addClass('disabled');
-//         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-//         $('.button.model_process_submit.run').addClass('disabled');
-//         
-//         // ...but if training sites are selected and a label raster is needed, 
-//         // enable the preprocess button to process the training sites
-//         if (label_raster_needed && n_training_sites_selected > 0) {
-//             $('.button.model_process_submit.preprocess').removeClass('disabled');
-//         }
-// 
-//         return;
-//         
-//     }
-// 
-//     // Check if all layers in cube are processed
-//     var all_processed = true;
-//     $.each(DATACUBE_CONFIG, function(i,dl) {
-//         var l = DATALAYERS_LOOKUP[dl.data_source_id];
-//         if (l.gui_model != 'processedlayer') {
-//             all_processed = false;
-//         }
-//     });
-//     
-//     if (all_processed) {
-//         // If all DATACUBE layers are processed:
-//         //  * disable pre-process and pre-process+run buttons
-//         //  * enable run model
-//         
-//         $('.button.model_process_submit.preprocess').addClass('disabled');
-//         $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-//         $('.button.model_process_submit.run').removeClass('disabled');
-//         
-// //         if 
-//         
-//         // ...but if training sites are selected and a label raster is needed, 
-//         // enable the preprocess button to process the training sites
-//         if (label_raster_needed && n_training_sites_selected > 0) {
-//             $('.button.model_process_submit.preprocess').removeClass('disabled');
-//         }
-//         
-//     } else {
-//         // Otherwise:
-//         //  * disable run model
-//         //  * enable the other two
-//         
-//         $('.button.model_process_submit.preprocess').removeClass('disabled');
-//         $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
-//         $('.button.model_process_submit.run').addClass('disabled');
-//     }
-//     if (label_raster_needed) {
-//         // Check if training sites are selected
-//         if (training_sites_selected) {
-//             $('.button.model_process_submit.preprocess').removeClass('disabled');
-// 
-//             if (DATACUBE_CONFIG.length > 0) {
-//                 $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
-//             } else {
-//                 $('.button.model_process_submit.run').addClass('disabled');
-//                 $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-//                 msg += 'Add at least one INPUT layer';
-//             }
-//             
-//         } else {
-// 
-//             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-//             $('.button.model_process_submit.run').addClass('disabled');
-//             msg += 'The selected model requires a <b>training label raster</b> to be included in INPUT LAYERS';
-// 
-//         }
-//     }
-
     
     $('#model_button_status').html(msg);
 }
@@ -4763,7 +4690,7 @@ function initiateCMA() {
 
 function toggleIntersectingLayers() {
     // Loop over and toggle each datalayer row
-    $('tr[data-path]').each(function () {
+    $('.datalayer_table tr.datalayer_row').each(function () {
         if (drawnLayer && $('#hide_intersecting_cb').is(':checked') && !boundsOverlap($(this).attr('data-path'))) {
             $(this).hide();
         } else {
@@ -4919,7 +4846,7 @@ function addRowToDataLayersTable(dl) {
         </div>
     `;
     table.append(`
-        <tr data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
+        <tr class='datalayer_row' data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
             <td class='name'>${name_pretty}</td>
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
