@@ -320,9 +320,12 @@
                             <div class='modeling_instructions' id='user_upload_sites_tools'>
                                 User upload sites: <span class='n_user_upload_sites'></span> | <span class='link' onclick='clearUserUploadSites();'>clear</span> | <label>show on map: <input id='user_upload_sites_show' type='checkbox' onclick='toggleUserUploadSitesVisibility();' checked /></label>
                                 <br>
-                                <label>Use  uploaded sites:<input id='chk_use_sites_uploaded' checked></label>
                                 <br>
-                                <label>Use queried KNOWN DEPOSIT SITES:<input id='chk_use_sites_queried' checked></label>
+                                <div id='chk_use_sites_div'>
+                                    <label><input type='checkbox' id='chk_use_sites_uploaded' onchange='onUseSitesChange();' checked> Use  uploaded sites</label>
+                                    <br>
+                                    <label><input type='checkbox' id='chk_use_sites_queried' onchange='onUseSitesChange();' checked> Use queried KNOWN DEPOSIT SITES</label>
+                                </div>
                             </div>
                         
                         </div> <!--content training-->

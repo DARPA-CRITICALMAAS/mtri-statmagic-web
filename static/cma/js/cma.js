@@ -43,7 +43,7 @@ var PROCESSING_PARAMS_DESCS = {
     sqrt: "Takes the sqrt transform of the raster data",
     mean: "Missing values are imputed by the mean of raster data",
     median: "Missing values are imputed by the median of raster data",
-    minmax: "Scales and translates raster data such that it is in the given range (min-max) on the training set",
+    minmax: "Scales and translates raster data such that it is in the given range (0-1) on the training set",
     maxabs: "Scales each feature individually such that the maximal absolute value of each feature in the training set will be 1.0",
     standard: "Standardize features by removing the mean and scaling to unit variance"
 };
@@ -406,6 +406,11 @@ function clearUserUploadSites() {
     
     // Hide tools
     $('#user_upload_sites_tools').hide();
+    
+    // Reset the "use" checkboxes so that queried sites are checked, uploaded 
+    // are not
+    $('#chk_use_sites_queried').prop('checked',true);
+    $('#chk_use_sites_uploaded').prop('checked',false);
     
     // Reset the store
     GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT = null;
@@ -973,25 +978,7 @@ function loadModelOutputs(cma_id,model_run_id) {
     
     // Remove existing content
     resetModelOutputs();
-    
-//     var table = $('#model_outputs_table');
-//     table.empty();
-//     table.append(`
-//         <tr class="subcategory_label">
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td class="colname">Download ALL</td>
-//         </tr>
-//         <tr>
-//             <td></td>
-//             <td></td>
-//             <td></td>
-//             <td class='download'>
-//                 <img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk()" height=12 width=12 />
-//             </td>
-//         </tr>
-//     `);
+
     var dls = [];
     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
         var cats = getLayerControlCategories(d);
@@ -1010,7 +997,7 @@ function loadModelOutputs(cma_id,model_run_id) {
             }
            
             dls.push(d);
-//             addRowToDataLayersTable(d);
+
         }
         
         // Also add processed layers
@@ -1018,7 +1005,6 @@ function loadModelOutputs(cma_id,model_run_id) {
             d.cma_id && d.cma_id == cma_id
         ) {
              dls.push(d);
-//             addRowToDataLayersTable(d);
         }
     });
     dls.sort(function(a,b) {
@@ -1029,35 +1015,9 @@ function loadModelOutputs(cma_id,model_run_id) {
         
     });
     
-//     var dls_red = dls.map(function(dl,i) {
-//         return [dl.category_sort,dl.subcategory_sort];
-//     });
-
-    
     $.each(dls, function(i,d) {
         addRowToDataLayersTable(d);
     });
-    
-//     $.each(DATALAYERS_LOOKUP, function(dsid,d) {
-//         if (d.gui_model == 'outputlayer' && 
-//             d.cma_id && d.cma_id == cma_id &&
-//             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
-//         ) {
-//             // Don't add outputs from model run objects not loaded. 
-//             // Model runs are filtered by date to exclude early test runs, 
-//             // but outputs are not
-//             if (model_run_id != 'all' && (!cma.model_run_objects || !cma.model_run_objects[model_run_id])) {
-//                 return;
-//             }
-//             addRowToDataLayersTable(d);
-//         }
-//         // Also add processed layers
-//         if (d.gui_model == 'processedlayer' &&
-//             d.cma_id && d.cma_id == cma_id
-//         ) {
-//             addRowToDataLayersTable(d);
-//         }
-//     });
     
     // Toggle header to expand if model_run_id specified
     if (model_run_id != 'all') {
@@ -1186,8 +1146,8 @@ function loadModelRuns(cma_id,mrid_selected) {
             GET_MODEL_RUNS_MOST_RECENT = response.model_runs;
             
             // Load outputs
-            processModelRunsFromCDR(response.model_runs,mrid_selected);
             loadModelOutputs(cma_id);
+            processModelRunsFromCDR(response.model_runs,mrid_selected);
 
         },
         error: function(response) {
@@ -1260,10 +1220,12 @@ function getNlayersByEventID(event_id) {
 }
 
 function processNewProcessedLayer(l) {
-    // Replace raw layer with processed layer in datacube
-    onRadioCubeClick(
-        $(`label[for='radiocube_${l.data_source_id_orig}'][class='no']`)[0]
-    );
+    if (l.data_source_id_orig) {
+        // Replace raw layer with processed layer in datacube
+        onRadioCubeClick(
+            $(`label[for='radiocube_${l.data_source_id_orig}'][class='no']`)[0]
+        );
+    }
     onRadioCubeClick(
         $(`label[for='radiocube_${l.data_source_id}'][class='yes']`)[0]
     );
@@ -2131,7 +2093,8 @@ function toggleUserUploadSitesVisibility(e) {
 
 function updateNsitesLabels() {
     var n_included = 0;
-    if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT) {
+    if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && 
+        $('#chk_use_sites_queried').is(':checked')) {
     
         $('.mineral_sites_n_results').html(
             GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length
@@ -2144,7 +2107,9 @@ function updateNsitesLabels() {
     }
     
     var n_total = n_included;
-    if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+    if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
+        $('#chk_use_sites_uploaded').is(':checked')
+    ) {
         var n_upload_sites = GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length
         
         // Add any user-uploaded sites
@@ -2332,7 +2297,7 @@ function loadMineralSitesToTable() {
         var names = maybeArrToStr(m.names);
         var types = maybeArrToStr(m.type);
         var ranks = maybeArrToStr(m.rank);
-        var rowspan = names.length > 3 ? 4 : names.length;//Math.min(names.length+1,4);
+        var rowspan = msids.length > 3 ? 4 : msids.length;//Math.min(names.length+1,4);
         //var srcs = getMineralSiteSourcesTable(m);
         var conf = m.top1_deposit_classification_confidence;
         if (conf) {
@@ -2341,7 +2306,7 @@ function loadMineralSitesToTable() {
             conf = '--';
         }
         
-        var src_style = names.length == 1 ? ' style="border-bottom: none;"' : '';
+        var src_style = msids.length == 1 ? ' style="border-bottom: none;"' : '';
         var top1_src = m.top1_deposit_classification_source;
         top1_src = top1_src ? `${top1_src.slice(0,12)} [...]` : '--';
         
@@ -2367,9 +2332,9 @@ function loadMineralSitesToTable() {
             </td>
         </tr>
         `;
-        for (let i = 1; i < names.length; i++) {
+        for (let i = 1; i < msids.length; i++) {
             cls = i > 2 ? `site_src_row_extra ${m.id}` : '';
-            var style = i == names.length - 1 ? ' style="border-bottom: none;"' : '';
+            var style = i == msids.length - 1 ? ' style="border-bottom: none;"' : '';
             trs += `
                 <tr class='${cls} ${evenodd}'>
                     <td class='sources'${style}>
@@ -2382,12 +2347,12 @@ function loadMineralSitesToTable() {
             
             // After the third source, if any remain, hide under expandable
             // row
-            if (i == 2 && names.length > 3) {
+            if (i == 2 && msids.length > 3) {
                 
                 trs += `
                 <tr class='${evenodd}'>
-                    <td colspan=3 class='site_src_toggle_tr ${m.id}' onclick='toggleAllSiteSources("${m.id}",${names.length});'>
-                        + show all ${names.length} sources for this site
+                    <td colspan=3 class='site_src_toggle_tr ${m.id}' onclick='toggleAllSiteSources("${m.id}",${msids.length});'>
+                        + show all ${msids.length} sources for this site
                     </td>
                 </tr>
                 `;
@@ -2752,10 +2717,10 @@ function onMineralSitesDisplayByChange() {
         if (display_by == 'site_type') {
             
             // If type is an array, just take the 1st
-            var ptype = prop.type;
-            if (ptype.indexOf('[') > -1) {
-                ptype = JSON.parse(ptype)[0];
-            }
+            var ptype = maybeArrToStr(prop.type)[0];
+//             if (ptype.indexOf('[') > -1) {
+//                 ptype = JSON.parse(ptype)[0];
+//             }
             if (site_types[ptype]) {
                 fillColor = site_types[ptype].color;
             } else {
@@ -2987,12 +2952,12 @@ function submitPreprocessing(process_and_run) {
         return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
     },false);
     if (!label_raster_included && model.uses_training) {
-        if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT) {
+        if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && $('#chk_use_sites_queried').is(':checked')) {
             training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
                     return !s.properties.exclude;
             }).map(function(s) {return s.properties.id;});
         }
-        if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+        if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT && $('#chk_use_sites_uploaded').is(':checked')) {
             $.each(GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords, function(i,s) {
                 training_sites.push(s);
             });
@@ -3266,6 +3231,7 @@ function checkModelRunStatus(model_run_id) {
             // Reload model runs/outputs if udpates
             if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
                 loadModelRuns(getActiveCMAID(),model_run_id);
+                processModelRunsFromCDR(null,model_run_id);
             }
             
             // Update model run status message
@@ -3896,6 +3862,9 @@ function onRadioCubeClick(cmp) {
             $('#training_info_using_processed_lr').hide();
             $('#training_info_using_sites').show();
             $('#datacube_message_div').html('');
+            
+            // Un-hide the 'use' sites checkboxes
+            $('#chk_use_sites_div').show();
         }
         
         
@@ -3909,12 +3878,19 @@ function onRadioCubeClick(cmp) {
         if (existing_dsids.indexOf(dsid) == -1) {
             addLayerToDataCube(datalayer);
             
+             // If added layer is a label raster...
              if (datalayer.gui_model == 'processedlayer' && datalayer.label_raster) {
+                 
+                // Update TRAINING SITES label
                 $('#training_info_using_processed_lr').html(
                     '<span class="lr_asterisk">*</span>selected label raster'
                 );
                 $('#training_info_using_processed_lr').show();
                 $('#training_info_using_sites').hide();
+                
+                // TODO: Disable the "use" checkboxes?
+                // Maybe just hide for now, then ignore when submitting
+                $('#chk_use_sites_div').hide();
             }
             
         }
@@ -4378,6 +4354,12 @@ function loadUserUploadSitesToMap() {
     MINERAL_SITES_LAYER_USER_UPLOAD.addTo(MAP);
 }
     
+    
+function onUseSitesChange() {
+    updateNsitesLabels();
+    
+}
+
 function uploadCSV() {
     var shp, dbf;
     var formData = new FormData($('#uploadFormCSV')[0]);
@@ -4947,6 +4929,10 @@ function addRowToDataLayersTable(dl) {
             <td>${radiocube}</td>
         </tr>
     `);
+    
+    if ($('#datacube_layers').is(':visible')) {
+        $('.radiocube').show();
+    }
     
 }
 
