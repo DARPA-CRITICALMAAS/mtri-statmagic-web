@@ -653,11 +653,13 @@ def initiate_cma(request):
 
     shape = wkt.loads(params["extent"])
     geojson = mapping(shape)
+    print(geojson)
     if geojson['type'] == 'Polygon':
         geojson['type'] = 'MultiPolygon'
         geojson['coordinates'] = [geojson['coordinates']]
     geojson_dict = json.loads(json.dumps(geojson))
-
+    print(geojson_dict)
+    print(type(geojson_dict))
 
     # Extent always comes in as 4326, so reproject and simplify while at it
     params['extent'] = util.simplify_and_transform_geojson(

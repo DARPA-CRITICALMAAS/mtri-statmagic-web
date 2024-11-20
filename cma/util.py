@@ -147,7 +147,8 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     t_srs:      (int) spatial reference system (PostGIS ID) to transform to
         
     '''
-    simplify = 0.002 if t_srs == 4326 else 200
+
+    simplify = 0.002 if str(t_srs) == '4326' else 200
     sql = f'''
         SELECT ST_AsGeoJSON(
             ST_Simplify(
@@ -167,7 +168,7 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
     precision = 4
     if int(t_srs) == 102008:
         precision = 0
-
+    
     return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
     #return json.loads(runSQL(sql)[0])
     

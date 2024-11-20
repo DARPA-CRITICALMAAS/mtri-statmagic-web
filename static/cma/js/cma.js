@@ -4666,7 +4666,8 @@ function initiateCMA() {
     data.resolution = Number(data.resolution);
     data.resolution = [data.resolution,data.resolution];
     data['extent'] = getWKT();
-        
+    console.log(data);
+
     $.ajax(`/initiate_cma`, {
 //         processData: false,
 //         contentType: false,
