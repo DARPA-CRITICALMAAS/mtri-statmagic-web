@@ -3378,8 +3378,8 @@ function showDataLayerInfo(layer_name,model_output,processed_layer) {
 
 
 function hideLayer(cmp_id) {
-    $(`tr[data-path='${cmp_id}'] td.show_chk input`).trigger('click');
-    
+    $(`tr[data-path='${cmp_id}'] td.show_chk input`).prop('checked',false);
+    $(`tr[data-path='${cmp_id}'] td.show_chk input`).trigger('change');
     // Do a separate call to remove layer from map
     // - this is needed for cases where the datalayer tr has been removed
     //   already (e.g. if model outputs are cleared) 
@@ -3389,7 +3389,7 @@ function hideLayer(cmp_id) {
 
 
 function removeLayerFromMap(layer_name) {
-    var layer_name_scrubbed = layer_name.replaceAll('.','');    
+    var layer_name_scrubbed = layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');    
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
     var layer = datalayer.maplayer;
     
@@ -3403,7 +3403,7 @@ function removeLayerFromMap(layer_name) {
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
-    var layer_name_scrubbed = layer_name.replaceAll('.','');
+    var layer_name_scrubbed = layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');  
     var layer = datalayer.maplayer;
     
     // Remove all layers in group
