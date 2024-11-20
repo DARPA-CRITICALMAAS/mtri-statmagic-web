@@ -211,7 +211,6 @@ def upload_datalayer(request):
     ext = f.name.split('.')[-1]
     fread = f.read()
 
-
     res = 0
     prj = None
     if ext == 'tif':
@@ -240,12 +239,13 @@ def upload_datalayer(request):
         with zipfile.ZipFile(f, 'r') as z:
             zfiles = z.namelist()
 
+        res = 100
         n_shps = len([x for x in zfiles if x[-4:] == '.shp'])
         if n_shps != 1:
             msg = f'.zip files must contain 1 shapefile (.shp). The uploaded .zip contains {n_shps} files with the .shp extension.'
             return HttpResponse(msg, status=400)
         
-        upload_bytes = f.read()
+        upload_bytes = fread#f.read()
        # with zipfile.ZipFile(f,'r') as z:
         #    upload_bytes = z
        
