@@ -3293,6 +3293,7 @@ function showDataLayerInfo(layer_name,model_output,processed_layer) {
                 } else {
                     v0 = '';
                     $.each(data.unique_values, function(i,v) {
+                        if (!v) {return;}
                         v0 += `
                             <span class='attrvalue'>${v.replaceAll('<','').replaceAll('>','')}</span>,`;
                     });

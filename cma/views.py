@@ -208,6 +208,7 @@ def upload_datalayer(request):
             return HttpResponse(msg, status=400)
     
     f = request.FILES.getlist('file')[0]
+    name = f.name.split('.')[0]
     ext = f.name.split('.')[-1]
     fread = f.read()
 
@@ -245,7 +246,7 @@ def upload_datalayer(request):
             msg = f'.zip files must contain 1 shapefile (.shp). The uploaded .zip contains {n_shps} files with the .shp extension.'
             return HttpResponse(msg, status=400)
         
-        upload_bytes = fread#f.read()
+        upload_bytes = f#fread#f.read()
        # with zipfile.ZipFile(f,'r') as z:
         #    upload_bytes = z
        
@@ -267,7 +268,7 @@ def upload_datalayer(request):
         resolution = [res,res],
         format = 'tif' if ext == 'tif' else 'shp',
         reference_url = params['reference_url'],
-        evidence_layer_raster_prefix = params['description'],
+        evidence_layer_raster_prefix = name,
     )
     #print(cogfile_bytes.name)
     print(ds.model_dump_json(exclude_none=True,indent=4))
@@ -653,13 +654,13 @@ def initiate_cma(request):
 
     shape = wkt.loads(params["extent"])
     geojson = mapping(shape)
-    print(geojson)
+    #print(geojson)
     if geojson['type'] == 'Polygon':
         geojson['type'] = 'MultiPolygon'
         geojson['coordinates'] = [geojson['coordinates']]
     geojson_dict = json.loads(json.dumps(geojson))
-    print(geojson_dict)
-    print(type(geojson_dict))
+    #print(geojson_dict)
+    #print(type(geojson_dict))
 
     # Extent always comes in as 4326, so reproject and simplify while at it
     params['extent'] = util.simplify_and_transform_geojson(
@@ -677,10 +678,6 @@ def initiate_cma(request):
     )
     
     cma_json = cma.model_dump_json(exclude_none=True)
-    
-    #print('\n\n\n\n\n')
-    #print(cma_json)
-    #blerg
     
     # Generate template raster
     proj4 = models.CRS.objects.filter(srid=params['crs']).values_list('proj4text')[0][0]

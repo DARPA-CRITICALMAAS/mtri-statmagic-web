@@ -16,9 +16,9 @@ class DisplayLayer(models.Model):
         #unique=True,
         help_text='Equivalent to evidence_layer_raster_prefix in CDR schema'
     )
-    name_alt = models.CharField(max_length=300,help_text='Display name (prettified)',null=True,blank=True)
+    name_alt = models.CharField(max_length=1000,help_text='Display name (prettified)',null=True,blank=True)
     description = models.CharField(max_length=2000,null=True,blank=True)
-    data_source_id = models.CharField(max_length=300,unique=True)
+    data_source_id = models.CharField(max_length=1000,unique=True)
     data_format = models.CharField(
         max_length=100,
         choices=(
@@ -88,10 +88,10 @@ class DataLayer(DisplayLayer):
         blank=True
     )
 
-    doi = models.CharField(max_length=200,null=True,blank=True)
+    doi = models.CharField(max_length=300,null=True,blank=True)
     reference_url = models.CharField(max_length=1000,null=True,blank=True)
     datatype = models.CharField(max_length=60,null=True,blank=True)
-    derivative_ops = models.CharField(max_length=200,null=True,blank=True)
+    derivative_ops = models.CharField(max_length=500,null=True,blank=True)
 
     
 class ProcessedLayer(DisplayLayer):

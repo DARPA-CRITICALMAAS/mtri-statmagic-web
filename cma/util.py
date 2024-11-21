@@ -1378,7 +1378,7 @@ def process_vector_for_mapfile(dataset):
     #     module already handles these
     # Pre-process the features into geojson for more efficient submission of 
     # preprocessing jobs
-    #gdf = None
+    gdf = None
     #features_file = get_output_layer_local_sync_path(dsid,ext='features')
     #if not os.path.exists(features_file):
         #gdf = gpd.read_file(features_file.replace('.features','.shp'))
