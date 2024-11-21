@@ -1745,8 +1745,8 @@ td.range_td {
 }
 .legend.leaflet-control #legendcontent_sites td.label {
     vertical-align: middle;
-    padding: 2px 7px 0px 7px;
-    color: #bfbfbf;
+    padding: 0px 7px 0px 7px;
+    color: #999;
     font-size: 0.73rem;
     font-family: var(--font-family-primary);
 }
@@ -2011,7 +2011,7 @@ div.topbar_button img {
 
 .datalayer_table td.name:hover, .datacube_layers_table td.name:hover {
     color: white;
-    font-weight: bold;
+/*     font-weight: bold; */
 }
 
 .datalayer_lowlight:hover {
@@ -2524,6 +2524,19 @@ div.download {
     
 }
 
+#uploadFormCSV td {
+    font-size: 0.95rem;
+    line-height: 1.1rem;
+    color: #f2f2f2;
+}
+label.chk_label {
+    font-size: 0.73rem;
+    padding-left: 5px;
+    color: #999;
+    cursor: pointer;
+    font-family: var(--font-family-primary);
+    
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

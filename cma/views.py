@@ -249,11 +249,6 @@ def upload_datalayer(request):
         upload_bytes = f#fread#f.read()
        # with zipfile.ZipFile(f,'r') as z:
         #    upload_bytes = z
-       
-   
-    
-    # Get date
-    #date = 
 
     # Create CDR metadata object
     ds = prospectivity_input.CreateDataSource(
@@ -268,7 +263,7 @@ def upload_datalayer(request):
         resolution = [res,res],
         format = 'tif' if ext == 'tif' else 'shp',
         reference_url = params['reference_url'],
-        evidence_layer_raster_prefix = name,
+        evidence_layer_raster_prefix = name.replace(' ','_').replace(',','').replace('>',''),
     )
     #print(cogfile_bytes.name)
     print(ds.model_dump_json(exclude_none=True,indent=4))

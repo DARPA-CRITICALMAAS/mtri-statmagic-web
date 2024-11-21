@@ -2548,7 +2548,9 @@ function loadMineralSitesToMap() {
         
         e.layer.openPopup();
     });
+   // if ($('#mineral_sites_show_chk').is(':checked')) {
     MINERAL_SITES_LAYER.addTo(MAP);
+  //  }
     
     // Update the "display by" selector to include commodity/deposit type
     // candidate filters customized to results
@@ -2595,7 +2597,7 @@ function loadMineralSitesToMap() {
     // Create/add legend
     html = `
         <div class='layer_legend' id='legendcontent_sites'>
-            <div class='legend_header'><span class='collapse'>-</span> Known deposit sites</div>
+            <div class='legend_header'><span class='collapse'>-</span> Known deposit sites <span class='header_info'>[n=<span style='color:#fff;'>${GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length}</span>]</span></div>
             <div class='legend_body'>
                 <table>
                     <tr class='buttons'>
@@ -2607,6 +2609,13 @@ function loadMineralSitesToMap() {
                                 <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="loadMineralSitesToTable();$('#show_sites').show();">
                                 
                             </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class='chk_label'>
+                                Show on map: <input type='checkbox' onchange='onShowDepositSitesToggle();' id='mineral_sites_show_chk' checked />
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -2631,6 +2640,19 @@ function loadMineralSitesToMap() {
     
     // Trigger display by change to style the markers
     onMineralSitesDisplayByChange();
+    
+}
+
+function onShowDepositSitesToggle() {
+    var show = $('#mineral_sites_show_chk').is(':checked');
+    if (show) {
+        MAP.addLayer(MINERAL_SITES_LAYER);
+    } else {
+        // Remove map layer
+        if (MAP.hasLayer(MINERAL_SITES_LAYER)) {
+            MAP.removeLayer(MINERAL_SITES_LAYER);
+        }
+    } 
     
 }
 
@@ -4690,6 +4712,14 @@ function initiateCMA() {
     });
 }
 
+function toggleNationalLayers() {
+    if ($('#toggle_national_layers_chk').is(':checked')) {
+        
+    } else {
+        $('#datalayer_container .datalayer_table tr.datalayer_row').show();
+    }
+}
+
 function toggleIntersectingLayers() {
     // Loop over and toggle each datalayer row
     $('.datalayer_table tr.datalayer_row').each(function () {
@@ -4770,24 +4800,6 @@ function addRowToDataLayersTable(dl) {
     var cats = getLayerControlCategories(dl);
     var category = cats.category;
     var subcat = cats.subcat;
-//     var category = dl.category;
-//     var subcat = dl.subcategory;
-//     
-//     if (dl.gui_model == 'outputlayer') {
-//         category = dl.model;//dl.subcategory;
-//         subcat = dl.model_run_id;
-//     }
-//     if (dl.subcategory == 'User upload') {
-//         category = 'User upload';
-//         subcat = dl.category;
-//     }
-    
-//     var gmap = {
-//         outputlayer: 'outputlayer_container',
-//         processedlayer: 'processedlayer_container',
-//         datalayer: 'datalayer_container',
-//     }
-    
     var category_clean = category.replaceAll(' ','_');
     var table_id = `${dl.gui_model}_table_${category_clean}`;
     var table = $(`#${table_id}`);
@@ -4849,7 +4861,7 @@ function addRowToDataLayersTable(dl) {
     `;
     table.append(`
         <tr class='datalayer_row' data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
-            <td class='name'>${name_pretty}</td>
+            <td class='name' title='${dl.name}'>${name_pretty}</td>
             <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
             <td class='download'>

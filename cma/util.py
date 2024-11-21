@@ -922,7 +922,9 @@ def get_datalayers_for_gui(
                 '12mhack' in d.description or 
                 '20240905' in d.description or 
                 'tdk' in d.description or
-                'tdw' in d.description): #or 'cma-lithium-' in d.description:
+                'tdw' in d.description or
+                d.name in ('jane_test_upload2',)
+                ): #or 'cma-lithium-' in d.description:
                 continue
             
             cat = d.category if d.subcategory != 'User upload' else 'User uploads'

@@ -75,7 +75,6 @@ def run_ta3_pipeline(model_run_id):
         config_file=config_file,
         output_folder=output_folder
     )
-    
 
     for output_layer in output_layers:
         print(output_layer[0])
