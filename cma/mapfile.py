@@ -255,7 +255,7 @@ def write_mapfile(
                 ds_path = f'/vsicurl_streaming/{ds_path}'
             else:
                
-                if ext == 'zip' and 'plots' not in r['download_url']: # assume .zip data sources are shapefiles
+                if ext == 'zip' and 'plots' not in r['download_url'] and 'additional' not in r['download_url'] : # assume .zip data sources are shapefiles
                     ext = 'shp'
                 
                 # NOTE: for now sync'ing these locally '
