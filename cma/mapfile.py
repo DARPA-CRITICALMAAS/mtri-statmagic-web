@@ -648,4 +648,4 @@ def write_mapfile(
         'REQUEST=GetCapabilities&'
         'SERVICE=WMS&'
         'map={}'
-    ).format(mapfile_path),file=sys.stderr)
+    ).format(mapfile_path))
