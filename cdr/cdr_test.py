@@ -340,20 +340,24 @@ preprocess_metadata = '''{
 }'''
 
 
-res = cdr.get_processed_data_layers('526c3425e4e347ef95dc71ef6e4d9e42')
-for i,r in enumerate(res):
-    print()
-    print(i,r['download_url'])
-    print(r)
+#res = cdr.get_processed_data_layers('526c3425e4e347ef95dc71ef6e4d9e42')
+# for i,r in enumerate(res):
+#     print()
+#     print(i,r['download_url'])
+#     print(r)
 
 #blerg
 
 #res = cdr.post_prospectivity_preprocess(preprocess_metadata)
-res = cdr.get_processed_data_layer_events('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
+#res = cdr.get_processed_data_layer_events('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
 #https://api.cdr.land/v1/prospectivity/event/bee5379f417c4da1ba318fbfd3296914
-#res = cdr.get_preprocess_event('526c3425e4e347ef95dc71ef6e4d9e42')
+res = cdr.get_preprocess_event('502cda93ef5e4d249aa3aaaf27419792')
 #print(res)
-for i,r['evidence_layers'] in enumerate(res):
-    print(i,r['download_url'])
+for i,r in enumerate(res):
+    print(r)
+    #print(i,r['download_url'])
+
+print(res)
+print(len(res['payload']['evidence_layers']))
 #res = cdr.get_processed_data_layer("d7848f650d28fd995bca5cf4a27b3f18__4cf3b043a38f568cb6e598efc6f08508_f8ffc0b5fe885f8301c495763f5da851")
 #print(json.dumps(res,indent=4))

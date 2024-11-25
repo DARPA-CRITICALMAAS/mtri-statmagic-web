@@ -288,9 +288,9 @@ class CDR():
             f'prospectivity/processed_data_layer_events?cma_id={cma_id}'
         )
 
-    def get_processed_data_layers(self,event_id=''):
+    def get_processed_data_layers(self,event_id='',cma_id=''):
         return self.run_query(
-            f'prospectivity/processed_data_layers?size=1000&event_id={event_id}'
+            f'prospectivity/processed_data_layers?size=10000&event_id={event_id}&cma_id={cma_id}'
         )
 
     def get_processed_data_layer(self,layer_id):

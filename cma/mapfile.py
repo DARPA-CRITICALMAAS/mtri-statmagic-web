@@ -22,6 +22,7 @@ COLORS_DIVERGING = [
     [69,117,180],
     [49,54,149],
 ]
+COLORS_DIVERGING.reverse()
 
 # From: https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
 COLORS_QUALITATIVE = [

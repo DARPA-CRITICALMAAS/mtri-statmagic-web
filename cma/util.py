@@ -669,10 +669,12 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
     
    # if cma_id:
     event_ids = cdr.get_processed_data_layer_events()
+    cmas_ids = [cma['cma_id'] for cma in cdr.get_cmas()]
         
     dsids = []
-    for event_id in event_ids:
-        res = cdr.get_processed_data_layers(event_id)
+    #for event_id in event_ids:
+    for cma_id in cmas_ids:
+        res = cdr.get_processed_data_layers(cma_id=cma_id)
 
         for i,ds in enumerate(res):
             #print(ds)
