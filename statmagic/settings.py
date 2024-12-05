@@ -41,7 +41,7 @@ else:
 
 # Determines whether app is hosted at the top of the domain e.g. myserver.org
 # or at a different location e.g. myserver.org/statmagic
-URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic'
+URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic/'
 
 
 ALLOWED_HOSTS = ['*']
@@ -165,7 +165,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
     BASE_DIR / "static" / "react" / "dist"
 ]
-STATIC_URL = 'static/'
+STATIC_URL = f'{URL_PREFIX}static/'
 STATIC_ROOT = BASE_DIR / "assets"
 
 # Default primary key field type
@@ -179,3 +179,5 @@ MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
 TILESERVER_LOCAL_SYNC_FOLDER = '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'
+
+    
