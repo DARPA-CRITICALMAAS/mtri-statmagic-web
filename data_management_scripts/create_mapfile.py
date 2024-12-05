@@ -6,5 +6,4 @@ django.setup()
 from cma import mapfile
 
 
-
 mapfile.write_mapfile()

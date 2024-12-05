@@ -40,7 +40,9 @@ COLORS_QUALITATIVE = [
 
 
 def get_mapfile_path():
-    mfmod = '' if settings.MAPSERVER_SERVER == 'vm-apps2' else '2'
+    mfmod = '2' if settings.MAPSERVER_SERVER == 'per440c' else ''
+    
+    # TODO: fix for USGS server setup
     mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/var/www/mapfiles{mfmod}'
     
     return os.path.join(mapfile_production_dir, settings.MAPFILE_FILENAME)

@@ -79,6 +79,7 @@ def home(request):
         'DATALAYERS_LOOKUP': json.dumps(dls['datalayers_lookup']),
        # 'datalayers': dls['datalayers'],
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
+        'MAPFILE_FILENAME': util.settings.MAPFILE_FILENAME,
         'crs_options': crs_opts,
         'CRS_OPTIONS': json.dumps(crs_opts),
         'PROCESSING_STEPS': json.dumps(processing_steps),

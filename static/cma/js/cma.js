@@ -5,12 +5,13 @@ var MAPFILE;
 
 if (MAPSERVER_SERVER == 'vm-apps2') {
     WMS_URL = `https://apps2.mtri.org/mapserver/wms?`;
-    MAPFILE = '/var/www/mapfiles/statmagic.map';
-}
-
-if (MAPSERVER_SERVER == 'per440c') {
+    MAPFILE = `/var/www/mapfiles/${MAPFILE_FILENAME}`;
+} else if (MAPSERVER_SERVER == 'per440c') {
     WMS_URL = `http://opg.mtri.org/mapserver_opg/wms?`;
-    MAPFILE = '/var/www/mapfiles2/statmagic.map';
+    MAPFILE = `/var/www/mapfiles2/${MAPFILE_FILENAME}`;
+} else {
+    WMS_URL = `https://${MAPSERVER_SERVER}/mapserver/wms?`;
+    MAPFILE = `/var/www/mapfiles/${MAPFILE_FILENAME}`;
 }
 var COMMODITIES;
 const REQUIRED_SHP_EXTS = ['shp','shx','prj','dbf'];
