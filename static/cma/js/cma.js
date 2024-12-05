@@ -10,7 +10,7 @@ if (MAPSERVER_SERVER == 'vm-apps2') {
     WMS_URL = `http://opg.mtri.org/mapserver_opg/wms?`;
     MAPFILE = `/var/www/mapfiles2/${MAPFILE_FILENAME}`;
 } else {
-    WMS_URL = `https://${MAPSERVER_SERVER}/mapserver/wms?`;
+    WMS_URL = `https://${MAPSERVER_SERVER}/cgi-bin/mapserv?`;
     MAPFILE = `/var/www/mapfiles/${MAPFILE_FILENAME}`;
 }
 var COMMODITIES;
