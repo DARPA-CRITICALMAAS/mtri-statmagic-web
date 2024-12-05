@@ -80,6 +80,7 @@ def home(request):
        # 'datalayers': dls['datalayers'],
         'MAPSERVER_SERVER': util.settings.MAPSERVER_SERVER,
         'MAPFILE_FILENAME': util.settings.MAPFILE_FILENAME,
+        'URL_PREFIX': util.settings.URL_PREFIX,
         'crs_options': crs_opts,
         'CRS_OPTIONS': json.dumps(crs_opts),
         'PROCESSING_STEPS': json.dumps(processing_steps),
@@ -929,6 +930,8 @@ def get_mineral_sites(request):
     }
     params = util.process_params(request, params, post_json=True)
     
+    print(params['commodity'])
+    
     # Convert comma-separated params to lists
     for p in ('type','rank'):
         params[p] = params[p].split(',')
@@ -973,7 +976,9 @@ def get_mineral_sites(request):
         }
 
 
-    cs = [params['commodity']]
+    cs = params['commodity']
+    if type(cs) == str:
+        cs = [cs]
     if params['commodity'] == 'rare earth elements':
         cs = [
             'Lanthanum', 

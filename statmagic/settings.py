@@ -24,7 +24,12 @@ HOST = socket.gethostname()
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECURITY WARNING: don't run with debug turned on in production!
 
-if 'apps' in HOST:
+IS_MTRI_SERVER = 'apps' in HOST or 'precision' in HOST
+
+# TODO: add condition that return true for USGS production server
+IS_PRODUCTION_SERVER = 'apps' in HOST
+
+if IS_PRODUCTION_SERVER:
     # Load production key from ENV
     SECRET_KEY = os.environ['SECRET_KEY'] 
     DEBUG = True
@@ -34,6 +39,9 @@ else:
     DEBUG = True
     DJANGO_VITE_DEV = True
 
+# Determines whether app is hosted at the top of the domain e.g. myserver.org
+# or at a different location e.g. myserver.org/statmagic
+URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic'
 
 
 ALLOWED_HOSTS = ['*']
@@ -170,4 +178,4 @@ MAPFILE_FILENAME = 'statmagic.map'
 MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
-TILESERVER_LOCAL_SYNC_FOLDER = '/home/mgbillmi/statmagic/data/datalayer_download/'
+TILESERVER_LOCAL_SYNC_FOLDER = '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'

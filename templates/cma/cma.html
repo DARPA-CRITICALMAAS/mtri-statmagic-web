@@ -94,7 +94,7 @@
                         <tr>
                             <td class='label'>Commodity:</td>
                             <td align='right'>
-                                <select id='commodity' onChange="validateLoadSitesButton();">
+                                <select id='commodity' onChange="validateLoadSitesButton();" multiple>
                                     <option value="" disabled selected hidden>Select...</option>
                                     <!--{% for commodity in commodities %}
                                         <option value="{{commodity}}">{{commodity}}</option>
@@ -402,6 +402,7 @@
     const PROCESSING_STEPS = {{ PROCESSING_STEPS|safe }};
     const CDR_BEARER = '{{ CDR_API_TOKEN }}';
     const COLORS_DIVERGING = {{ COLORS_DIVERGING|safe }};
+    const URL_PREFIX = '{{ URL_PREFIX }}';
     var TA1_SYSTEMS = {{ TA1_SYSTEMS|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>

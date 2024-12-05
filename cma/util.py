@@ -854,7 +854,8 @@ def getOutputLayers(do_processed_layers=False):
 
 
 def get_output_layer_local_sync_path(dsid,ext='tif'):
-    dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+    #dd = f'/net/{settings.MAPSERVER_SERVER}{settings.TILESERVER_LOCAL_SYNC_FOLDER}'
+    dd = settings.TILESERVER_LOCAL_SYNC_FOLDER
     
     return os.path.join(dd,f'{dsid}.{ext}')
 

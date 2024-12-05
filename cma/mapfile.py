@@ -42,8 +42,9 @@ COLORS_QUALITATIVE = [
 def get_mapfile_path():
     mfmod = '2' if settings.MAPSERVER_SERVER == 'per440c' else ''
     
-    # TODO: fix for USGS server setup
-    mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/var/www/mapfiles{mfmod}'
+    mapfile_production_dir = f'/var/www/mapfiles{mfmod}'
+    if settings.IS_MTRI_SERVER:
+        mapfile_production_dir = f'/net/{settings.MAPSERVER_SERVER}/{mapfile_production_dir}'
     
     return os.path.join(mapfile_production_dir, settings.MAPFILE_FILENAME)
   
@@ -76,7 +77,9 @@ def getCLASS(cmap,attribute='pixel'):
 def openRaster(ds_path):
     td = None
     ds_path2 = ds_path
-    if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path:
+    
+    # If this is an MTRI server, prepend the /net/[mapserver system] location 
+    if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path and settings.IS_MTRI_SERVER:
         ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
         
     if ' ' in ds_path:

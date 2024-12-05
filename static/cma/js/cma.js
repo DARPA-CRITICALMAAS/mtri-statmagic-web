@@ -1102,7 +1102,7 @@ function downloadDataCubeLayers(cmp) {
 // CDR, and so even if the CDR is down or unresponsive, the page will still 
 // load.
 function getMetadata() {
-    $.ajax(`/get_metadata`, {
+    $.ajax(`${URL_PREFIX}get_metadata`, {
         data: {},
         success: function(response) {
             CMAS_EXISTING = response.cmas;
@@ -1141,7 +1141,7 @@ function getMetadata() {
 // Requests list of model runs for a given CMA_id from backend
 function loadModelRuns(cma_id,mrid_selected) {
     $('#load_run_cma_label').html(CMAS_EXISTING[cma_id].description);
-    $.ajax(`/get_model_runs`, {
+    $.ajax(`${URL_PREFIX}get_model_runs`, {
         data: {
             cma_id: cma_id,
         },
@@ -1197,7 +1197,7 @@ function processDataLayersUpdates(response) {
 // sync'd w/ the GUI's PG database.
 function syncModelOutputs(cma_id) {
 
-    $.ajax(`/sync_model_outputs`, {
+    $.ajax(`${URL_PREFIX}sync_model_outputs`, {
         data: {
             cma_id: cma_id,
         },
@@ -1239,7 +1239,7 @@ function processNewProcessedLayer(l) {
 
 function syncProcessedLayers(cma_id,awaiting_n_layers,event_id,run_model_on_complete) {
 
-    $.ajax(`/sync_processed_layers`, {
+    $.ajax(`${URL_PREFIX}sync_processed_layers`, {
         data: {
             cma_id: cma_id,
             event_id: event_id,
@@ -1489,7 +1489,7 @@ function loadModelRun(cma_id,model_run_id) {
 }
 
 function getModelRun(model_run_id,dl) {
-    $.ajax(`/get_model_run`, {
+    $.ajax(`${URL_PREFIX}get_model_run`, {
         data: {
             model_run_id: model_run_id,
         },
@@ -2042,7 +2042,7 @@ function loadMineralSites() {
     setLoadingLoadSitesButton();
     
     
-    AJAX_GET_MINERAL_SITES = $.ajax(`/get_mineral_sites`, {
+    AJAX_GET_MINERAL_SITES = $.ajax(`${URL_PREFIX}get_mineral_sites`, {
         data: JSON.stringify(getMineralSitesRequestFilters()),
         type: 'POST',
         dataType: 'json',
@@ -2569,6 +2569,7 @@ function loadMineralSitesToMap() {
     
     var opts = `
         <option value="site_type" selected>Site type</option>
+        <option value="commodity_type">Commodity type</option>
         <option value="top1_deposit_classification_confidence">Primary dep. type conf.</option>
         <option value="tonnage">Tonnage</option>
         <option value="grade">Grade</option>
@@ -2579,18 +2580,18 @@ function loadMineralSitesToMap() {
     
     // ranks
     $.each(['A','B','C','D','E','U'], function(i,d) {
-        opts += `<option value='rank__${d}'>rec. quality: ${d}</option>`;
+        opts += `<option value='rank__${d}'>Rec. quality: ${d}</option>`;
     });
-    // vvv not needed anymore b/c only a single commodity per site
-//     $.each(all_opts.commodities.sort(), function(i,m) {
-//         if (!m) {return;}
-//         opts += `<option value='commodity__${m}'>has commodity: ${m}</option>`;
-//     });
+
+    // commodities
+    $.each(all_opts.commodities.sort(), function(i,d) {
+        opts += `<option value='commodity__${d}'>Commodity: ${d}</option>`;
+    });
+    
+    // primary deposit types
     $.each(all_opts.dtcs.sort(), function(i,d) {
         opts += `<option value='deposit_type__${d}'>Prim. deposit type: ${d}</option>`;
     });
-    
-
     
     // Show the "display by" selector <- only needed if 'display by' dropdown is moved under the KNOWN DEPOSIT SITES filter form
 //     $('#mineral_sites_display_by').show();
@@ -2713,6 +2714,13 @@ function onMineralSitesDisplayByChange() {
             color: '#fb9a99'
         }  
     };
+    // Commodities
+    var commodities = getMineralSiteValsByProperty('commodity');
+    commodities.sort();
+    var commodity_types = {}
+    $.each(commodities, function(i,commodity) {
+        commodity_types[commodity] = {color:  d3.schemeCategory20b[i % 20]};
+    });
     
     // Map of confidence to style
     var confidence_colormap = [
@@ -2767,6 +2775,14 @@ function onMineralSitesDisplayByChange() {
                 fillOpacity: 0.9,
                 weight: strokeWeight_default,
             });
+        } else if (display_by == 'commodity_type') {
+            fillColor = commodity_types[prop.commodity].color;
+            flayer.setStyle({
+                fillColor: fillColor,
+                fillOpacity: 0.9,
+                weight: strokeWeight_default,
+            });
+            
         } else if (colormaps[display_by]) {
             var conf = prop[display_by];
             
@@ -2849,6 +2865,10 @@ function onMineralSitesDisplayByChange() {
     var lhtml = '';
     if (display_by == 'site_type') {
         $.each(site_types, function(label,obj) {
+            lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${label}</div>`;
+        });
+    } else if (display_by == 'commodity_type') {
+        $.each(commodity_types, function(label,obj) {
             lhtml += `<div class='legend_entry'><div class='dot' style='background-color:${obj.color};'></div> ${label}</div>`;
         });
     } else if (colormaps[display_by]) {
@@ -3009,7 +3029,7 @@ function submitPreprocessing(process_and_run) {
         dry_run: false,
     };
     
-    $.ajax('submit_preprocessing', {
+    $.ajax(`${URL_PREFIX}submit_preprocessing`, {
         data: JSON.stringify(data),
         type: 'POST',
         dataType: 'json',
@@ -3162,7 +3182,7 @@ function submitModelRun() {
 //         dry_run: true,
     };
     
-    $.ajax('submit_model_run', {
+    $.ajax(`${URL_PREFIX}submit_model_run`, {
         data: JSON.stringify(data),
         type: 'POST',
         dataType: 'json',
@@ -3250,7 +3270,7 @@ function sleep(ms) {
 
 function checkModelRunStatus(model_run_id) {
     
-    $.ajax('check_model_run_status', {
+    $.ajax(`${URL_PREFIX}check_model_run_status`, {
         data: {
             model_run_id: model_run_id,
         },
@@ -4218,7 +4238,7 @@ function getCSVcolumnHeaders() {
         formData.append('file',file);
     });
 
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_csv_column_names', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}get_csv_column_names`, {
         processData: false,
         contentType: false,
         data: formData,
@@ -4326,7 +4346,7 @@ function uploadCSV() {
         formData.append('wkt',getWKT());
     }
 
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_sites_csv', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}upload_sites_csv`, {
         processData: false,
         contentType: false,
         dataType: 'text json',
@@ -4481,7 +4501,7 @@ function getFishnet() {
     $('#cma_fishnet_message').hide()
     $('.loading_fishnet').show();
     FISHNET_LAYER.clearLayers();
-    AJAX_GET_FISHNET = $.ajax('get_fishnet', {
+    AJAX_GET_FISHNET = $.ajax(`${URL_PREFIX}get_fishnet`, {
         data: {
             resolution: res,
             srid: CRS_OPTIONS[crs].srid.split(':')[1],
@@ -4692,7 +4712,7 @@ function initiateCMA() {
     data['extent'] = getWKT();
     console.log(data);
 
-    $.ajax(`/initiate_cma`, {
+    $.ajax(`${URL_PREFIX}initiate_cma`, {
 //         processData: false,
 //         contentType: false,
         type: 'POST',
@@ -4940,7 +4960,7 @@ function uploadDataLayer() {
     }
     setLoadingButton('submit_upload_datalayer_button');
 //     AUDIO.submit.play();
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('upload_datalayer', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}upload_datalayer`, {
         processData: false,
         contentType: false,
         data: formData,
@@ -5194,7 +5214,7 @@ $('.modal_uploadshp tr.footer_buttons.load_aoi').find('.button.submit').on('clic
         AJAX_UPLOAD_SHAPEFILE.abort();
     }
 //     AUDIO.submit.play();
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_vectorfile_as_geojson', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}get_vectorfile_as_geojson`, {
         processData: false,
         contentType: false,
         data: formData,
@@ -5249,7 +5269,7 @@ $('#file_geojson').on('change', function() {
         AJAX_UPLOAD_SHAPEFILE.abort();
     }
 //     AUDIO.submit.play();
-    AJAX_UPLOAD_SHAPEFILE = $.ajax('get_geojson_from_file', {
+    AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}get_geojson_from_file`, {
         processData: false,
         contentType: false,
         data: formData,
