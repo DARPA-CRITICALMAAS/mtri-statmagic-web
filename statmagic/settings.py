@@ -102,9 +102,9 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'statmagic',
         'USER': 'django_user_statmagic',
-        'PASSWORD': 'gimme_gimme_gallium',#os.environ['DJANGO_USER_STATMAGIC_PGPASS'],
-        'HOST' : 'per510c',
-        'PORT': '5433'
+        'PASSWORD': os.environ['DJANGO_USER_STATMAGIC_PGPASS'],
+        'HOST': os.environ['DB_HOST'],
+        'PORT': os.environ['DB_PORT']
     }
 }
 
@@ -175,9 +175,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAPFILE_FILENAME = 'statmagic.map'
 
-MAPSERVER_SERVER = 'vm-apps2'#'per440c'#'vm-apps2'
+MAPSERVER_SERVER = os.environ['MAPSERVER_SERVER']
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
-TILESERVER_LOCAL_SYNC_FOLDER = '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'
+TILESERVER_LOCAL_SYNC_FOLDER = os.environ['TILESERVER_LOCAL_SYNC_FOLDER']
 
-    
+
