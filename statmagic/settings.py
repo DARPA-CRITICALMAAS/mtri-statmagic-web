@@ -35,7 +35,7 @@ if IS_PRODUCTION_SERVER:
     DEBUG = True
     DJANGO_VITE_DEV = False
 else:
-    SECRET_KEY = 'django-insecure-horfy%^!-p6s)tda@@=iyslwunl@!0+b@hxvh)fm*f0hxpxvu-'
+    SECRET_KEY = 'iat3k%kt0e53=c*68_!m-cr-tb2=r#1m6925*(5k1-d5wvhan)'#'django-insecure-horfy%^!-p6s)tda@@=iyslwunl@!0+b@hxvh)fm*f0hxpxvu-'
     DEBUG = True
     DJANGO_VITE_DEV = True
 

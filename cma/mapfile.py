@@ -326,12 +326,15 @@ def write_mapfile(
         layer_type = 'RASTER'
     
         ds_path2 = ds_path
-        if 'cdr' not in ds_path and util.settings.MAPSERVER_SERVER not in ds_path:
-            ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
+        # vvv NOTE: commenting this out 2024-12-06 b/c I think it was in place
+        #           only for the early demo-versions of the output files
+        
+        #if 'cdr' not in ds_path and util.settings.MAPSERVER_SERVER not in ds_path:
+            #ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
             
         # Run sync script if one of the outputlayers has not been locally
         # downloaded
-        if '/net/' in ds_path2 and not os.path.exists(ds_path2):
+        if util.settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path2 and not os.path.exists(ds_path2):
             util.sync_cdr_prospectivity_outputs_to_outputlayer(rkey)
             util.sync_remote_outputs_to_local(rkey)
     

@@ -1125,7 +1125,7 @@ function getMetadata() {
             
             // Now load these to the dropdowns
             $.each(['commodity','top1_deposit_type'], function(i,v) {
-                var opts = v == 'commodity' ? '' : `<option value='' selected>[any]</option>`;
+                var opts = v == 'commodity' ? '' : `<option value='any' selected>[any]</option>`;
                 $.each(response[v], function(i,c) {
                     var c0 = c == 'Rare earth elements' ? 'rare earth elements' : c;
                     opts += `<option value='${c0}'>${c}</option>`;

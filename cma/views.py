@@ -630,6 +630,7 @@ def get_geojson_from_file(request):
 
     return response
 
+
 # Function for handling CMA initiation
 @csrf_exempt
 def initiate_cma(request): 
@@ -930,7 +931,7 @@ def get_mineral_sites(request):
     }
     params = util.process_params(request, params, post_json=True)
     
-    print(params['commodity'])
+    #print(params['commodity'])
     
     # Convert comma-separated params to lists
     for p in ('type','rank'):
@@ -979,8 +980,8 @@ def get_mineral_sites(request):
     cs = params['commodity']
     if type(cs) == str:
         cs = [cs]
-    if params['commodity'] == 'rare earth elements':
-        cs = [
+    if 'rare earth elements' in cs:
+        cs += [
             'Lanthanum', 
             'Cerium', 
             'Yttrium', 
@@ -1070,7 +1071,7 @@ def get_mineral_sites(request):
                     srank = eval(srank)
                 else:
                     srank = [srank]
-                matches =  [i for i in srank if i in params[p]]
+                matches =  [i for i in srank if ('any' in params[p] or i in params[p])]
                 if not matches:
                     skip = True
         if skip:
@@ -1082,7 +1083,10 @@ def get_mineral_sites(request):
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
       
     if params['format'] == 'csv':
-        sites_df_filtered = pd.DataFrame(sites_filtered,columns=sites_df_merged.columns)
+        sites_df_filtered = pd.DataFrame(
+            sites_filtered,
+            columns=sites_df_merged.columns
+        )
         buff = StringIO()
         sites_df_filtered.to_csv(buff)
         buff.seek(0)

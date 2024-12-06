@@ -2561,6 +2561,12 @@ label.chk_label {
     font-size: 0.95rem;
     
 }
+select[multiple] options.active,
+select[multiple] options.focus,
+select[multiple] options.hover,
+select[multiple] options.checked:after {
+    color: white;
+}
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
