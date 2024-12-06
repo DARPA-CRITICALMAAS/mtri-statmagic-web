@@ -5,7 +5,7 @@ anyio==4.3.0
 asgiref==3.8.1
 attrs==24.2.0
 backports.zoneinfo==0.2.1
-certifi==2024.2.2
+certifi==2024.7.4
 charset-normalizer==3.3.2
 click==8.1.7
 click-plugins==1.1.1
@@ -16,7 +16,7 @@ django-vite==3.0.4
 et-xmlfile==1.1.0
 exceptiongroup==1.2.1
 fastapi==0.115.3
-fiona==1.9.6
+fiona==1.10b1
 GDAL==3.0.0
 geojson-pydantic==1.1.0
 geopandas==0.13.2
