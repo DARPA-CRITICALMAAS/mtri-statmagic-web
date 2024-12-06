@@ -26,8 +26,7 @@ import json
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
     sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
-    #print('CDR_SCHEMAS_DIRECTORY',os.environ['CDR_SCHEMAS_DIRECTORY'])
-#sys.path.append('/usr/local/project/cdr_schemas/')
+
 from cdr_schemas import prospectivity_models
 from cdr_schemas import prospectivity_input
 from cdr_schemas.common import GeomType

@@ -79,8 +79,8 @@ def openRaster(ds_path):
     ds_path2 = ds_path
     
     # If this is an MTRI server, prepend the /net/[mapserver system] location 
-    if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path and settings.IS_MTRI_SERVER:
-        ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
+    #if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path and settings.IS_MTRI_SERVER:
+    #    ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
         
     if ' ' in ds_path:
         td = tempfile.TemporaryDirectory()
@@ -274,16 +274,16 @@ def write_mapfile(
                 #       process, which properly sets data_format based on the 
                 #       content of the .zip file. 
                 #       Leaving these conditions in for now.
-                if (ext == 'zip' and 
-                    'plots' not in r['download_url'] and 
-                    'additional' not in r['download_url'] and
-                    os.path.basename(r['download_url']) not in (
-                        'splits.zip',
-                        'metrics.zip',
-                        'optuna_search_values.zip',
-                        'error_logs.zip',
-                    )): 
-                    ext = 'shp'
+                #if (ext == 'zip' and 
+                    #'plots' not in r['download_url'] and 
+                    #'additional' not in r['download_url'] and
+                    #os.path.basename(r['name']) not in (
+                        #'splits.zip',
+                        #'metric_files.zip',
+                        #'optuna_search_values.zip',
+                        #'error_logs.zip',
+                    #)): 
+                    #ext = 'shp'
                 
                 # NOTE: for now sync'ing these locally '
                 ds_path = os.path.join(
@@ -334,8 +334,11 @@ def write_mapfile(
             
         # Run sync script if one of the outputlayers has not been locally
         # downloaded
+        #print(ds_path2)
+        #print(util.settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path2,os.path.exists(ds_path2))
         if util.settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path2 and not os.path.exists(ds_path2):
             util.sync_cdr_prospectivity_outputs_to_outputlayer(rkey)
+         #   print('syncing remote')
             util.sync_remote_outputs_to_local(rkey)
     
         if ext in ('js','json','geojson'):

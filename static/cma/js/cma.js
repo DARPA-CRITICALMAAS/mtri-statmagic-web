@@ -953,6 +953,8 @@ function loadCMA(cma_id) {
     loadModelRuns(cma_id);
     
     // Load known deposit sites
+    // Uncheck 'global' for DEPOSIT SITES - QUERIED
+    $('#sites_ignoreextent').prop('checked',false);
     loadMineralSites();
      
     // Clear loaded processed layers 
@@ -3476,8 +3478,8 @@ function onToggleLayerClick(target,layer_name) {
             var lmin = datalayer.stats_minimum;
             var lmax = datalayer.stats_maximum;
             var precision = 3;//Math.max(-Math.round(Math.log10(lmax-lmin)),1);
-            vmin = lmin.toPrecision(precision);
-            vmax = lmax.toPrecision(precision);
+            if (lmin != undefined) {vmin = lmin.toPrecision(precision);}
+            if (lmax != undefined) {vmax = lmax.toPrecision(precision);}
             //var svg = '';//VECTOR_LEGENDS[datalayer.vector_format](datalayer.color];on(precision);
             svg = `
                 <linearGradient id="gradient_${layer_name_scrubbed}">
