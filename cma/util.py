@@ -1330,6 +1330,7 @@ def get_extent_geom_of_raster(tif):
         'coordinates': [coords]
     }
 
+
 def process_vector_for_mapfile(dataset):
     '''
         dataset: models.DisplayLayer instance (OutputLayer or DataLayer)

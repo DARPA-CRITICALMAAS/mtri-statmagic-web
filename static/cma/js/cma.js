@@ -56,8 +56,7 @@ resetModelCache();
 function getSpecifyExtentTR(ignore) {
     var ig = '';
     if (ignore) {
-        ig = `/ <label title='If checked, will query all of North America'>global <input type='checkbox' id='sites_ignoreextent' onchange='validateLoadSitesButton();'></label>`;
-            
+        ig = `/ <label title='If checked, will query all of North America'>global <input type='checkbox' checked id='sites_ignoreextent' onchange='validateLoadSitesButton();'></label>`;
     }
     return `
         <td class='label'>Extent:</td>
@@ -415,6 +414,9 @@ function clearUserUploadSites() {
     
     // Reset the store
     GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT = null;
+    
+    // Reset initial instructions 
+    $('#user_upload_sites_initial_instructions').show();
     
     updateNsitesLabels();
     
@@ -826,7 +828,7 @@ function onModelSelect() {
         var onclick = button.onclick ? button.onclick : '';
         
         button_html += `
-            <td>
+            <td class=${button.class}>
                 <div class='button model_process_submit ${button.class}' onclick='${onclick};'>
                     ${button.label}
                 </div>
@@ -2142,6 +2144,10 @@ function updateNsitesLabels() {
     } else {
         $('.header_info.training').removeClass('warning');
     }
+    
+    if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+        $('.n_user_upload_sites.main_label').html(n_upload_sites);
+    }
 }
 
 function setLoadingLoadSitesButton() {
@@ -2264,7 +2270,7 @@ function getCommodityAndDTsFromSite(site_prop) {
 
 function maybeArrToStr(n) {
     if (!n) {return '';}
-    return n.indexOf('[') > -1 ? JSON.parse(n) : [n];
+    return n.charAt(0) == '[' ? JSON.parse(n) : [n];
 }
 
 function loadMineralSitesToTable() {
@@ -2599,7 +2605,7 @@ function loadMineralSitesToMap() {
     // Create/add legend
     html = `
         <div class='layer_legend' id='legendcontent_sites'>
-            <div class='legend_header'><span class='collapse'>-</span> Known deposit sites <span class='header_info'>[n=<span style='color:#fff;'>${GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length}</span>]</span></div>
+            <div class='legend_header'><span class='collapse'>-</span> deposit sites - queried <span class='header_info'>[n=<span style='color:#fff;'>${GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length}</span>]</span></div>
             <div class='legend_body'>
                 <table>
                     <tr class='buttons'>
@@ -4343,7 +4349,10 @@ function uploadCSV() {
         formData.append(`csv_${ll}_field`,$(`#csv_${ll}_field`).val());
     });
     if ($('#csv_filter_by_extent').is(':checked')) {
-        formData.append('wkt',getWKT());
+        var wkt = getWKT();
+        if (wkt) {
+            formData.append('wkt',getWKT());
+        }
     }
 
     AJAX_UPLOAD_SHAPEFILE = $.ajax(`${URL_PREFIX}upload_sites_csv`, {
@@ -4370,8 +4379,18 @@ function uploadCSV() {
             // Close the upload modal
             $('.overlay.modal_uploadcsv').hide();
             
+            // Hide initial instructions 
+            $('#user_upload_sites_initial_instructions').hide();
+            
+            // Update upload file label
+            $('#user_upload_sites_file_name').html(
+                $('#file_csv')[0].files[0].name
+            );
+            
             // Show upload sites tools
             $('#user_upload_sites_tools').show();
+            
+            // TODO: toggle open the DEPOSIT SITES - UPLOADED section
             
             // Upload sites labels
             updateNsitesLabels();

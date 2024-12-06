@@ -1191,6 +1191,7 @@ def upload_sites_csv(request):
     params = util.process_params(request, params, post=True)
 
     if params['wkt']:
+        print(params['wkt'])
         params['wkt'] = shapely.from_wkt(util.validate_wkt_geom(params['wkt']))
         #extent = ogr.CreateGeometryFromWkt(params['wkt'])#util.convert_wkt_to_geojson(params['wkt'])
 

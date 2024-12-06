@@ -100,11 +100,12 @@ post_data_intersect_sources = {
 # #     print(el['data_source']['description'],el['data_source']['format'])
 # # print(len(res['event']['payload']['evidence_layers']))
 # # blerg
-# res = cdr.get_prospectivity_output_layers(model_run_id='d494c5f58006463bac584952bc9bba4a')
-# for r in res:
-#     print()
-#     print(r)
-# blerg
+res = cdr.get_prospectivity_output_layers(model_run_id='6ed9a1e88d5a401fa3775d181e7b38f9')
+for r in res:
+    if '.zip' in r['title']:
+        print()
+        print(r)
+blerg
 # print(len(res))
 # blerg
 # #

@@ -82,7 +82,7 @@
         <div id='control_panel'>
             <div id='sidebar_collapse_button'>&#11207;</div>
             <div class='collapse deposit_sites'>
-                <div class='header topbar deposit_sites'><span class="collapse">+ </span> Known deposit sites
+                <div class='header topbar deposit_sites'><span class="collapse">+ </span>  deposit sites - queried
  
                     <div class='topbar_button super'>
                         <img src="/static/cma/img/dots-24b.png" height="16px" class="download_icon">
@@ -94,7 +94,7 @@
                         <tr>
                             <td class='label'>Commodity:</td>
                             <td align='right'>
-                                <select id='commodity' onChange="validateLoadSitesButton();" multiple>
+                                <select id='commodity' onChange="validateLoadSitesButton();" multiple size='5'>
                                     <option value="" disabled selected hidden>Select...</option>
                                     <!--{% for commodity in commodities %}
                                         <option value="{{commodity}}">{{commodity}}</option>
@@ -132,19 +132,19 @@
                                 <label>A <input class='dedup_chk rank' type='checkbox' id='rank__A' checked /></label>
                                 <label>B <input class='dedup_chk rank' type='checkbox' id='rank__B' checked /></label>
                                 <label>C <input class='dedup_chk rank' type='checkbox' id='rank__C' checked /></label>
-                                <label>D <input class='dedup_chk rank' type='checkbox' id='rank__D' /></label>
-                                <label>E <input class='dedup_chk rank' type='checkbox' id='rank__E' /></label>
+                                <label>D <input class='dedup_chk rank' type='checkbox' id='rank__D' checked /></label>
+                                <label>E <input class='dedup_chk rank' type='checkbox' id='rank__E' checked /></label>
                                 <label>U <input class='dedup_chk rank' type='checkbox' id='rank__U' checked /></label>
                             </td>
                         </tr>
                         <tr>
                             <td class='label'>Type:</td>
                             <td align='right'>
-                                <label>Occurrence <input class='dedup_chk type' type='checkbox' id='type__Occurrence'  /></label><br>
+                                <label>Occurrence <input class='dedup_chk type' type='checkbox' id='type__Occurrence'  checked /></label><br>
                                 <label>Prospect <input class='dedup_chk type' type='checkbox' id='type__Prospect' checked /></label><br>
                                 <label>Past producer <input class='dedup_chk type' type='checkbox' id='type__Past_Producer' checked /></label><br>
                                 <label>Producer <input class='dedup_chk type' type='checkbox' id='type__Producer' checked /></label><br>
-                                <label>Plant <input class='dedup_chk type' type='checkbox' id='type__Plant' /></label><br>
+                                <label>Plant <input class='dedup_chk type' type='checkbox' id='type__Plant' checked /></label><br>
                                 <label>Unknown/Not Specified <input class='dedup_chk type' type='checkbox' id='type__NotSpecified' checked /></label>
                             </td>
                         </tr>
@@ -189,6 +189,30 @@
                     </table>
                 </div>
             </div>
+            <div class='collapse'>
+             <div class='header topbar deposit_sites'><span class="collapse">+ </span>  deposit sites - uploaded
+ 
+                    <div class='topbar_button super'>
+                        <img src="/static/cma/img/dots-24b.png" height="16px" class="download_icon">
+                    </div>
+                
+                </div>
+                <div class='content main'>
+                    <div class='modeling_instructions uploadsites'>
+                        <div id='user_upload_sites_initial_instructions'>
+                        <span class='link' onclick='$(".modal_uploadcsv").show();'>Upload a <b>CSV</b> file</span> of deposit site locations. The only requirement of the CSV is that it needs to contain columns representing <b>degrees latitude</b> and <b>degrees longitude</b>.
+                        </div>
+    
+                        <div id='user_upload_sites_tools'>
+                            <div class='upload_sites_label'>User upload sites from file <span id='user_upload_sites_file_name'></span>:</div>
+        
+                            <div class='upload_sites_options'>
+                                n=<span class='n_user_upload_sites main_label'></span> | <span class='link' onclick='clearUserUploadSites();'>clear</span> | <span class='link' onclick='$(".modal_uploadcsv").show();'>upload new</span> | <label>show on map: <input id='user_upload_sites_show' type='checkbox' onclick='toggleUserUploadSitesVisibility();' checked /></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class='collapse' id='datalayer_container'>
                
                 <div class='header topbar toptop'><span class="collapse">+ </span> Prospectivity layers
@@ -213,7 +237,6 @@
                 </div>
             </div>
  
-            
             <div class='collapse modeling'>
                 <div class='header topbar modeling modeling_topbar'><span class="collapse">+ </span> Model Tools
                     <div class='topbar_button super'>
@@ -320,17 +343,14 @@
                             <span class='header_info training warning'>[<span id='training_info_using_processed_lr'></span><span id='training_info_using_sites'><span class='mineral_sites_n_results training'>--</span> sites selected<span id='training_data_user_sites_label'> (<span class='mineral_sites_n_included'></span> queried + <span class='n_user_upload_sites'></span> uploaded)</span></span>]</div>
                         <div class='content training'>
                             <div class='modeling_instructions'>
-                            If no <b>label raster</b> in the MODEL PROCESSED LAYERS list below is selected, the model will use the <span id='n_training'></span> sites selected in the <b>KNOWN DEPOSIT SITES</b> section above for training. To filter out specific sites, click on the site or <span class='link' onclick="loadMineralSitesToTable();$('#show_sites').show();">open the sites table</span> and click on the <b>exclude</b> checkbox.<br><br>
+                            If no <b>label raster</b> in the MODEL PROCESSED LAYERS list below is selected, the model will use the <span id='n_training'></span> sites selected in the <b>DEPOSIT SITES - QUERIED</b> section above for training. To filter out specific sites, click on the site or <span class='link' onclick="loadMineralSitesToTable();$('#show_sites').show();">open the sites table</span> and click on the <b>exclude</b> checkbox.<br><br>
                             Users can also <span class='link' onclick='$(".modal_uploadcsv").show();'>upload a CSV file</span> containing lat/lons of additional sites they would like to include. 
                             </div>
-                            <div class='modeling_instructions' id='user_upload_sites_tools'>
-                                User upload sites: <span class='n_user_upload_sites'></span> | <span class='link' onclick='clearUserUploadSites();'>clear</span> | <label>show on map: <input id='user_upload_sites_show' type='checkbox' onclick='toggleUserUploadSitesVisibility();' checked /></label>
-                                <br>
-                                <br>
+                            <div class='modeling_instructions'>  
                                 <div id='chk_use_sites_div'>
-                                    <label><input type='checkbox' id='chk_use_sites_uploaded' onchange='onUseSitesChange();' checked> Use  uploaded sites</label>
+                                    <label><input type='checkbox' id='chk_use_sites_uploaded' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - UPLOADED</label>
                                     <br>
-                                    <label><input type='checkbox' id='chk_use_sites_queried' onchange='onUseSitesChange();' checked> Use queried KNOWN DEPOSIT SITES</label>
+                                    <label><input type='checkbox' id='chk_use_sites_queried' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - QUERIED</label>
                                 </div>
                             </div>
                         

@@ -25,8 +25,6 @@ class CDR():
 
         cdr_version : str
             CDR version string, which is part of the API call; e.g. 'v1'
-
-
         '''
 
         self.cdr_host = cdr_host

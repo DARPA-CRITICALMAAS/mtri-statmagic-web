@@ -255,12 +255,28 @@ def write_mapfile(
         ext = ds_path.split('.')[-1]
         #print(ext)
         if 'http' in ds_path:
-            # WARNING: temporarily, model outputs are sync'd locally
+            # NOTE: for now, model processed layer & outputs are sync'd locally,
+            #       mostly b/c the processes that generate them do not 
+            #       consistently cogify which makes them very inefficient to 
+            #       visualize from their CDR URLs.
+            
+            # These conditions filter out non-processed and non-model output 
+            # layers; only prospectivity datalayers are unsynced.
             if '.cdr.' in ds_path and 'model' not in r and ext not in ('zip',): 
                 ds_path = f'/vsicurl_streaming/{ds_path}'
             else:
                
-                if ext == 'zip' and 'plots' not in r['download_url'] and 'additional' not in r['download_url'] : # assume .zip data sources are shapefiles
+                # Attempt to distinguish between .zips that are shp's vs. other 
+                # model outputs
+                if (ext == 'zip' and 
+                    'plots' not in r['download_url'] and 
+                    'additional' not in r['download_url'] and
+                    os.path.basename(r['download_url']) not in (
+                        'splits.zip',
+                        'metrics.zip',
+                        'optuna_search_values.zip',
+                        'error_logs.zip',
+                    )): 
                     ext = 'shp'
                 
                 # NOTE: for now sync'ing these locally '

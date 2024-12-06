@@ -23,7 +23,8 @@ class DisplayLayer(models.Model):
         max_length=100,
         choices=(
             ('tif','tif',),
-            ('shp','shp',)
+            ('shp','shp',),
+            ('zip','zip',)
         ),
         blank=True, null=True
     )

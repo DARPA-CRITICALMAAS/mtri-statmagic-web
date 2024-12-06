@@ -2471,15 +2471,16 @@ div.download {
     
 }
 #user_upload_sites_tools {
+/*     margin-top:20px; */
     display: none;
-    
 }
 #training_data_user_sites_label {
     display: none;
     font-size: .75rem;
 }
 #training_data_user_sites_label .mineral_sites_n_included, 
-#training_data_user_sites_label .n_user_upload_sites {
+#training_data_user_sites_label .n_user_upload_sites,
+.n_user_upload_sites {
     color: #fff;
 }
 #training_info_using_processed_lr {
@@ -2535,8 +2536,32 @@ label.chk_label {
     color: #999;
     cursor: pointer;
     font-family: var(--font-family-primary);
+}
+.preprocess_and_run {
+    display: none;
+}
+
+.collapse div.modeling_instructions.uploadsites {
+    padding: 4px 20px;
+    font-size: 0.9rem;
     
 }
+
+#user_upload_sites_file_name {
+    font-weight: bold;
+    color: #baba5e;
+    
+}
+.upload_sites_label {
+    margin-bottom: 4px;
+}
+
+.upload_sites_options {
+    margin-left: 10px;
+    font-size: 0.95rem;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
