@@ -252,7 +252,8 @@ def write_mapfile(
         # Processing path to raster
         #   (replace spaces with '+' or URLs won't work)
         ds_path = r['download_url'].replace(' ','+')
-        ext = ds_path.split('.')[-1]
+        ext = dataset.data_format
+#        ext = ds_path.split('.')[-1]
         #print(ext)
         if 'http' in ds_path:
             # NOTE: for now, model processed layer & outputs are sync'd locally,
@@ -268,6 +269,11 @@ def write_mapfile(
                
                 # Attempt to distinguish between .zips that are shp's vs. other 
                 # model outputs
+                # NOTE: these distinctions for model outputs are now resolved
+                #       during the sync_cdr_prospectivity_outputs_to_outputlayer
+                #       process, which properly sets data_format based on the 
+                #       content of the .zip file. 
+                #       Leaving these conditions in for now.
                 if (ext == 'zip' and 
                     'plots' not in r['download_url'] and 
                     'additional' not in r['download_url'] and

@@ -812,7 +812,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
                 #'publication_date': ds['publication_date'],
                 #'doi': ds['DOI'],
                 #'datatype': ds['type'],
-                'data_format': ext,
+                #'data_format': ext,
                 'category': 'model outputs',
                 'subcategory': ds['model'].capitalize().rstrip('s'),
                 #'spatial_resolution_m': ds['resolution'][0],
@@ -833,6 +833,32 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
         if created:
             print('\tcreated!')
             dsids.append(dl.data_source_id)
+            
+            # If created and it's a .zip file, open the zip to see if it
+            # contains a .shp and update the data_format as needed.
+            # We only do this when created; otherwise it will take too long to
+            # open every single zip every time we scrape for new outputs
+            data_format = ext
+            if ext == 'zip':
+                resp = urlopen(dataset.download_url)
+                
+                # Open zipfile
+                try:
+                    myzip = zipfile.ZipFile(BytesIO(resp.read()))
+
+                except:
+                    print(f'Problem opening zipfile: date_source_id={dl.data_source_id}; download_url={dl.download_url}')
+                    continue
+                
+                for f in myzip.namelist():
+                    if '.shp' in f:
+                        data_format = 'shp'
+                        break
+                
+            dl.data_format = data_format
+            dl.save()
+                
+            
         #else:
         #    print('NONTIF:',ds)
         
