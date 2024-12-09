@@ -39,10 +39,9 @@ else:
     DEBUG = True
     DJANGO_VITE_DEV = True
 
-# Determines whether app is hosted at the top of the domain e.g. myserver.org
+# Determines whether app is hosted at the top of the domain e.g. statmagic.myserver.org
 # or at a different location e.g. myserver.org/statmagic
 URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic/'
-
 
 ALLOWED_HOSTS = ['*']
 
@@ -96,15 +95,14 @@ WSGI_APPLICATION = 'statmagic.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
  'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'statmagic',
         'USER': 'django_user_statmagic',
-        'PASSWORD': os.environ['DJANGO_USER_STATMAGIC_PGPASS'],
-        'HOST': os.environ['DB_HOST'],
-        'PORT': os.environ['DB_PORT']
+        'PASSWORD': os.environ['DJANGO_USER_STATMAGIC_PGPASS'] if not IS_MTRI_SERVER else 'gimme_gimme_gallium',
+        'HOST': os.environ['DB_HOST'] if not IS_MTRI_SERVER else 'per510c',
+        'PORT': os.environ['DB_PORT'] if not IS_MTRI_SERVER else 5433,
     }
 }
 
@@ -175,9 +173,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAPFILE_FILENAME = 'statmagic.map'
 
-MAPSERVER_SERVER = os.environ['MAPSERVER_SERVER']
+MAPSERVER_SERVER = os.environ['MAPSERVER_SERVER'] if not IS_MTRI_SERVER else 'vm-apps2'
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
-TILESERVER_LOCAL_SYNC_FOLDER = os.environ['TILESERVER_LOCAL_SYNC_FOLDER']
-
+TILESERVER_LOCAL_SYNC_FOLDER = os.environ['TILESERVER_LOCAL_SYNC_FOLDER' ]if not IS_MTRI_SERVER else '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'
 

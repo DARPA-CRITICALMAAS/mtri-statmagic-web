@@ -3555,6 +3555,8 @@ function onToggleLayerClick(target,layer_name) {
         // Remove legend content
         $(`#legendcontent_${layer_name_scrubbed}`).remove();
     }
+    
+    // TODO: check if >1 layer is visible. If so, show 'toggle controls'
 }
 
 // Function for parsing out the data label, linking back to the raw label

@@ -17,5 +17,6 @@ for line in os.popen(f'ps aux | grep {__file__}'):
       sys.exit(0)
 
 # Run sync
+dm_util.util.sync_cdr_prospectivity_datasources_to_datalayer(update_all=True)
 dm_util.util.sync_cdr_prospectivity_outputs_to_outputlayer()
 dm_util.util.sync_cdr_prospectivity_processed_layers_to_datalayer()

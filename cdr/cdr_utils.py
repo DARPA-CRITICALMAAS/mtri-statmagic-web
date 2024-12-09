@@ -7,13 +7,12 @@ import io
 class CDR():
     '''
     Class with utils for interfacing with the CDR
-
     '''
 
     def __init__ (
             self,
-            cdr_host = "https://api.cdr.land",
-            cdr_version = 'v1'
+            cdr_host = None,#"https://api.cdr.land",
+            cdr_version =  None#,'v1'
         ):
         '''
         On initialization, register authentication headers and httpx client
@@ -26,6 +25,11 @@ class CDR():
         cdr_version : str
             CDR version string, which is part of the API call; e.g. 'v1'
         '''
+
+        if not cdr_host:
+            cdr_host = os.environ['CDR_API']
+        if not cdr_version:
+            cdr_version = os.environ['CDR_API_VERSION']
 
         self.cdr_host = cdr_host
         self.cdr_version = cdr_version
