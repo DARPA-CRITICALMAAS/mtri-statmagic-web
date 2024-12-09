@@ -62,11 +62,11 @@ function getSpecifyExtentTR(ignore) {
         <td class='label'>Extent:</td>
         <td align='right'>
             <span class='link' onclick="$('#file_geojson').trigger('click')";">geojson</span> / <span class='link' onclick="$('.modal_uploadshp').show();">file</span> / draw: <a onClick=drawStart("polygon")>
-            <img src="/static/cma/img/draw-polygon-icon.png" 
+            <img src="${STATIC_URL}cma/img/draw-polygon-icon.png" 
                 height="17"
                 id="draw_polygon_icon" /></a>
             <a onClick=drawStart("rectangle")>
-            <img src="/static/cma/img/draw-rectangle-icon.png"
+            <img src="${STATIC_URL}cma/img/draw-rectangle-icon.png"
                 height="17"
                 id="draw_rectangle_icon" ></a>
             ${ig}
@@ -2613,10 +2613,10 @@ function loadMineralSitesToMap() {
                     <tr class='buttons'>
                         <td>
                             <div class='topbar_button'>
-                                 <span class="link mineral_sites_download_link" onclick="downloadMineralSites('csv');" style="display: inline;">csv</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites();" style="display: inline;">shp</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('gpkg');" style="display: inline;">gpkg</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('geojson');" style="display: inline;">geojson</span>|<img title='View tonnage histogram for the sites that have tonnage data' src="/static/cma/img/icons8-histogram-50.png" height="14px" class="download_icon"
+                                 <span class="link mineral_sites_download_link" onclick="downloadMineralSites('csv');" style="display: inline;">csv</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites();" style="display: inline;">shp</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('gpkg');" style="display: inline;">gpkg</span>|<span class="link mineral_sites_download_link" onclick="downloadMineralSites('geojson');" style="display: inline;">geojson</span>|<img title='View tonnage histogram for the sites that have tonnage data' src="${STATIC_URL}cma/img/icons8-histogram-50.png" height="14px" class="download_icon"
                                 onclick="createTonnageHistogram();">
-                                <img src="/static/cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon" onclick="createGradeTonnageScatterplot();">
-                                <img src="/static/cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="loadMineralSitesToTable();$('#show_sites').show();">
+                                <img src="${STATIC_URL}cma/img/icons8-scatter-plot-30.png" height="16px" class="download_icon" onclick="createGradeTonnageScatterplot();">
+                                <img src="${STATIC_URL}cma/img/icons8-table-48.png" height="16px" class="download_icon" onclick="loadMineralSitesToTable();$('#show_sites').show();">
                                 
                             </div>
                         </td>
@@ -3531,9 +3531,9 @@ function onToggleLayerClick(target,layer_name) {
                 ${getLayerNameLabel(datalayer)}
                 <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name}')">
                     <img class="close-top-img" height=24 
-                        src="/static/cma/img/close-dark.png" 
-                        onmouseover="this.src='/static/cma/img/close-light.png'"
-                        onmouseout="this.src='/static/cma/img/close-dark.png'">
+                        src='${STATIC_URL}/cma/img/close-dark.png'
+                        onmouseover="this.src='${STATIC_URL}cma/img/close-light.png'"
+                        onmouseout="this.src='${STATIC_URL}cma/img/close-dark.png'">
                 </div>
                 <table>
                     <tr>
@@ -3648,10 +3648,10 @@ function addLayerToDataCube(datalayer) {
             <td class='remove'>
                 <div class='img_hover' onclick=''>
                     <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
-                        <img src="/static/cma/img/icon_trash2.png" height="${icon_height}px" />
+                        <img src="${STATIC_URL}cma/img/icon_trash2.png" height="${icon_height}px" />
                     </div>
                     <div class='snapshot' onclick="onRemoveDataCubeLayerClick(this);" title="Remove data layer from cube">
-                        <img src="/static/cma/img/icon_trash2_hover.png" height="${icon_height}px" />
+                        <img src="${STATIC_URL}cma/img/icon_trash2_hover.png" height="${icon_height}px" />
                     </div>
                 </div>
             </td>
@@ -4094,7 +4094,7 @@ function onAddProcessingStep(v,lab) {
             <td class='edit' title='Edit step parameters'>
                 <img onclick='showProcessingStepParameters(this);' 
                      height=14
-                     src="/static/cma/img/form.svg" />
+                     src="${STATIC_URL}cma/img/form.svg" />
             </td>
         `;
         
@@ -4904,7 +4904,7 @@ function addRowToDataLayersTable(dl) {
     table.append(`
         <tr class='datalayer_row' data-path="${dl.data_source_id}" onmouseover='showLayerExtentPreview("${dl.data_source_id}");' onmouseout='hideLayerExtentPreview();'>
             <td class='name' title='${dl.name}'>${name_pretty}</td>
-            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="/static/cma/img/information.png" height="16px" class="download_icon"></td>
+            <td class='info' onclick='showDataLayerInfo("${dl.data_source_id}",${dl.gui_model == 'outputlayer'},${dl.gui_model == 'processedlayer'});'><img src="${STATIC_URL}cma/img/information.png" height="16px" class="download_icon"></td>
             <td class='show_chk'>${show_chk}</td>
             <td class='download'>
                 <a href='${dl.download_url}' target='_blank'>${dl.data_format}</a>

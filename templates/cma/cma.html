@@ -69,8 +69,8 @@
         <div class="close-top" onclick="$('#graph_modal').hide()">
             <img class="close-top-img" height=32 
                 src="{% static 'cma/' %}img/close-dark.png" 
-                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
-                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+                onmouseover="this.src='{% static 'cma/img/close-light.png' %}'"
+                onmouseout="this.src='{% static 'cma/img/close-dark.png' %}'">
         </div>
         <div id='graph_modal_header' class='message_modal_header'></div>
         <div id='graph_modal_content' class='message_modal_content'></div>
@@ -85,7 +85,7 @@
                 <div class='header topbar deposit_sites'><span class="collapse">+ </span>  deposit sites - queried
  
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/dots-24b.png" height="16px" class="download_icon">
+                        <img src="{% static 'cma/img/dots-24b.png' %}" height="16px" class="download_icon">
                     </div>
                 
                 </div>
@@ -155,25 +155,7 @@
                         <tr id='mineral_sites_extent_tr'> 
                             
                         </tr>
-                        <!-- <tr id='mineral_sites_display_by' title='Choose how sites are displayed'>
-                            <td class='label'>Display by:</td>
-                            <td align='right'><select id='sites_display_select'>
-                                <option title='Color sites by whether they are a producer, past producer, prospect, etc.' value='site_type' selected>Site type</option>
-                            </select></td>
-                        </tr>-->
-                        <!--   <tr>
-                            <td class='label'>AOI:</td>
-                            <td align='right'><div id='query_instructions'><span class="highlight">
-                                (draw) poly <a onClick=drawStart("polygon")>
-                                <img src="/static/cma/img/draw-polygon-icon.png" 
-                                    height="17"
-                                    id="draw_polygon_icon" /></a> | 
-                                rect <a onClick=drawStart("rectangle")>
-                                <img src="/static/cma/img/draw-rectangle-icon.png"
-                                    height="17"
-                                    id="draw_rectangle_icon" ></a>
-                            </div></td>
-                        </tr>-->
+
                         <tr>
                             <td colspan=2 align='center'>
                                 <div class='mineral_sites_results_message'>
@@ -182,8 +164,6 @@
                                 </div> 
                                 <div id="clear_sites_button" class='button load_sites sites cancel disabled' onClick='clearMineralSites();'>Clear results</div>
                                 <div id="load_sites_button" class='button load_sites sites disabled' onClick='loadMineralSites();'>Load/refresh</div>
-            <!--                        <div id="show_histogram_button" class='button load_sites sites histogram disabled' onClick='createTonnageHistogram();'>Tonnage histogram</div>-->
-                                
                             </td>
                         </tr>
                     </table>
@@ -193,7 +173,7 @@
              <div class='header topbar deposit_sites'><span class="collapse">+ </span>  deposit sites - uploaded
  
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/dots-24b.png" height="16px" class="download_icon">
+                        <img src="{% static 'cma/img/dots-24b.png' %}" height="16px" class="download_icon">
                     </div>
                 
                 </div>
@@ -217,7 +197,7 @@
                
                 <div class='header topbar toptop'><span class="collapse">+ </span> Prospectivity layers
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                        <img src="{% static 'cma/img/layer-48.png' %}" height="20px" class="download_icon">
                     </div>
                 </div>
                 <div class='content main'>
@@ -240,7 +220,7 @@
             <div class='collapse modeling'>
                 <div class='header topbar modeling modeling_topbar'><span class="collapse">+ </span> Model Tools
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/tools-30.png" height="20px" class="download_icon">
+                        <img src="{% static 'cma/img/tools-30.png' %}" height="20px" class="download_icon">
                     </div>
                 
                 </div>
@@ -289,7 +269,7 @@
                         Model type: <select id='model_select' onChange="onModelSelect();">
                             <option value="" disabled selected hidden>Select...</option>
                             
-                        </select> <img src="/static/cma/img/information.png" height="18px" class="download_icon" onclick='showModelInfo();'>
+                        </select> <img src="{% static 'cma/img/information.png' %}" height="18px" class="download_icon" onclick='showModelInfo();'>
                        
                     </div>
                     
@@ -315,7 +295,7 @@
                                     <td class='layer'>Data layer</td>
                                     <td>Processing steps</td>
                                     <td style='text-align:right;'>
-                                        <img src="/static/cma/img/download-32.png" 
+                                        <img src="{% static 'cma/img/download-32.png' %}" 
                                              height="14px"
                                              class="download_icon"
                                              title="Click to bulk download all INPUT LAYERS"
@@ -379,7 +359,7 @@
                 
                 <div class='header topbar toptop modeling_topbar'><span class="collapse">+ </span> Model processed layers
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                        <img src="{% static 'cma/img/layer-48.png' %}" height="20px" class="download_icon">
                     </div>
                 
                 </div>
@@ -391,7 +371,7 @@
             <div class='collapse model_results' id='outputlayer_container'>
                 <div class='header topbar model_results modeling_topbar'><span class="collapse">+ </span> Model outputs
                     <div class='topbar_button super'>
-                        <img src="/static/cma/img/layer-48.png" height="20px" class="download_icon">
+                        <img src="{% static 'cma/img/layer-48.png' %}" height="20px" class="download_icon">
                     </div>
                 
                 </div>
@@ -400,7 +380,7 @@
                         Filter MPM layers: <select onchange='loadModelOutputs();'>
                             <option value='all'>all</option>
                         </select>
-                        <div class='download' title='Download all model outputs listed below'><img src="/static/cma/img/download-32.png" onclick="downloadModelOutputsBulk(this)" height=14 width=14 /></div>
+                        <div class='download' title='Download all model outputs listed below'><img src="{% static 'cma/img/download-32.png' %}" onclick="downloadModelOutputsBulk(this)" height=14 width=14 /></div>
                     </div>
                 </div> <!--content main-->
             </div> <!--collapse model_results-->
@@ -423,6 +403,7 @@
     const CDR_BEARER = '{{ CDR_API_TOKEN }}';
     const COLORS_DIVERGING = {{ COLORS_DIVERGING|safe }};
     const URL_PREFIX = '{{ URL_PREFIX }}';
+    const STATIC_URL = '{% static '' %}';
     var TA1_SYSTEMS = {{ TA1_SYSTEMS|safe }};
 </script>
 <script src="{% static 'cma/js/leaflet_custom_layer_control.js' %}"></script>
