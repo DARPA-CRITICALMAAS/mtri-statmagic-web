@@ -840,7 +840,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
             # open every single zip every time we scrape for new outputs
             data_format = ext
             if ext == 'zip':
-                resp = urlopen(dataset.download_url)
+                resp = urlopen(dl.download_url)
                 
                 # Open zipfile
                 try:
