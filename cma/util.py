@@ -840,7 +840,7 @@ def sync_cdr_prospectivity_outputs_to_outputlayer(
             # open every single zip every time we scrape for new outputs
             data_format = ext
             if ext == 'zip':
-                resp = urlopen(dataset.download_url)
+                resp = urlopen(dl.download_url)
                 
                 # Open zipfile
                 try:
@@ -1674,3 +1674,15 @@ def process_transform_methods(transform_methods,processing_steps):
     #gj = json.loads(multi.UnionCascaded().ExportToJson())
     
     #return gj
+
+def get_metrics_from_zip(metric_file):
+    # TEMP_FILE_PATH = "/net/nas1/data/idata/CriticalMAAS/data/efvega/output.json.zip"
+    zippath = Path(settings.TILESERVER_LOCAL_SYNC_FOLDER).joinpath(metric_file)
+    with zipfile.ZipFile(zippath, "r") as z:
+        metrics_file = z.namelist()[0]
+        try:
+            with z.open("metrics.json", "r") as f:
+                data = json.load(f)
+        except KeyError as e:
+                data = None
+    return data
