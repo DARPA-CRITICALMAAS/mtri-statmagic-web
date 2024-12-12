@@ -263,7 +263,7 @@ def write_mapfile(
             
             # These conditions filter out non-processed and non-model output 
             # layers; only prospectivity datalayers are unsynced.
-            if '.cdr.' in ds_path and 'model' not in r and ext not in ('zip',): 
+            if '.cdr.' in ds_path and 'model' not in r and ext not in ('zip','shp'): 
                 ds_path = f'/vsicurl_streaming/{ds_path}'
             else:
                
@@ -294,7 +294,7 @@ def write_mapfile(
         # Load required params
         rkey = r['data_source_id']
         bn = os.path.basename(ds_path)
-        ext = bn.split('.')[-1]
+        #ext = bn.split('.')[-1]
         
         rasters[rkey] = r
         rasters[rkey]['download_url'] = ds_path

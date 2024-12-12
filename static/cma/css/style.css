@@ -2568,6 +2568,15 @@ select[multiple] options.checked:after {
     color: white;
 }
 
+#toggle_controls_toggle {
+/*     cursor: pointer; */
+    text-align: right;
+}
+#toggle_controls_toggle label {
+     cursor: pointer;
+    
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

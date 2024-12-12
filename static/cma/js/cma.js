@@ -187,6 +187,15 @@ function onLoad() {
     // Create legend control for standard layers
     createLegendControl('legend_content','topright');
     
+    // Add toggle controls div to legend content
+    $('#legend_content').append(`
+        <div id='toggle_controls_toggle'>
+            <label>Turn on toggle mode: 
+                <input id='toggle_controls_toggle_chk' type='checkbox' />
+            </label>
+        </div>
+    `);
+    
     // Add layers to layer control
     $.each(DATALAYERS_LOOKUP, function(dsid,dl) {
         addRowToDataLayersTable(dl);
@@ -2920,6 +2929,14 @@ function createLegendControl(element_id,position) {
 // send the sites query.
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
+    
+    $('#n_commodities').html(v.length);
+    if (v.length == 0) {
+        $('#commodity_select_message').addClass('warning');
+    } else {
+        $('#commodity_select_message').removeClass('warning');
+    }
+    
     var ignore_extent = $('#sites_ignoreextent').is(':checked') || !drawnLayer;
     if (v != undefined && (drawnLayer || ignore_extent)) {
         $('#load_sites_button').removeClass('disabled');
@@ -3452,11 +3469,18 @@ function removeLayerFromMap(layer_name) {
     $(`#legendcontent_${layer_name_scrubbed}`).remove();
 }
 
+function scrubLayerName(layer_name) {
+    return layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');  
+    
+}
+
 function onToggleLayerClick(target,layer_name) {
     var chk = $(target);
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
-    var layer_name_scrubbed = layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');  
+    var layer_name_scrubbed = scrubLayerName(layer_name);
     var layer = datalayer.maplayer;
+    
+    var n_layers_selected = $('td.show_chk input:checked').length;
     
     // Remove all layers in group
     if (chk.prop('checked')) {
@@ -3545,18 +3569,69 @@ function onToggleLayerClick(target,layer_name) {
         
         $('#legend_content').append(html);
         
+        // If a layer was turned on and that makes 2 layers, then reset the 
+        // toggle controls toggle to unchecked
+        if (n_layers_selected == 2) {
+            $('#toggle_controls_toggle_chk').prop('checked', false);
+        }
+        
         // Show legend
 //         $('.legend.leaflet-control').show();
         
     } else {
+//         console.log(layer_name, target);
+        removeLayerFromMap(layer_name);
+      /*  
         // Remove layer from map
         MAP.removeLayer(layer);
 
         // Remove legend content
-        $(`#legendcontent_${layer_name_scrubbed}`).remove();
+        $(`#legendcontent_${layer_name_scrubbed}`).remove();*/
     }
     
-    // TODO: check if >1 layer is visible. If so, show 'toggle controls'
+    // Check if >1 layer is visible. If so, show 'toggle controls'
+    if (n_layers_selected > 1) {
+        $('#toggle_controls_toggle').show();
+        
+    } else {
+        // Hide the toggle controls toggle
+        $('#toggle_controls_toggle').hide();
+        
+        resetToggleControls();
+       
+    }
+}
+
+function removeLayerFromMap(layer_name) {
+    
+    var datalayer =  DATALAYERS_LOOKUP[layer_name];
+//     console.log(layer_name);
+    var layer_name_scrubbed = scrubLayerName(layer_name);
+    var layer = datalayer.maplayer;
+    
+    // Remove layer from map
+    if (MAP.hasLayer(layer)) {
+        MAP.removeLayer(layer);
+    }
+    // Remove legend content
+    $(`#legendcontent_${layer_name_scrubbed}`).remove();
+}
+
+// Resets visible layer when toggle controls are disabled
+function resetToggleControls() {
+
+    // Loop through all 'Show' chks and  show any layers that are checked but 
+    // not in map
+    $('td.show_chk input:checked').each(function(i,chk) {
+        var tr = $(chk).closest('tr');
+        var dsid = tr.attr('data-path');
+        var datalayer =  DATALAYERS_LOOKUP[dsid];
+        var layer = datalayer.maplayer;
+       
+        if (!MAP.hasLayer(layer)) {
+            MAP.addLayer(layer);
+        }
+    });
 }
 
 // Function for parsing out the data label, linking back to the raw label
