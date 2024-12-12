@@ -186,7 +186,7 @@ function onLoad() {
     
     // Create legend control for standard layers
     createLegendControl('legend_content','topright');
-    
+
     // Add layers to layer control
     $.each(DATALAYERS_LOOKUP, function(dsid,dl) {
         addRowToDataLayersTable(dl);
@@ -3457,7 +3457,7 @@ function onToggleLayerClick(target,layer_name) {
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
     var layer_name_scrubbed = layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');  
     var layer = datalayer.maplayer;
-    
+
     // Remove all layers in group
     if (chk.prop('checked')) {
         MAP.addLayer(layer);
@@ -3525,6 +3525,40 @@ function onToggleLayerClick(target,layer_name) {
         } else {
             svg = `<td>[categorical; ${Math.round(vmax+1)} classes]</td>`
             
+        }
+
+        // Get metrics file contents if attempting to visualize appropriate model output
+        // if (["Likelihoods.tif", "Uncertainties.tif"].includes(datalayer.name_alt)) {
+        if (datalayer.name_alt === "Likelihoods.tif") {
+            let metrics_file = `${$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")}.zip`;
+
+            var metrics_div = "";
+            $.ajax(`${URL_PREFIX}get_cma_metrics`, {
+                data: {
+                    metric_file: metrics_file,
+                },
+                type: 'GET',
+                success: function(response) {
+                    // console.log(response)
+                    // Construct table for display
+                    metrics_div = $('<div>');
+                    // Below may be needed in the future
+                    let metric_table = $('<table>');
+                    $.each(response["test"], (idx, metric) => {
+                        let row = $('<tr>');
+                        row.append($('<td>').text(`${metric["name"]}:`));
+                        row.append($('<td>').text(metric["value"].toFixed(3)).attr('title', metric["value"]).css({ 'font-weight': 'bold' }));
+                        metric_table.append(row);
+                    })
+                    metrics_div.append($("<p>").text("Test set statistics"))
+                    metrics_div.append(metric_table);
+                    $(`#legendcontent_${layer_name_scrubbed}`).append(metrics_div);
+                },
+                error: function(response) {
+                    // console.log(response);
+                    console.log("Error retrieving metrics data for this model run")
+                },
+            });
         }
         html = `
             <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>

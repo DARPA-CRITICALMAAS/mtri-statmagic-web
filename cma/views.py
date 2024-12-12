@@ -1269,3 +1269,22 @@ def download_urls_to_zip(request):
         params['zipname']
     )
 
+@csrf_exempt
+def get_cma_metrics(request):
+    # extract relevant info from request
+    params = {
+        "metric_file": ""
+    }
+    params = util.process_params(request, params)
+
+    metrics_data = util.get_metrics_from_zip(params['metric_file'])
+
+    if metrics_data:
+        # Return response as JSON to client
+        response = HttpResponse(json.dumps(metrics_data))
+        response['Content-Type'] = 'application/json'
+    else:
+        response = HttpResponse()
+        response['Content-Type'] = 'text/plain'
+        response.status_code = 400
+    return response
