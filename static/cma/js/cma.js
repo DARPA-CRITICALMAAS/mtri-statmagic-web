@@ -190,8 +190,8 @@ function onLoad() {
     // Add toggle controls div to legend content
     $('#legend_content').append(`
         <div id='toggle_controls_toggle'>
-            <label>Turn on toggle mode: 
-                <input id='toggle_controls_toggle_chk' type='checkbox' />
+            <label>Turn on layer toggle mode: 
+                <input id='toggle_controls_toggle_chk' type='checkbox' onchange='onLayerToggleModeChange();' />
             </label>
         </div>
     `);
@@ -274,6 +274,31 @@ function onLoad() {
     
     // Get metadata
     getMetadata();
+}
+
+function onLayerToggleModeChange() {
+    var on = $('#toggle_controls_toggle_chk').is(':checked');
+    
+    if (on) {
+        // Show radio buttons
+        $('input.layer_toggle_radio').show()
+        
+        // Default 'selected' to top 
+        $('.layer_legend.layers').first().find(
+            'input.layer_toggle_radio'
+        ).prop('checked',true)
+        
+        // Hide all other layers
+        onRadioLayerToggleChange();
+        
+    } else {
+        // Revert all 'show' layers to visible
+        resetToggleControls();
+        
+        // Hide radio buttons
+        $('input.layer_toggle_radio').hide();
+        
+    }
 }
 
 function validateUploadDataLayerForm() {
@@ -3584,8 +3609,8 @@ function onToggleLayerClick(target,layer_name) {
             });
         }
         html = `
-            <div class='layer_legend' id='legendcontent_${layer_name_scrubbed}'>
-                ${getLayerNameLabel(datalayer)}
+            <div class='layer_legend layers' id='legendcontent_${layer_name_scrubbed}'>
+                <label><input type='radio' name='layer_toggle_radio_group' value="${layer_name}" class='layer_toggle_radio' onchange='onRadioLayerToggleChange("${layer_name}");' /> ${getLayerNameLabel(datalayer)}</label>
                 <div class="close-top layer_legend_close" onclick="hideLayer('${layer_name}')">
                     <img class="close-top-img" height=24 
                         src='${STATIC_URL}/cma/img/close-dark.png'
@@ -3633,6 +3658,34 @@ function onToggleLayerClick(target,layer_name) {
         resetToggleControls();
        
     }
+}
+
+function onRadioLayerToggleChange(dsid) {
+//     console.log(dsid);
+    var layer_checked = $('input.layer_toggle_radio:checked').val();
+    
+    // Loop through all 'Show' chks, hide unselected and show selecteds
+    $('td.show_chk input:checked').each(function(i,chk) {
+        var tr = $(chk).closest('tr');
+        var dsid = tr.attr('data-path');
+        var datalayer =  DATALAYERS_LOOKUP[dsid];
+        var layer = datalayer.maplayer;
+        
+        if (dsid == layer_checked) {
+            // vvv complications with this method:
+            //  * has to be responsive to any pan/zoom events 
+            //  * tiles may show/hide before they are loaded
+//             $(`.leaflet-tile[src*="${dsid}"]`).show();
+            if (!MAP.hasLayer(layer)) {
+                MAP.addLayer(layer);
+            }
+        } else {
+//             $(`.leaflet-tile[src*="${dsid}"]`).hide(); 
+            if (MAP.hasLayer(layer)) {
+                MAP.removeLayer(layer);
+            } 
+        }
+    });
 }
 
 function removeLayerFromMap(layer_name) {
