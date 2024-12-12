@@ -460,7 +460,7 @@ def create_fishnet(
     # get rows/columns
     rows = math.ceil((ymax - ymin) / resolution)
     cols = math.ceil((xmax - xmin) / resolution)
-    print(rows + cols)
+    #print(rows + cols)
     if rows + cols > 500:
         return {'message': 'Resolution too high to produce a grid preview'}
 

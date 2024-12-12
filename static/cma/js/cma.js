@@ -276,6 +276,21 @@ function onLoad() {
     getMetadata();
 }
 
+function validateDTConfidence() {
+    var v = $('#top1_deposit_classification_confidence__gte').val();
+    var vnew = v;
+    if (v < 0) {
+        vnew = 0;
+    }
+    if (v > 1) {
+        vnew = 1;
+    }
+    console.log(v,vnew);
+    $('#top1_deposit_classification_confidence__gte').val(vnew);
+    
+    
+}
+
 function onLayerToggleModeChange() {
     var on = $('#toggle_controls_toggle_chk').is(':checked');
     
@@ -2954,9 +2969,10 @@ function createLegendControl(element_id,position) {
 // send the sites query.
 function validateLoadSitesButton() {
     var v = $('#commodity').val();
+    var v_len = v ? v.length : 0;
     
-    $('#n_commodities').html(v.length);
-    if (v.length == 0) {
+    $('#n_commodities').html(v_len);
+    if (v_len == 0) {
         $('#commodity_select_message').addClass('warning');
     } else {
         $('#commodity_select_message').removeClass('warning');
@@ -2969,6 +2985,9 @@ function validateLoadSitesButton() {
     } else {
         $('#load_sites_button').addClass('disabled');
     }
+    
+    validateDTConfidence();
+    
 }
 
 function drawStart(layerType) {
