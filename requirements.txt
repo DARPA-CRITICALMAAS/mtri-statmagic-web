@@ -35,4 +35,6 @@ xarray
 rasterio
 rio-cogeo
 pidfile
+rioxarray
+snuggs
 GDAL==3.4.0
