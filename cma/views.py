@@ -861,6 +861,7 @@ def submit_model_run(request):
         'sri_NN': prospectivity_input.NeuralNetUserOptions,
         'beak_som': prospectivity_input.SOMTrainConfig,
         'jataware_rf': prospectivity_input.RFUserOptions,
+        'beak_bnn': prospectivity_input.fastBNNUserOptions,
     }
    
     # Build TA3 models metadata instance

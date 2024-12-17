@@ -3220,7 +3220,12 @@ function submitModelRun() {
     $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
         $.each(groups, function(group,parr) {
             $.each(parr, function(i,p) {
-                train_config[p.name] = p.value;//p.html_attributes.value;
+                // If value is null/undefined/empty, don't include in
+                // train_config b/c it will mess up the cdr_schema object 
+                // generation.
+                if (p.value != undefined && p.value != '') {
+                    train_config[p.name] = p.value;//p.html_attributes.value;
+                }
                 
                 // Tuples get special processing- represented as string
                 // Determines tuple by checking for 'tuple' in the param name

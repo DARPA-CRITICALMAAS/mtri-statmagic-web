@@ -20,6 +20,7 @@ mmap = {
     'jataware_rf': prospectivity_models.RFUserOptions,
     'sri_NN': prospectivity_models.NeuralNetUserOptions,
     'beak_som': prospectivity_models.SOMTrainConfig,
+    'beak_bnn': prospectivity_models.fastBNNUserOptions,
 }
 
 # Map from cdr_schemas type -> models.ProcessParameter.input_type, which indicates HTML input type
@@ -28,12 +29,10 @@ typemap = {
     'float': 'number',
     'number': 'number',
     'array': 'range_double',
+    'boolean': 'checkbox',
 }
 
 #model_name = 'jataware_rf'
-
-
-
 
 #################
 # Sync model-level updates <- ***any changes will require migrations***
