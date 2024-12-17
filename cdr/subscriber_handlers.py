@@ -1,7 +1,7 @@
 import atexit, json, os, requests, shutil, sys, tempfile, urllib
 from pathlib import Path
 from beak.integration.statmagic.call_som import run_som
-from beak.integration.stagmagic.call_bnn import run_bnn
+from beak.integration.statmagic.call_bnn import run_bnn
 
 model_functions = {
     'beak_som': run_som,
