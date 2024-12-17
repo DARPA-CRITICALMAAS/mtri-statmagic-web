@@ -1,6 +1,6 @@
 import atexit, json, os, requests, shutil, sys, tempfile, urllib
 from pathlib import Path
-from beak.hmi_integration.call_som import run_som
+from beak.integration.statmagic.call_som import run_som
 
 
 
