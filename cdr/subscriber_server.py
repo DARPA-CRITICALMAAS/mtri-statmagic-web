@@ -39,7 +39,7 @@ SETTINGS = {
    # 'cdr_version': os.environ["CDR_VERSION"], # <- not used with the 'user' api
     'local_port': 9999,#,int(os.environ["NGROK_PORT"]),
     'registration_id': "",
-    'registration_secret': os.environ["CDR_HOST"],
+    'registration_secret': 'secret',#os.environ["CDR_HOST"],
     'callback_url':""
 }
 

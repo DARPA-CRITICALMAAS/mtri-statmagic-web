@@ -1,6 +1,12 @@
 import atexit, json, os, requests, shutil, sys, tempfile, urllib
 from pathlib import Path
 from beak.integration.statmagic.call_som import run_som
+from beak.integration.stagmagic.call_bnn import run_bnn
+
+model_functions = {
+    'beak_som': run_som,
+    'beak_bnn': run_bnn,
+}
 
 
 
@@ -29,8 +35,11 @@ def run_ta3_pipeline(model_run_id):
     res = cdr.get_model_run(model_run_id)
     
     # Ignore model runs unless they are 'beak_som' type
-    if res['event']['payload']['model_type'] != 'beak_som':
+    model_type = res['event']['payload']['model_type']
+    if model_type not in ('beak_som','beak_bnn'):
         print('\tNot Beak SOM type; ignoring...')
+
+    print('\n*************\nProcessing Beak model type: ',model_type)
 
     # Set temporary output folder                                                        
     output_folder = os.path.join('/tmp',res['model_run_id'])#Path('/tmp',res['model_run_id'])
@@ -69,7 +78,7 @@ def run_ta3_pipeline(model_run_id):
     
     # Would like the output from run_som to be a list of tuples
     # [(path_to_raster1, ProspectivityOutputLayer1), (path_to_raster2, ProspectivityOutputLayer2), ...]
-    output_layers = run_som(
+    output_layers = model_functions[model_type](
         input_layers=input_file_list,
         input_labels=input_labels,
         config_file=config_file,
