@@ -3600,8 +3600,7 @@ function onToggleLayerClick(target,layer_name) {
         }
 
         // Get metrics file contents if attempting to visualize appropriate model output
-        // if (["Likelihoods.tif", "Uncertainties.tif"].includes(datalayer.name_alt)) {
-        if (datalayer.name_alt === "Likelihoods.tif") {
+        if (/\blikelihoods?\.tif\b/i.test(datalayer.name_alt)) {
             let metrics_file = `${$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")}.zip`;
 
             var metrics_div = "";
