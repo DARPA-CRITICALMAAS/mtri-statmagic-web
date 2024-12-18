@@ -912,7 +912,7 @@ def get_mineral_sites(request):
         # top group are args that go to CDR/cache:
         'commodity': 'Copper', # Commodity to search for
         'with_deposit_types_only': 'false',
-        'limit': 100,
+        'limit': -1,
         'top_n': 1,
         
         # this next group are filters applied to what is returned from CDR 
@@ -1037,6 +1037,8 @@ def get_mineral_sites(request):
             sites_df_merged = pd.concat([sites_df_merged,sites_df])
         
     # print(json.dumps(gj))
+    
+    print(len(sites_df_merged))
     
     # Apply non-CDR-based filters
     #   * TODO: also trim out unncessary properties
