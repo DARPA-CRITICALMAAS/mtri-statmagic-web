@@ -101,8 +101,8 @@ DATABASES = {
         'NAME': 'statmagic',
         'USER': 'django_user_statmagic',
         'PASSWORD': os.environ['DJANGO_USER_STATMAGIC_PGPASS'] if not IS_MTRI_SERVER else 'gimme_gimme_gallium',
-        'HOST': os.environ['DB_HOST'] if not IS_MTRI_SERVER else 'vm-apps3',
-        'PORT': os.environ['DB_PORT'] if not IS_MTRI_SERVER else 5432,
+        'HOST': os.environ['DB_HOST'] if not IS_MTRI_SERVER else 'per510c',
+        'PORT': os.environ['DB_PORT'] if not IS_MTRI_SERVER else 5433,
     }
 }
 print(DATABASES)
