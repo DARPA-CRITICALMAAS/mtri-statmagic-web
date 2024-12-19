@@ -1480,6 +1480,7 @@ function loadModelRun(cma_id,model_run_id) {
         jataware_rf: 'jataware_rf',
     }
     var mtype = mtypemap[model_run.model_type];
+    mtype = mtype ? mtype : model_run.model_type;
     
     $('#model_select').val(mtype);
     onModelSelect();

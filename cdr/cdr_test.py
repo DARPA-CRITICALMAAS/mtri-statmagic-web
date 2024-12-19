@@ -8,7 +8,7 @@ import json
 
 
 ### Testing code...
-cdr = CDR()
+cdr = CDR(cdr_host='https://api.cdr.land',cdr_version='v1')
 
 #res = cdr.run_query('prospectivity/cmas')
 #print(res)
@@ -88,11 +88,12 @@ post_data_intersect_sources = {
 # blerg
 #
 # #
-#res = cdr.get_model_run("e77c35bdf7ae4020a9c029959b763c38")
-# # print(res['event']['payload']['evidence_layers'])#.keys()))
-#print(res['event']['payload']['model_type'])
-#print(res['event']['payload']['evidence_layers'])
-#blerg
+res = cdr.get_model_run("63004bf03d1647d3a988e4c1320a3b09")
+# print(res['event']['payload']['evidence_layers'])#.keys()))
+print(res['event']['payload']['model_type'])
+print(res['event']['payload']['evidence_layers'])
+print(res)
+blerg
 #
 # # for p,v in res['event']['payload']['train_config'].items():
 # #     print(p,v)
