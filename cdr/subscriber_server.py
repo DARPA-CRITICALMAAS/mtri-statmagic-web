@@ -68,7 +68,7 @@ async def event_handler(
         evt: Event
     ):
     try:
-       # match evt: # pattern matching on evt.
+        match evt: # pattern matching on evt.
             case Event(event="ping"):
                 print("Received PING!")
             case Event(event="prospectivity_model_run.process"):
