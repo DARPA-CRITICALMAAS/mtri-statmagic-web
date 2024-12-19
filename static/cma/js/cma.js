@@ -3601,8 +3601,11 @@ function onToggleLayerClick(target,layer_name) {
         }
 
         // Get metrics file contents if attempting to visualize appropriate model output
-        if (/\blikelihoods?\.tif\b/i.test(datalayer.name_alt)) {
-            let metrics_file = `${$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")}.zip`;
+        // if (/\blikelihoods?\.tif\b/i.test(datalayer.name_alt)) {
+        if (/\blikelihoods?\.tif\b/i.test(datalayer["download_url"].split("/").pop())) {
+            // let metrics_file = `${$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")}.zip`;
+            // let metrics_file = DATALAYERS_LOOKUP[$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")]["download_url"];
+            let metrics_file = $("#outputlayer_container td.download a[href*='metrics.zip']").attr('href');
 
             var metrics_div = "";
             $.ajax(`${URL_PREFIX}get_cma_metrics`, {
@@ -3611,18 +3614,25 @@ function onToggleLayerClick(target,layer_name) {
                 },
                 type: 'GET',
                 success: function(response) {
-                    // console.log(response)
                     // Construct table for display
-                    metrics_div = $('<div>');
-                    // Below may be needed in the future
+                    metrics_div = $("<div>");
+                    // metrics_div = $("<div class='collapse' onclick='toggleHeader(this)'>");
                     let metric_table = $('<table>');
-                    $.each(response["test"], (idx, metric) => {
+                    if (Object.keys(response).length == 1) {
+                        metric_type = Object.keys(response)[0];
+                    } else if ("test" in response) {
+                        metric_type = "test";
+                    } else if ("train" in response) {
+                        metric_type = "train";
+                    }
+
+                    $.each(response[metric_type], (idx, metric) => {
                         let row = $('<tr>');
                         row.append($('<td>').text(`${metric["name"]}:`));
                         row.append($('<td>').text(metric["value"].toFixed(3)).attr('title', metric["value"]).css({ 'font-weight': 'bold' }));
                         metric_table.append(row);
                     })
-                    metrics_div.append($("<p>").text("Test set statistics"))
+                    metrics_div.append($("<p>").text(`${metric_type.charAt(0).toUpperCase() + metric_type.slice(1)} set statistics`))
                     metrics_div.append(metric_table);
                     $(`#legendcontent_${layer_name_scrubbed}`).append(metrics_div);
                 },
