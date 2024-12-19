@@ -9,7 +9,6 @@ model_functions = {
 }
 
 
-
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
     sys.path.append(os.environ['CDR_SCHEMAS_DIRECTORY'])
@@ -38,6 +37,7 @@ def run_ta3_pipeline(model_run_id):
     model_type = res['event']['payload']['model_type']
     if model_type not in ('beak_som','beak_bnn'):
         print('\tNot Beak SOM type; ignoring...')
+        return
 
     print('\n*************\nProcessing Beak model type: ',model_type)
 
