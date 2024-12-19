@@ -242,7 +242,7 @@ def write_mapfile(
     rasters = {}
     for i,dataset in enumerate(datasets):
         r = model_to_dict(dataset)
-        is_likelihood_layer = 'ikelihood' in r['description']
+        is_likelihood_layer = 'ikelihood' in r['description'] or 'ikelihoods.tif' in r['download_url']
         is_qualitative_layer = 'est Matching Units' in r['description']
         
         # Ignore any non-rasters for now
@@ -400,14 +400,19 @@ def write_mapfile(
 
             # Retrieve data range if not already loaded
             if r['stats_minimum'] is None and r['stats_maximum'] is None:
-                print('extracting stats for:',ds_path)
-                ds = openRaster(ds_path)
+                if is_likelihood_layer:
+                    stats = [0,1]
+                    dr = stats
+                else:
+                    print('extracting stats for:',ds_path)
+                    ds = openRaster(ds_path)
+                        
+                    stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
+                    del ds
+                    #if td:
+                        #td.cleanup()
+                    dr = [stats[0],stats[1]+(stats[1]*0.0000001)]
                     
-                stats = ds.GetRasterBand(1).GetStatistics(0,1) # min,max,mean,std
-                del ds
-                #if td:
-                    #td.cleanup()
-                dr = [stats[0],stats[1]+(stats[1]*0.0000001)]
                 dataset.stats_minimum = stats[0]
                 dataset.stats_maximum = stats[1]
                 dataset.save()
@@ -441,7 +446,7 @@ def write_mapfile(
             
             # For likelihood rasters, use diverging color scale
             if is_likelihood_layer:
-                classification = getClassesForRange(dr, COLORS_DIVERGING)
+                classification = getClassesForRange([0,1], COLORS_DIVERGING)
         
             if is_qualitative_layer:
                 classification = getClassesForQualitative(dr)

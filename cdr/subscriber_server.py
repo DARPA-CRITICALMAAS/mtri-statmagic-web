@@ -28,20 +28,25 @@ from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request, 
 from cdr_schemas.events import Event
 import subscriber_handlers
 
-
 SETTINGS = {
     'system_name': os.environ["SYSTEM_NAME"],
     'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
-    #'ml_model_name': '',#os.environ["MODEL_NAME"],
-    #'ml_model_version': os.environ["MODEL_VERSION"],
     'user_api_token': os.environ["CDR_API_TOKEN"],
     'cdr_host': os.environ["CDR_HOST"],
-   # 'cdr_version': os.environ["CDR_VERSION"], # <- not used with the 'user' api
     'local_port': 9999,#,int(os.environ["NGROK_PORT"]),
     'registration_id': "",
     'registration_secret': 'secret',#os.environ["CDR_HOST"],
-    'callback_url':""
+    'callback_url': ""
 }
+
+# If callback_url not in env, get ngrok to give us an endpoint
+if 'LISTENER_CALLBACK_URL' in os.environ:
+    callback_url = os.environ['LISTENER_CALLBACK_URL']
+else:
+    listener = ngrok.forward(SETTINGS['local_port'], authtoken_from_env=True) # Forward the local port through ngrok and get a listener.
+    callback_url = listener.url() + "/hook" # Set the callback URL to the ngrok URL plus "/hook".
+
+SETTINGS['callback_url'] = callback_url
 
 
 def clean_up():
@@ -54,9 +59,6 @@ def clean_up():
 atexit.register(clean_up)
 
 
-# Get ngrok to give us an endpoint
-listener = ngrok.forward(SETTINGS['local_port'], authtoken_from_env=True) # Forward the local port through ngrok and get a listener.
-SETTINGS['callback_url'] = listener.url() + "/hook" # Set the callback URL to the ngrok URL plus "/hook".
 
 
 app = FastAPI() # creating an instance
