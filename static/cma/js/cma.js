@@ -3601,11 +3601,8 @@ function onToggleLayerClick(target,layer_name) {
         }
 
         // Get metrics file contents if attempting to visualize appropriate model output
-        // if (/\blikelihoods?\.tif\b/i.test(datalayer.name_alt)) {
         if (/\blikelihoods?\.tif\b/i.test(datalayer["download_url"].split("/").pop())) {
-            // let metrics_file = `${$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")}.zip`;
-            // let metrics_file = DATALAYERS_LOOKUP[$("#outputlayer_container td[title='metrics.zip']").parent().attr("data-path")]["download_url"];
-            let metrics_file = $("#outputlayer_container td.download a[href*='metrics.zip']").attr('href');
+            let metrics_file = $(`#outputlayer_container tr[data-path*=${datalayer['model_run_id']}] td.download a[href*='metrics.zip']`).attr('href');
 
             var metrics_div = "";
             $.ajax(`${URL_PREFIX}get_cma_metrics`, {
