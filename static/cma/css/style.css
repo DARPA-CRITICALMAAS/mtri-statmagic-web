@@ -480,7 +480,7 @@ select {
 
 .button.load_sites {
     font-size: 1.1rem;
-/*     line-height: 1.5rem; */
+    line-height: 1.5rem;
     background-color: #6aaf7a;
     width: 260px;
     margin: 10px auto;
@@ -2582,6 +2582,17 @@ input.layer_toggle_radio {
 }
 #toggle_controls_toggle {
     display: none;
+}
+
+.n_layers {
+    color: #999;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+tr.datalayer_row.hide_table_row {
+    display: none;
+    
 }
 
 @keyframes spin {

@@ -36,7 +36,7 @@ const DRAW_STYLE = {
     strokeOpacity: 1,
     pointerEvents: 'None'
 }
-var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET;
+var AJAX_GET_MINERAL_SITES, AJAX_UPLOAD_SHAPEFILE, AJAX_GET_FISHNET, AJAX_CHECK_MODEL_RUN_STATUS;
 
 var PROCESSING_PARAMS_DESCS = {
     log: "Takes the log transform of the raster data",
@@ -776,7 +776,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
 //       is cleared regardless and setting 'clear' has no effect.
 function resetModelUI(clear) {
     $('.selected_model_config').hide();
-    $('.collapse_datacube').hide();
+    $('.collapse_datacube').show();
     $('.collapse_training').hide();
     $('.collapse_parameters').hide();
     $('.collapse_model_run').hide();
@@ -788,6 +788,36 @@ function resetModelUI(clear) {
     $('#model_run_edited').hide();
 
     
+     // Build buttons
+    var button_html = '';
+    var buttons = [
+        {
+            class: "preprocess",
+            label: "Pre-process layers",
+            onclick: "submitPreprocessing();"
+        }, {
+            class: "preprocess_and_run",
+            label: "Pre-process + run",
+            onclick: "submitPreprocessAndRun();",
+        }, {
+            class: "run",
+            label: "Run model",
+            onclick: "submitModelRun();",
+        }
+    ];
+    $.each(buttons, function(i,button) {
+        var onclick = button.onclick ? button.onclick : '';
+        
+        button_html += `
+            <td class=${button.class}>
+                <div class='button model_process_submit ${button.class}' onclick='${onclick};'>
+                    ${button.label}
+                </div>
+            </td>`;
+    });
+    $('#modeling_buttons_table tr').html(button_html);
+    $('#modeling_buttons_table').show();
+    validateModelButtons();
     
 //     $('#model_select').val('');
     // Collapse results pane 
@@ -870,27 +900,10 @@ function onModelSelect() {
     buildParametersTable(model,'.content.model');
     
     // Now trigger change to set initial display
-
-    // Build buttons
-    var button_html = '';
-    $.each(model.buttons.buttons, function(i,button) {
-        var onclick = button.onclick ? button.onclick : '';
-        
-        button_html += `
-            <td class=${button.class}>
-                <div class='button model_process_submit ${button.class}' onclick='${onclick};'>
-                    ${button.label}
-                </div>
-            </td>`;
-    });
-    $('#modeling_buttons_table tr').html(button_html);
     
     // Show all sections
     $('.collapse_parameters').show();
     $('.collapse_model_run').show();
-    $('#modeling_buttons_table').show();
-
-    
     
     // Enable/disable buttons as needed
     validateModelButtons();
@@ -1188,7 +1201,6 @@ function getMetadata() {
             console.log(response);
         }
     });
-    
 }
 
 // Requests list of model runs for a given CMA_id from backend
@@ -1217,23 +1229,43 @@ function loadModelRuns(cma_id,mrid_selected) {
 // Process updates to datalayers received from backend, e.g. when checking for 
 function processDataLayersUpdates(response) {
     var dls_to_add = [];
+    var n_dls_changed = 0;
     $.each(response.DATALAYERS_LOOKUP_UPDATES, function(dsid,dl) {
         if (!DATALAYERS_LOOKUP[dsid]) {
             dls_to_add.push(dl);
-            DATALAYERS_LOOKUP[dsid] = dl;
-            
-//             console.log('adding layer: ',dsid);
-            
-            // Create WMS map layer so it can be loaded to map
-            createMapLayer(dl.data_source_id,dl)
-            
-            // Add layer lookup 
             DATALAYERS_LOOKUP[dl.data_source_id] = dl;
-            
-            // TODO If it's a processed layer that is replacing a raw layer, update
-            // the DATACUBE to reflect this
         }
+        // Check for changes
+        var dl_orig = DATALAYERS_LOOKUP[dsid];
+        
+        var changed = 0;
+        $.each(dl, function(k,v) {
+            if (v != dl_orig[k]) {
+                changed = 1;
+                DATALAYERS_LOOKUP[dsid][k] = v;
+            }
+        });
+        n_dls_changed += changed;
+        
+        //DATALAYERS_LOOKUP[dsid] = dl;
+        
+//             console.log('adding layer: ',dsid);
+        
+        // Create WMS map layer so it can be loaded to map
+        createMapLayer(dl_orig.data_source_id,dl_orig)
+        
+        // Add layer lookup 
+        //DATALAYERS_LOOKUP[dl.data_source_id] = dl;
+        
+        // TODO If it's a processed layer that is replacing a raw layer, update
+        // the DATACUBE to reflect this
+
     });
+    
+    if (dls_to_add.length == 0 && n_dls_changed == 0) {
+        return n_dls_changed + dls_to_add;
+    }
+    //console.log(dls_to_add, n_dls_changed);
     
     // Add rows AFTER all new layers have been processed into DATALAYERS_LOOKUP
     // b/c some of the added layers may reference other layers (e.g. outputs or 
@@ -1244,6 +1276,8 @@ function processDataLayersUpdates(response) {
             addRowToDataLayersTable(dl);
         }
     });
+    return n_dls_changed + dls_to_add;
+    
 }
 
 // Requests backend to check for any output layers that have not yet been
@@ -2184,7 +2218,7 @@ function updateNsitesLabels() {
         $('#training_data_user_sites_label').show();
         
     } else {
-        $('.n_user_upload_sites').html('--');
+        $('.n_user_upload_sites').html('0');
         $('#training_data_user_sites_label').hide();
     }
         
@@ -3073,7 +3107,7 @@ function submitPreprocessing(process_and_run) {
     var label_raster_included =  DATACUBE_CONFIG.reduce(function(tot,l) {
         return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
     },false);
-    if (!label_raster_included && model.uses_training) {
+    if (!label_raster_included && model && model.uses_training) {
         if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && $('#chk_use_sites_queried').is(':checked')) {
             training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
                     return !s.properties.exclude;
@@ -3313,9 +3347,14 @@ function submitModelRun() {
             
             // Set the MODEL OUTPUTs filter to the provided model_run_id
             // ^^^ don't need this b/c will run after loadModelRuns
-//             loadModelOutputs(cma_id,mri);
+//             loadModelOutputs(cma_id,mrid);
             
             // Start the model run status monitor
+            // But first abort existing run status checker or there will be too 
+            // much layer refreshing that will get in the way of the GUI
+            if (AJAX_CHECK_MODEL_RUN_STATUS) {
+                AJAX_CHECK_MODEL_RUN_STATUS.abort();
+            }
             checkModelRunStatus(mrid);
         },
         error: function(response) {
@@ -3345,7 +3384,7 @@ function sleep(ms) {
 
 function checkModelRunStatus(model_run_id) {
     
-    $.ajax(`${URL_PREFIX}check_model_run_status`, {
+    var AJAX_CHECK_MODEL_RUN_STATUS = $.ajax(`${URL_PREFIX}check_model_run_status`, {
         data: {
             model_run_id: model_run_id,
         },
@@ -3353,12 +3392,16 @@ function checkModelRunStatus(model_run_id) {
         success: function(response) {
             console.log(this.url,response);
             
-            processDataLayersUpdates(response);
+            var n_updates = processDataLayersUpdates(response);
             
             // Reload model runs/outputs if udpates
-            if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
+//             if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
+            if (n_updates > 0) {
+                console.log('layer updates!');
                 loadModelRuns(getActiveCMAID(),model_run_id);
                 processModelRunsFromCDR(null,model_run_id);
+//                 processDataLayersUpdates(response);
+                
             }
             
             // Update model run status message
@@ -3371,9 +3414,11 @@ function checkModelRunStatus(model_run_id) {
             `);
             
             // Wait 3 seconds and then check again
+//             if (!response.complete) { // <- commenting out for now b/c there may be outputs that have not been uploaded to CDR
             sleep(60000).then(() => {
                 checkModelRunStatus(model_run_id);
             });
+//             }
         },
         error: function(response) {
             console.log(response);
@@ -3859,14 +3904,18 @@ function validateModelButtons() {
     var model = MODELS[$('#model_select').val()];
     var cma_id = getActiveCMAID();
     var msg = '';
-    if (!model || !cma_id) {
+    var msg_no_training = 'Select >0 TRAINING SITES or a LABEL RASTER';
+    if (!cma_id) {
         $('#model_button_status').html(msg);
+        $('.button.model_process_submit.preprocess').addClass('disabled');
+        $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
+        $('.button.model_process_submit.run').addClass('disabled');
         return;
     }
     
     // Derive conditionals common to both supervised and unsupervised models
     
-   //  Check if all layers in cube are processed
+    // Check if all layers in cube are processed
     var all_processed = true;
     $.each(DATACUBE_CONFIG, function(i,dl) {
         var l = DATALAYERS_LOOKUP[dl.data_source_id];
@@ -3874,27 +3923,34 @@ function validateModelButtons() {
             all_processed = false;
         }
     });
+    
     // Check if a label raster is needed (i.e. 'supervised' model selected and  
     // NOT in cube)
     var label_raster_included = isLabelRasterInDataCube();
     
     // For supervised models....
-    if (model.uses_training) {
+    if (model && model.uses_training) {
         var n_training_sites_selected = Number($('.mineral_sites_n_results.training').html());
 
         var training_sites_selected = (
             (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
-            GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0) ||
+            GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0 && 
+            $('#chk_use_sites_queried').is(':checked')
+            ) ||
             (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
-            GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0));
+            GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0 &&
+            $('#chk_use_sites_uploaded').is(':checked')
+            ));
           
+//         console.log(n_training_sites_selected, training_sites_selected);
+        
         // If no layers in cube and no training sites, disable all buttons
         if (DATACUBE_CONFIG.length == 0 && !training_sites_selected) {
             $('.button.model_process_submit.preprocess').addClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'Select at least 1 INPUT LAYER and >0 TRAINING SITES';
+            msg = `Select at least 1 INPUT LAYER<br>${msg_no_training}`;
             $('#model_button_status').html(msg);
             
             return;
@@ -3911,12 +3967,15 @@ function validateModelButtons() {
         
         // Enable ONLY 'pre-process' button IF unprocessed layers exist and 
         // no training data is selected:
-        if (!all_processed && !training_sites_selected && !label_raster_included) {
-            $('.button.model_process_submit.preprocess').removeClass('disabled');
+        if (!training_sites_selected && !label_raster_included) {
+            $('.button.model_process_submit.preprocess').addClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
-            
-            msg = 'No training data selected; query or upload training sites or add PROCESSED label raster to enable model RUN buttons';
+            if (!all_processed) {
+                $('.button.model_process_submit.preprocess').removeClass('disabled');
+            }
+
+            msg = msg_no_training;
             
         }
         // Enable ONLY 'pre-process' button IF training sites are selected BUT 
@@ -3972,7 +4031,9 @@ function validateModelButtons() {
         } else { // If all processed, enable RUN only
             $('.button.model_process_submit.preprocess').addClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
-            $('.button.model_process_submit.run').removeClass('disabled');
+            if (model) {
+                $('.button.model_process_submit.run').removeClass('disabled');
+            }
         }
     }
     
@@ -4523,6 +4584,7 @@ function loadUserUploadSitesToMap() {
     
 function onUseSitesChange() {
     updateNsitesLabels();
+    validateModelButtons();
     
 }
 
@@ -4951,14 +5013,17 @@ function toggleNationalLayers() {
 
 function toggleIntersectingLayers() {
     // Loop over and toggle each datalayer row
-    $('.datalayer_table tr.datalayer_row').each(function () {
+    $('.datalayer_table tr.datalayer_row').each(function() {
         if (drawnLayer && $('#hide_intersecting_cb').is(':checked') && !boundsOverlap($(this).attr('data-path'))) {
-            $(this).hide();
+            $(this).addClass('hide_table_row');
         } else {
-            $(this).show();
+            $(this).removeClass('hide_table_row');
         }
     });
     hideSubcategoryLabels();
+
+    // Update n layer label for the category 
+    updateLayerCategoryNLayersInfo();
 }
 
 function hideSubcategoryLabels() {
@@ -5043,7 +5108,7 @@ function addRowToDataLayersTable(dl) {
     if (table.length == 0) {// && dl.gui_model == 'processedlayer') {     
         var category_html = `
             <div class='collapse sub'>
-                <div class='header topbar sub ${category_clean}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${category}</div>
+                <div class='header topbar sub ${category_clean}' onclick='toggleHeader(this);'><span class="collapse">+ </span> ${category} <span class='n_layers'></span></div>
                 <div class='content'>
                     <table class='datalayer_table' id='${table_id}'>
                     </table>
@@ -5100,9 +5165,34 @@ function addRowToDataLayersTable(dl) {
         </tr>
     `);
     
+    // Show 'add to cube' interface if applicable
     if ($('#datacube_layers').is(':visible')) {
         $('.radiocube').show();
     }
+    
+    // Update n layer label for the category 
+    updateLayerCategoryNLayersInfo();
+//     var n_layers = $(`.topbar.sub.${category_clean}`).next('.content').find('tr.datalayer_row').length;
+//     $(`.topbar.sub.${category_clean} span.n_layers`).html(n_layers);
+    
+}
+
+function updateLayerCategoryNLayersInfo() {
+
+    $.each([
+        '#datalayer_container',
+        '#processedlayer_container',
+        '#outputlayer_container',
+      ], function(i,cont_id) {
+          
+        $(`${cont_id} .header.topbar.sub`).each(function(j,tb) {
+            var category_clean = $(tb).attr('class').split(' ').pop();
+            var sel = `${cont_id} .header.topbar.sub.${category_clean}`;
+            var n_layers = $(sel).next('.content').find('tr.datalayer_row').not('.hide_table_row').length;
+            
+            $(`${sel} span.n_layers`).html(n_layers);
+        })
+    });
     
 }
 
@@ -5235,7 +5325,8 @@ function onStartedCMA(cma) {
     showCMAstart();
     
     $('#modeling_initial_message').hide();
-    $('#modeling_initial_message2').show();
+    $('.mpm_top_options').show();
+//     $('#modeling_initial_message2').show();
     
     $('.model_select_div').hide();
     
@@ -5243,7 +5334,10 @@ function onStartedCMA(cma) {
     $('#load_cma_modal').hide();
     
     // Reset model UI
-    resetModelUI(true);
+//     resetModelUI(true);
+    
+    // Auto start new run:
+    startNewModelRun();
 }
 
 

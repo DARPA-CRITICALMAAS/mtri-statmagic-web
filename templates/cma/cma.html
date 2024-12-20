@@ -116,7 +116,7 @@
                         <tr>
                             <td class='label'>Primary deposit type confidence:</td>
                             <td align='right'>
-                                >=<input id='top1_deposit_classification_confidence__gte' onChange="validateLoadSitesButton();" type='number' min="0", max=1 value=0.50 step=0.1>
+                                >=<input id='top1_deposit_classification_confidence__gte' onChange="validateLoadSitesButton();" type='number' min="0", max=1 value=0.0 step=0.1>
                             </td>
                         </tr>
                         <tr>
@@ -208,7 +208,7 @@
                     <input type='checkbox' id='toggle_national_layers_chk' onchange='toggleNationalLayers();' /><label for='toggle_national_layers_chk'> only show CONUS-wide layers</label>
                 </div>-->
                 <div class="collapse sub">
-                <div class="header topbar sub USER_UPLOAD"><span class="collapse">+ </span> USER UPLOAD<div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div></div>
+                <div class="header topbar sub USER_UPLOAD"><span class="collapse">+ </span> USER UPLOAD <span class='n_layers'></span><div class='topbar_button'><img src="{% static 'cma/img/upload-32.png' %}" height="16px" class="download_icon"" onclick="$('.modal_uploaddatalayer').show();"/></div></div>
                 <div class="content">
                     <table class="datalayer_table" id="datalayer_table_USER_UPLOAD">
                     </table>
@@ -328,9 +328,9 @@
                             </div>
                             <div class='modeling_instructions'>  
                                 <div id='chk_use_sites_div'>
-                                    <label><input type='checkbox' id='chk_use_sites_uploaded' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - UPLOADED</label>
+                                    <label><input type='checkbox' id='chk_use_sites_uploaded' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - UPLOADED [n=<span class='n_user_upload_sites'></span>]</label>
                                     <br>
-                                    <label><input type='checkbox' id='chk_use_sites_queried' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - QUERIED</label>
+                                    <label><input type='checkbox' id='chk_use_sites_queried' onchange='onUseSitesChange();' checked> Use DEPOSIT SITES - QUERIED [n=<span class='mineral_sites_n_included'></span>]</label>
                                 </div>
                             </div>
                         

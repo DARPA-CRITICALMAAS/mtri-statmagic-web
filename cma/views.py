@@ -135,6 +135,8 @@ def get_metadata(request):
         #'Zinc',
     #]
     cs = cdr.get_mineral_dedupsite_commodities()
+    print(cs)
+    
     if 'rare earth elements' not in cs:
         cs.append('Rare earth elements')
     commodities = sorted(cs)

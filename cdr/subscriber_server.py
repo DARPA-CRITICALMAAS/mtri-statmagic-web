@@ -32,7 +32,7 @@ SETTINGS = {
     'system_name': os.environ["SYSTEM_NAME"],
     'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
     'user_api_token': os.environ["CDR_API_TOKEN"],
-    'cdr_host': os.environ["CDR_HOST"],
+    'cdr_host': os.environ["CDR_API"],
     'local_port': 9999,#,int(os.environ["NGROK_PORT"]),
     'registration_id': "",
     'registration_secret': 'secret',#os.environ["CDR_HOST"],
