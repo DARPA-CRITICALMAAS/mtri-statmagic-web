@@ -1675,13 +1675,27 @@ def process_transform_methods(transform_methods,processing_steps):
     
     #return gj
 
+# def get_metrics_from_zip(metric_file):
+#     # TEMP_FILE_PATH = "/net/nas1/data/idata/CriticalMAAS/data/efvega/output.json.zip"
+#     zippath = Path(settings.TILESERVER_LOCAL_SYNC_FOLDER).joinpath(metric_file)
+#     with zipfile.ZipFile(zippath, "r") as z:
+#         metrics_file = z.namelist()[0]
+#         try:
+#             with z.open("metrics.json", "r") as f:
+#                 data = json.load(f)
+#         except KeyError as e:
+#                 data = None
+#     return data
+
 def get_metrics_from_zip(metric_file):
-    # TEMP_FILE_PATH = "/net/nas1/data/idata/CriticalMAAS/data/efvega/output.json.zip"
-    zippath = Path(settings.TILESERVER_LOCAL_SYNC_FOLDER).joinpath(metric_file)
-    with zipfile.ZipFile(zippath, "r") as z:
-        metrics_file = z.namelist()[0]
+    import io
+
+    response = requests.get(metric_file)
+    response.raise_for_status()
+
+    with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
         try:
-            with z.open("metrics.json", "r") as f:
+            with zip_ref.open("metrics.json", "r") as f:
                 data = json.load(f)
         except KeyError as e:
                 data = None
