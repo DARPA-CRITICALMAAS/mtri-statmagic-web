@@ -287,6 +287,9 @@ function onLoad() {
     getMetadata();
     
     updateLayerCategoryNLayersInfo();
+
+    // Clears the contents of all dynamic search bars
+    $(".dynamic_search").val("");
 }
 
 function validateDTConfidence() {
@@ -5725,5 +5728,48 @@ $('#file_geojson').on('change', function() {
         },
     });
 });
+
+function filter_list(text_input, container, filter_type) {
+    // Modify jQuery contains function to be case-insensitive
+    jQuery.expr[':'].contains = function(a, i, m) {
+        return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
+    };
+
+    // Grab all table rows of interest
+    let rows = $(container).find("table tr:not(.subcategory_label)");
+
+    $(rows).each((idx, row) => {
+
+        // Boolean array for search conditions
+        let conditionals = [];
+
+        // Check if the search value is present in the text of the table row
+        conditionals.push($(row).find(`td:contains(${text_input.value})`).length > 0);
+
+        if (filter_type != "mpm") {
+            let dl = DATALAYERS_LOOKUP[$(row).attr('data-path')];
+            if ("authors" in dl) {
+                conditionals.push(DATALAYERS_LOOKUP[$(row).attr('data-path')]["authors"].some(author => author.toLowerCase().includes(text_input.value.toLowerCase())));
+            }
+            if ("description" in dl) {
+                conditionals.push(DATALAYERS_LOOKUP[$(row).attr('data-path')]["description"].toLowerCase().includes(text_input.value.toLowerCase()));
+            }
+            // Can add additional filters here
+            // e.g. if ("data_source_id_orig" in dl) or if ("label_raster" in dl)
+        }
+
+        // If any conditions are true then search term has been found and keep row shown, else hide
+        if (conditionals.some(value => value)) {
+            $(row).show()
+        }
+        else {
+            $(row).hide()
+        }
+
+    });
+    // Hide labels if there are no remaining datalayers for it's section
+    hideSubcategoryLabels();
+}
+
 
 onLoad();

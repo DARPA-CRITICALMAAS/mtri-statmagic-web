@@ -204,6 +204,9 @@
                 <div class='toggle_intersecting'>
                     <input type='checkbox' id='hide_intersecting_cb' onchange='toggleIntersectingLayers();' /><label for='hide_intersecting_cb'> only show layers that intersect with extent</label>
                 </div>
+                <div>
+                    <input type="text" class="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'datalayer')" placeholder="Seach for datalayer">
+                </div>
                <!-- <div class='layer_filter'>
                     <input type='checkbox' id='toggle_national_layers_chk' onchange='toggleNationalLayers();' /><label for='toggle_national_layers_chk'> only show CONUS-wide layers</label>
                 </div>-->
@@ -356,7 +359,6 @@
             
             
             <div class='collapse' id='processedlayer_container'>
-                
                 <div class='header topbar toptop modeling_topbar'><span class="collapse">+ </span> MPM processed layers
                     <div class='topbar_button super'>
                         <img src="{% static 'cma/img/layer-48.png' %}" height="20px" class="download_icon">
@@ -364,7 +366,9 @@
                 
                 </div>
                 <div class='content main'>
-                    
+                    <div style="text-align: right">
+                        <input type="text" id="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'processed')" placeholder="Seach for processed layer">
+                    </div>
                 </div> <!--content main-->
             </div> <!--collapse processedlayer_container-->
 
@@ -381,6 +385,9 @@
                             <option value='all'>all</option>
                         </select>
                         <div class='download' title='Download all MPM outputs listed below'><img src="{% static 'cma/img/download-32.png' %}" onclick="downloadModelOutputsBulk(this)" height=14 width=14 /></div>
+                    </div>
+                    <div style="text-align: right">
+                        <input type="text" id="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'outputs')" placeholder="Seach for output layer">
                     </div>
                 </div> <!--content main-->
             </div> <!--collapse model_results-->
