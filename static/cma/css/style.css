@@ -2590,6 +2590,13 @@ input.layer_toggle_radio {
     font-style: italic;
 }
 
+.n_layers .on_map {
+    text-transform: none;
+    font-style: normal;
+    font-size: 0.70rem;
+    color: #c7826b;
+}
+
 tr.datalayer_row.hide_table_row {
     display: none;
     

@@ -198,7 +198,7 @@ function onLoad() {
     
     // Add layers to layer control
     $.each(DATALAYERS_LOOKUP, function(dsid,dl) {
-        addRowToDataLayersTable(dl);
+        addRowToDataLayersTable(dl,true);
     });
     
     // Have the leaflet map update it's size after the control_panel show/hide
@@ -274,6 +274,8 @@ function onLoad() {
     
     // Get metadata
     getMetadata();
+    
+    updateLayerCategoryNLayersInfo();
 }
 
 function validateDTConfidence() {
@@ -1087,7 +1089,7 @@ function loadModelOutputs(cma_id,model_run_id) {
     });
     
     $.each(dls, function(i,d) {
-        addRowToDataLayersTable(d);
+        addRowToDataLayersTable(d,true);
     });
     
     // Toggle header to expand if model_run_id specified
@@ -1097,8 +1099,24 @@ function loadModelOutputs(cma_id,model_run_id) {
     
     // Re-show the originally shown layers
     $.each(showing_outputs, function(i,dsid) {
-        $(`#outputlayer_container tr[data-path="${dsid}"] td.show_chk input`).trigger('click');
+        // vvv Attempt to allow layers to continue to show even when model run ID
+        //     filter is applied (and a different model is selected than the one 
+        //     for the shown layer). 
+        //     Problem encountered here:
+        //      * if we go back to 'all', any displayed layers need to be 
+        //        rechecked.
+        //      * the toggle mode needs to work properly
+
+        var cmp = $(`#outputlayer_container tr[data-path="${dsid}"] td.show_chk input`);
+        if (cmp.length > 0) {
+            console.log(cmp);
+            cmp.trigger('click');
+        } else {
+            onToggleLayerClick(null,dsid,true);
+        }
     });
+    
+    updateLayerCategoryNLayersInfo();
 }
 
 function downloadURLsToZip(urls, zipname, loading_container) {
@@ -1273,9 +1291,10 @@ function processDataLayersUpdates(response) {
     loadModelOutputs();
     $.each(dls_to_add, function(i,dl) {
         if (dl.gui_model == 'datalayer') {
-            addRowToDataLayersTable(dl);
+            addRowToDataLayersTable(dl,true);
         }
     });
+    updateLayerCategoryNLayersInfo();
     return n_dls_changed + dls_to_add;
     
 }
@@ -3549,11 +3568,13 @@ function hideLayer(cmp_id) {
     //   already (e.g. if model outputs are cleared) 
     removeLayerFromMap(cmp_id);
     
+    checkToggleMode();
+    updateLayerCategoryNLayersInfo();
 }
 
 
 function removeLayerFromMap(layer_name) {
-    var layer_name_scrubbed = layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');    
+    var layer_name_scrubbed = scrubLayerName(layer_name);//layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');    
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
     var layer = datalayer.maplayer;
     
@@ -3569,16 +3590,29 @@ function scrubLayerName(layer_name) {
     
 }
 
-function onToggleLayerClick(target,layer_name) {
+function getNdataLayersOnMap() {
+    var n_layers = 0;
+//     MAP.eachLayer(function(layer) {
+//         if( layer instanceof L.TileLayer && layer.wmsParams) {
+//             n_layers += 1;
+//         }
+//     });
+    var n_layers = $('.layer_legend.layers').length;
+    return n_layers;
+    
+}
+
+function onToggleLayerClick(target,layer_name,checked) {
     var chk = $(target);
     var datalayer =  DATALAYERS_LOOKUP[layer_name];
     var layer_name_scrubbed = scrubLayerName(layer_name);
     var layer = datalayer.maplayer; 
-    var n_layers_selected = $('td.show_chk input:checked').length;
+    var n_layers_selected = getNdataLayersOnMap();//$('td.show_chk input:checked').length;
 
     // Remove all layers in group
-    if (chk.prop('checked')) {
+    if (checked || (chk && chk.prop('checked'))) {
         MAP.addLayer(layer);
+        n_layers_selected = getNdataLayersOnMap();
         
         // Add layer color to checkbox
         chk.css({
@@ -3705,7 +3739,7 @@ function onToggleLayerClick(target,layer_name) {
         
         // If a layer was turned on and that makes 2 layers, then reset the 
         // toggle controls toggle to unchecked
-        if (n_layers_selected == 2) {
+        if (getNdataLayersOnMap() == 2) {
             $('#toggle_controls_toggle_chk').prop('checked', false);
         }
         
@@ -3723,17 +3757,33 @@ function onToggleLayerClick(target,layer_name) {
         $(`#legendcontent_${layer_name_scrubbed}`).remove();*/
     }
     
+    checkToggleMode();
+    updateLayerCategoryNLayersInfo();
+    
+}
+
+function checkToggleMode() {
     // Check if >1 layer is visible. If so, show 'toggle controls'
-    if (n_layers_selected > 1) {
+    if (getNdataLayersOnMap() > 1) {
         $('#toggle_controls_toggle').show();
         
+        if ($('#toggle_controls_toggle_chk').prop('checked')) {
+            $('input.layer_toggle_radio').show();
+            onLayerToggleModeChange();
+        } else {
+            $('input.layer_toggle_radio').hide();
+            
+        }
     } else {
         // Hide the toggle controls toggle
         $('#toggle_controls_toggle').hide();
         
+        // Hide radio buttons
+        $('input.layer_toggle_radio').hide();
+        
         resetToggleControls();
-       
     }
+    
 }
 
 function onRadioLayerToggleChange(dsid) {
@@ -5097,7 +5147,7 @@ function getLayerControlCategories(dl) {
     
 }
 
-function addRowToDataLayersTable(dl) {
+function addRowToDataLayersTable(dl,startup) {
     var cats = getLayerControlCategories(dl);
     var category = cats.category;
     var subcat = cats.subcat;
@@ -5128,8 +5178,13 @@ function addRowToDataLayersTable(dl) {
     
     var subcat = subcat.toUpperCase();
     var name_pretty = getLayerNameLabel(dl);
+    
+    // Check if the legend is on the map, if so set checkbox to checked 
+    var layer_name_scrubbed = scrubLayerName(dl.data_source_id);
+    var showing = $(`#legendcontent_${layer_name_scrubbed}`).length == 1 ? ' checked' : '';
+    
     var show_chk = `
-        <input type='checkbox' 
+        <input type='checkbox' ${showing}
                onChange='onToggleLayerClick(this,"${dl.data_source_id}");' />
     `;
     var ext = dl.download_url.split('.').slice(-1)[0];
@@ -5178,14 +5233,23 @@ function addRowToDataLayersTable(dl) {
     }
     
     // Update n layer label for the category 
-    updateLayerCategoryNLayersInfo();
+    updateLayerCategoryNLayersInfo(startup);
 //     var n_layers = $(`.topbar.sub.${category_clean}`).next('.content').find('tr.datalayer_row').length;
 //     $(`.topbar.sub.${category_clean} span.n_layers`).html(n_layers);
     
 }
 
-function updateLayerCategoryNLayersInfo() {
+function updateLayerCategoryNLayersInfo(startup) {
+    if (startup) {return;}
 
+    // Update how many layers are visible
+    var dsids_on_map = [];
+    $('.layer_legend.layers').each(function(i,leg) {
+        var dsid = $(leg).find('input[name="layer_toggle_radio_group"]').prop('value');
+        dsids_on_map.push(dsid);
+    });
+    
+    // Update total layers and layers visible
     $.each([
         '#datalayer_container',
         '#processedlayer_container',
@@ -5195,11 +5259,23 @@ function updateLayerCategoryNLayersInfo() {
         $(`${cont_id} .header.topbar.sub`).each(function(j,tb) {
             var category_clean = $(tb).attr('class').split(' ').pop();
             var sel = `${cont_id} .header.topbar.sub.${category_clean}`;
-            var n_layers = $(sel).next('.content').find('tr.datalayer_row').not('.hide_table_row').length;
+            var layers = $(sel).next('.content').find('tr.datalayer_row').not('.hide_table_row');
+            var n_layers = layers.length;
+            var n_on_map = 0;
+            $.each(layers, function(i,layer) {
+                if (dsids_on_map.indexOf($(layer).attr('data-path')) > -1) {
+                    n_on_map += 1;
+                }
+            });
             
-            $(`${sel} span.n_layers`).html(n_layers);
+            var h = `${n_layers}`;
+            if (n_on_map > 0) {
+                h += `, <span class='on_map'>${n_on_map} on map</span>`;
+            }
+            $(`${sel} span.n_layers`).html(h);
         })
     });
+    
     
 }
 
