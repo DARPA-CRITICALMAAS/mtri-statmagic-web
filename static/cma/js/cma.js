@@ -2084,10 +2084,18 @@ function addDrawControl() {
         drawnLayer = e.layer;
         drawnItems.addLayer(drawnLayer);
         finishDraw(drawnLayer);
+        if ($('#cma_initialize_form').is(':visible')) {
+            getFishnet();
+        }
+        
+        
     });
     MAP.on(L.Draw.Event.EDITED, function(e) {
         var layer = e.layers.getLayers()[0];
         finishDraw(layer);
+        if ($('#cma_initialize_form').is(':visible')) {
+            getFishnet();
+        }
     });
     
     MAP.on(L.Draw.Event.DELETED, function(e) {
@@ -2097,6 +2105,7 @@ function addDrawControl() {
         $('.toggle_intersecting').hide();
         $('#hide_intersecting_cb').prop('checked',false);
         toggleIntersectingLayers();
+        FISHNET_LAYER.clearLayers();
     });
 }
 
@@ -2225,7 +2234,6 @@ function updateNsitesLabels() {
     if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
         n_upload_sites = GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length;
     }
-    
     
     if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && 
         $('#chk_use_sites_queried').is(':checked')) {
@@ -4823,12 +4831,17 @@ function showInitializeCMAform() {
     // Run validation
     validateCMAinitializeForm();
     
+    // Get fishnet
+    getFishnet();
+    
 }
 function showCMAstart() {
     $('.cma_start_div').show();
     
     $('#cma_initialize_form').hide();
     $('#cma_load_form').hide();
+    
+    FISHNET_LAYER.clearLayers();
 }
 
 function getFishnet() {
