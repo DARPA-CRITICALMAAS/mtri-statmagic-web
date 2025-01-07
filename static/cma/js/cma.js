@@ -158,6 +158,17 @@ function onLoad() {
     });
     $('#cma_crs').html(opts);
     
+    // Load upload sites CSV projection options
+    var opts = `<option value='ll' selected>lat/lon</option>`;
+    $.each(['N','S'], function(i,ns) {
+        for (let i=1; i<=60; i++) {
+            var n = `${String(i).padStart(2,'0')}${ns}`;
+            opts += `<option value='${n}'>UTM ${n}</option>`;
+        }
+    });
+    $('#csv_projection').html(opts);
+
+    
     // Add listeners for CMA initiate parameter validation
     $('#cma_initialize_params input').on('change', function(el) {
         validateCMAinitializeForm(el);
@@ -2209,6 +2220,13 @@ function toggleUserUploadSitesVisibility(e) {
 
 function updateNsitesLabels() {
     var n_included = 0;
+    var n_upload_sites = 0
+    
+    if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
+        n_upload_sites = GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length;
+    }
+    
+    
     if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && 
         $('#chk_use_sites_queried').is(':checked')) {
     
@@ -2226,7 +2244,7 @@ function updateNsitesLabels() {
     if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
         $('#chk_use_sites_uploaded').is(':checked')
     ) {
-        var n_upload_sites = GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length
+         
         
         // Add any user-uploaded sites
         n_total += n_upload_sites;
@@ -4653,8 +4671,8 @@ function uploadCSV() {
         formData.append('file',file);
     });
     
-    $.each(['latitude','longitude'], function(i,ll) {
-        formData.append(`csv_${ll}_field`,$(`#csv_${ll}_field`).val());
+    $.each(['latitude_field','longitude_field','projection'], function(i,ll) {
+        formData.append(`csv_${ll}`,$(`#csv_${ll}`).val());
     });
     if ($('#csv_filter_by_extent').is(':checked')) {
         var wkt = getWKT();

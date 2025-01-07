@@ -955,7 +955,8 @@ def get_datalayers_for_gui(
                 '20240905' in d.description or 
                 'tdk' in d.description or
                 'tdw' in d.description or
-                d.name in ('jane_test_upload2',)
+                d.name in ('jane_test_upload2',) or
+                'Bge_' in d.subcategory
                 ): #or 'cma-lithium-' in d.description:
                 continue
             
@@ -976,7 +977,6 @@ def get_datalayers_for_gui(
             if data['extent_geom'] is not None and data['extent_geom'].empty:
                 data['extent_geom'] = None
             if data['extent_geom']:
-          
                 data['extent_geom'] = data['extent_geom'].json
     
             if 'b4050056d38a449fa3d940008e277145' in data['download_url']:

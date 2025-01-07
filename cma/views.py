@@ -1,6 +1,7 @@
 import json, math, os, sys, zipfile
 import pandas as pd
 import shapely
+import pyproj
 import geopandas as gpd
 from django.core.exceptions import BadRequest
 from datetime import datetime as dt
@@ -1195,6 +1196,7 @@ def upload_sites_csv(request):
         'csv_longitude_field': '',
         'csv_latitude_field': '',
         'wkt': '',
+        'csv_projection': 'll', # if provided, convert from this UTM zone to lat/long, e.g. 14N
     }
     params = util.process_params(request, params, post=True)
 
@@ -1205,6 +1207,12 @@ def upload_sites_csv(request):
 
     csv_file =request.FILES.getlist('file_csv')[0]
     df = pd.read_csv(csv_file,header=0)
+    
+    prj = params['csv_projection']
+    if prj != 'll':
+        ns = 6 if prj[-1] == 'N' else 7
+        from_crs = f'EPSG:32{ns}{prj[:2]}'
+        transformer = pyproj.Transformer.from_crs(from_crs,'EPSG:4326')
 
     coords = []
     for i,row in df.iterrows():
@@ -1218,6 +1226,14 @@ def upload_sites_csv(request):
         
         lat = round(float(row[params['csv_latitude_field']]),5)
         lon = round(float(row[params['csv_longitude_field']]),5)
+        
+        prj = params['csv_projection']
+        if prj != 'll':
+            lat,lon = transformer.transform(lon,lat)
+            
+           # proj_utm = pyproj.Proj(proj='utm', zone=int(prj[:2]), ellps='WGS84')
+           # proj_wgs84 = pyproj.Proj(proj='latlong', ellps='WGS84')
+           # lon, lat = pyproj.transform(proj_utm, proj_wgs84, lon, lat)
 
         if params['wkt']:
             point = shapely.Point(lon,lat)
