@@ -16,7 +16,7 @@ django-vite==3.0.4
 et-xmlfile==1.1.0
 exceptiongroup==1.2.1
 fastapi==0.115.3
-fiona==1.9.6
+fiona==1.10b1
 GDAL==3.0.0
 geojson-pydantic==1.1.0
 geopandas==0.13.2
