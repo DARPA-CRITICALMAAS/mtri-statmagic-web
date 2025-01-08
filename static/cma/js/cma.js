@@ -3139,37 +3139,55 @@ function submitPreprocessAndRun() {
 }
 
 // Send POST request to backend
-function submitPreprocessing(process_and_run) {
-     var model = MODELS[$('#model_select').val()];
-
-    // TODO: account for if 'ignore extent' is checked; b/c training sites 
-    //       submitted for model runs should ALWAYS adhere to extent 
-
-    // Only include training sites IF:
-    //    * model is supervised
-    //    * label_raster not already in DATACUBE_CONFIG
+function submitPreprocessing(process_and_run,mpm_initial) {
     var training_sites = [];
-    var label_raster_included =  DATACUBE_CONFIG.reduce(function(tot,l) {
-        return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
-    },false);
-    if (!label_raster_included && model && model.uses_training) {
-        if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && $('#chk_use_sites_queried').is(':checked')) {
-            training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
-                    return !s.properties.exclude;
-            }).map(function(s) {return s.properties.id;});
+    var evidence_layers = {};
+    
+    // If this is the initial preprocessing of default layers for an MPM, 
+    // build list of evidence layers
+    if (mpm_initial) {
+        $.each(DATALAYERS_LOOKUP, function(dsid,dobj) {
+            if (dobj.process_at_mpm_initialization) {
+                evidence_layers.push({
+                    data_source_id: dsid,
+                    transform_methods: {}
+                });
+            }
+        });
+        
+        
+    } else { // Otherwise pull from DATACUBE_CONFIG
+        var model = MODELS[$('#model_select').val()];
+
+        // TODO: account for if 'ignore extent' is checked; b/c training sites 
+        //       submitted for model runs should ALWAYS adhere to extent 
+
+        // Only include training sites IF:
+        //    * model is supervised
+        //    * label_raster not already in DATACUBE_CONFIG
+
+        var label_raster_included =  DATACUBE_CONFIG.reduce(function(tot,l) {
+            return tot || DATALAYERS_LOOKUP[l.data_source_id].label_raster;
+        },false);
+        if (!label_raster_included && model && model.uses_training) {
+            if (GET_MINERAL_SITES_RESPONSE_MOST_RECENT && $('#chk_use_sites_queried').is(':checked')) {
+                training_sites = GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.filter(function(s) {
+                        return !s.properties.exclude;
+                }).map(function(s) {return s.properties.id;});
+            }
+            if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT && $('#chk_use_sites_uploaded').is(':checked')) {
+                $.each(GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords, function(i,s) {
+                    training_sites.push(s);
+                });
+            }
         }
-        if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT && $('#chk_use_sites_uploaded').is(':checked')) {
-            $.each(GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords, function(i,s) {
-                training_sites.push(s);
-            });
-        }
+        
+        evidence_layers = DATACUBE_CONFIG.filter(function(l) {
+            var d = DATALAYERS_LOOKUP[l.data_source_id];
+            return d.gui_model != 'processedlayer';
+        });
     }
-    
-    var evidence_layers = DATACUBE_CONFIG.filter(function(l) {
-        var d = DATALAYERS_LOOKUP[l.data_source_id];
-        return d.gui_model != 'processedlayer';
-    });
-    
+        
     var cma_id = getActiveCMAID();
     var data = {
         cma_id: cma_id,
@@ -3186,7 +3204,12 @@ function submitPreprocessing(process_and_run) {
         success: function(response) {
             console.log(this.url,response);
             var event_id = response.event_id;
-            alert(`Pre-processing submitted successfully! Event ID: ${response.event_id}`);
+            if (!mpm_initial) {
+                $('#message_modal_small .content').html(`
+                    Pre-processing job submitted successfully! Event ID: ${response.event_id}
+                `);
+                $('#message_modal_small').show();
+            }
             
             // TODO: Disable the modeling buttons until (a) pre-process is complete
             // or (b) they remove layers? How do I track this?
@@ -3204,10 +3227,12 @@ function submitPreprocessing(process_and_run) {
             var n_processed = 0;
             if (response.previously_processed) {
                 n_processed = response.previously_processed.length;
-                $('#message_modal_small .content').html(`
-                    ${n_processed} layers previously processed for event ID:<br><span class='highlight'>${event_id}</span>
-                `);
-                $('#message_modal_small').show();
+                if (!mpm_initial) {
+                    $('#message_modal_small .content').html(`
+                        ${n_processed} layers previously processed for event ID:<br><span class='highlight'>${event_id}</span>
+                    `);
+                    $('#message_modal_small').show();
+                }
                 $.each(response.previously_processed, function(i,lobj) {
                     processNewProcessedLayer(DATALAYERS_LOOKUP[lobj.layer_id]);
                 });
@@ -3250,7 +3275,10 @@ function submitPreprocessing(process_and_run) {
                 </tr>
             `);
             
-            activateRunStatus();
+            // have the initial MPM processing run behind the scenes
+            if (!mpm_initial) { 
+                activateRunStatus();
+            }
             
              // If all requested layers already processed....
             if (expected_layers == n_processed) {
@@ -5084,6 +5112,9 @@ function initiateCMA() {
             }
             
             loadCMA(response.cma.cma_id);
+            
+            // Start pre-processing default layers
+            submitPreprocessing(false,true);
         },
         error: function(response) {
             console.log(response);

@@ -93,6 +93,7 @@ class DataLayer(DisplayLayer):
     reference_url = models.CharField(max_length=1000,null=True,blank=True)
     datatype = models.CharField(max_length=60,null=True,blank=True)
     derivative_ops = models.CharField(max_length=500,null=True,blank=True)
+    process_at_mpm_initialization = models.BooleanField(default=False,null=True,blank=True)
 
     
 class ProcessedLayer(DisplayLayer):

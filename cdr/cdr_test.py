@@ -88,7 +88,7 @@ post_data_intersect_sources = {
 # blerg
 #
 # #
-res = cdr.get_model_run("63004bf03d1647d3a988e4c1320a3b09")
+res = cdr.get_model_run("02fdfd4d2aaf4ff59247976d0a70a74f")
 # print(res['event']['payload']['evidence_layers'])#.keys()))
 print(res['event']['payload']['model_type'])
 print(res['event']['payload']['evidence_layers'])
