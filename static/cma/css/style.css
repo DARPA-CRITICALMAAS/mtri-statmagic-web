@@ -2621,3 +2621,7 @@ tr.datalayer_row.hide_table_row {
 .rec-warning {
     color: #d65c5c;
 }
+
+input.dynamic_search::placeholder {
+    text-align: left
+}
