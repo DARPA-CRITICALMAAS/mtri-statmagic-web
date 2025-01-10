@@ -3340,13 +3340,16 @@ function submitModelRun() {
                 
                 // Tuples get special processing- represented as string
                 // Determines tuple by checking for 'tuple' in the param name
-                if (p.name.indexOf('tuple') > -1 && p.value) {
+                if ((p.name.indexOf('tuple') > -1 ||
+                    ['network_arch_head_units','network_arch_core_units'].indexOf(p.name) > -1
+                    )
+                    && p.value) {
                     train_config[p.name] = p.value.split(',');
                 }
             });
         });
     });
-
+    console.log(train_config)
     // This is now just a list of ProcessedLayer IDs
     var evidence_layers = []
     $.each(DATACUBE_CONFIG,function(i,l) {
