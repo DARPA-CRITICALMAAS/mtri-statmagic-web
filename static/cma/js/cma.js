@@ -308,9 +308,10 @@ function validateDTConfidence() {
 }
 
 function onLayerToggleModeChange() {
-    var on = $('#toggle_controls_toggle_chk').is(':checked');
+    // var on = $('#toggle_controls_toggle_chk').is(':checked');
     
-    if (on) {
+    // if (on) {
+    if (getNdataLayersOnMap() > 1) {
         // Show radio buttons
         $('input.layer_toggle_radio').show()
         
@@ -3824,23 +3825,43 @@ function onToggleLayerClick(target,layer_name,checked) {
 
 function checkToggleMode() {
     // Check if >1 layer is visible. If so, show 'toggle controls'
+    // if (getNdataLayersOnMap() > 1) {
+    //     $('#toggle_controls_toggle').show();
+    //
+    //     if ($('#toggle_controls_toggle_chk').prop('checked')) {
+    //         $('input.layer_toggle_radio').show();
+    //         onLayerToggleModeChange();
+    //     } else {
+    //         $('input.layer_toggle_radio').hide();
+    //
+    //     }
+    // } else {
+    //     // Hide the toggle controls toggle
+    //     $('#toggle_controls_toggle').hide();
+    //
+    //     // Hide radio buttons
+    //     $('input.layer_toggle_radio').hide();
+    //
+    //     resetToggleControls();
+    // }
+
     if (getNdataLayersOnMap() > 1) {
-        $('#toggle_controls_toggle').show();
-        
-        if ($('#toggle_controls_toggle_chk').prop('checked')) {
-            $('input.layer_toggle_radio').show();
-            onLayerToggleModeChange();
-        } else {
-            $('input.layer_toggle_radio').hide();
-            
-        }
+        // $('#toggle_controls_toggle').show();
+
+        // if ($('#toggle_controls_toggle_chk').prop('checked')) {
+        $('input.layer_toggle_radio').show();
+        onLayerToggleModeChange();
+        // } else {
+        //     $('input.layer_toggle_radio').hide();
+
+        // }
     } else {
         // Hide the toggle controls toggle
-        $('#toggle_controls_toggle').hide();
-        
+        // $('#toggle_controls_toggle').hide();
+
         // Hide radio buttons
         $('input.layer_toggle_radio').hide();
-        
+
         resetToggleControls();
     }
     
