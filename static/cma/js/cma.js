@@ -4100,7 +4100,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'Select at least 1 non-training INPUT LAYER';
+            msg = 'To enable "Run model" button, select at least 1 non-training INPUT LAYER';
         }
         
         // Enable ONLY 'pre-process' button IF unprocessed layers exist and 
@@ -4123,7 +4123,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'Select at least 1 non-training INPUT LAYER';
+            msg = 'Click "pre-process layers" to create a <b>label raster</b> from the selected training data.<br>To enable "Run model" button, select at least 1 non-training INPUT LAYER.';
         }
         
         // Disable ONLY 'run' button 
