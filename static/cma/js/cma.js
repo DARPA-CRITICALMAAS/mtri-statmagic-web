@@ -3647,7 +3647,7 @@ function removeLayerFromMap(layer_name) {
 }
 
 function scrubLayerName(layer_name) {
-    return layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','');  
+    return layer_name.replaceAll('.','').replaceAll(' ','').replaceAll(',','').replaceAll('>','').replaceAll('(','_').replaceAll(')','_');
     
 }
 
