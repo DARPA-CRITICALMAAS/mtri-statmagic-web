@@ -5510,6 +5510,11 @@ function onStartedCMA(cma) {
     
     // Auto start new run:
     startNewModelRun();
+
+    // Show 'Add to cube' buttons (this used to only be shown after model is selected, but 
+    // we want folks to be able to run preprocessing without having to select a model first
+    $('.radiocube').show();
+
 }
 
 

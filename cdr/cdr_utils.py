@@ -11,8 +11,8 @@ class CDR():
 
     def __init__ (
             self,
-            cdr_host = None,#"https://api.cdr.land",
-            cdr_version =  None#,'v1'
+            cdr_host = "https://api.cdr.land",
+            cdr_version =  'v1'
         ):
         '''
         On initialization, register authentication headers and httpx client
