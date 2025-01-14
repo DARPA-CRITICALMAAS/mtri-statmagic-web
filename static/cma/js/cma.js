@@ -511,6 +511,7 @@ function clearMineralSites() {
     
     GET_MINERAL_SITES_RESPONSE_MOST_RECENT = null;
     updateNsitesLabels();
+//    validateModelButtons();// <- this is now called at the end of updateNsitesLabels
     
 }
 
@@ -2197,7 +2198,6 @@ function loadMineralSites() {
             $('#clear_sites_button').removeClass('disabled');
             
             // Update query results n
-
             updateNsitesLabels();
             $('.mineral_sites_download_link').show();
             
@@ -2283,6 +2283,8 @@ function updateNsitesLabels() {
     if (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT) {
         $('.n_user_upload_sites.main_label').html(n_upload_sites);
     }
+
+    validateModelButtons();
 }
 
 function setLoadingLoadSitesButton() {
@@ -4722,7 +4724,7 @@ function loadUserUploadSitesToMap() {
     
 function onUseSitesChange() {
     updateNsitesLabels();
-    validateModelButtons();
+//    validateModelButtons(); // <- this is now called at the end of updateNsitesLabels
     
 }
 
