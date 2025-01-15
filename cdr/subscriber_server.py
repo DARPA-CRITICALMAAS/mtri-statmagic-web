@@ -16,6 +16,7 @@ import ngrok
 import uvicorn
 import uvicorn.logging
 import optuna
+from subprocess import Popen, PIPE
 
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
@@ -28,8 +29,12 @@ from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request, 
 from cdr_schemas.events import Event
 import subscriber_handlers
 
+# Generate unique system_name id
+res = Popen("echo beak_via_mtri_$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)", shell=True, stdout=PIPE)
+system_name = res.stdout.read().decode('utf-8').strip()
+
 SETTINGS = {
-    'system_name': os.environ["SYSTEM_NAME"],
+    'system_name': system_name,
     'system_version': '0.0.1',#os.environ["SYSTEM_VERSION"],
     'user_api_token': os.environ["CDR_API_TOKEN"],
     'cdr_host': os.environ["CDR_API"],
@@ -151,7 +156,6 @@ def register_system():
                     json=registration, headers=headers)
 
     print(r)
-
     # Log our registration_id such we can delete it when we close the program.
     SETTINGS['registration_id'] = r.json()["id"]
 
