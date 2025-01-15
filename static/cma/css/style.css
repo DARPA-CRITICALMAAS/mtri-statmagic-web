@@ -2456,6 +2456,7 @@ tr.site_src_row_extra {
     color: #ff8080;
 }
 
+#model_button_status_select_model,
 #model_button_status {
     width: calc(100% - 40px);
     padding: 0px 20px;

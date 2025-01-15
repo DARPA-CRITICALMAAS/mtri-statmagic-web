@@ -795,7 +795,7 @@ function buildParametersTable(mobj, table_selector, dobj) {
 function resetModelUI(clear) {
     $('.selected_model_config').hide();
     $('.collapse_datacube').show();
-    $('.collapse_training').hide();
+    $('.collapse_training').show();
     $('.collapse_parameters').hide();
     $('.collapse_model_run').hide();
     $('#modeling_buttons_table').hide();
@@ -4044,6 +4044,13 @@ function validateModelButtons() {
     var model = MODELS[$('#model_select').val()];
     var cma_id = getActiveCMAID();
     var msg = '';
+
+    var msg_select_model = '';
+    if (!model) {
+	msg_select_model = 'To enable "Run model" button, select a <b>Model type</b>';
+    }
+    $('#model_button_status_select_model').html(msg_select_model);
+    
     var msg_no_training = 'Select >0 TRAINING SITES or a LABEL RASTER';
     if (!cma_id) {
         $('#model_button_status').html(msg);
@@ -4067,21 +4074,21 @@ function validateModelButtons() {
     // Check if a label raster is needed (i.e. 'supervised' model selected and  
     // NOT in cube)
     var label_raster_included = isLabelRasterInDataCube();
+
+    var training_sites_selected = (
+        (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
+         GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0 && 
+         $('#chk_use_sites_queried').is(':checked')
+        ) ||
+        (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
+         GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0 &&
+         $('#chk_use_sites_uploaded').is(':checked')
+    ));
     
     // For supervised models....
     if (model && model.uses_training) {
         var n_training_sites_selected = Number($('.mineral_sites_n_results.training').html());
-
-        var training_sites_selected = (
-            (GET_MINERAL_SITES_RESPONSE_MOST_RECENT &&
-            GET_MINERAL_SITES_RESPONSE_MOST_RECENT.mineral_sites.length > 0 && 
-            $('#chk_use_sites_queried').is(':checked')
-            ) ||
-            (GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT &&
-            GET_MINERAL_SITES_USER_UPLOAD_RESPONSE_MOST_RECENT.site_coords.length > 0 &&
-            $('#chk_use_sites_uploaded').is(':checked')
-            ));
-          
+      
 //         console.log(n_training_sites_selected, training_sites_selected);
         
         // If no layers in cube and no training sites, disable all buttons
@@ -4157,7 +4164,16 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'Select at least 1 INPUT LAYER';
+            msg = '';//'Select at least 1 INPUT LAYER';
+
+	    if (training_sites_selected) {
+		$('.button.model_process_submit.preprocess').removeClass('disabled');
+		msg = 'Click "pre-process layers" to create a <b>label raster</b> from the selected training data'; 
+	    }
+	    if (model) {
+		msg += '<br>To enable "Run model" button, select at least 1 INPUT LAYER';
+	    }
+	    
             $('#model_button_status').html(msg);
             
             return;
