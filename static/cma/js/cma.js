@@ -4041,10 +4041,12 @@ function isLabelRasterInDataCube() {
 
 // Enables/disables model buttons according to selected layers
 function validateModelButtons() {
+    if ($('#modeling_initial_message').is(':visible')) {return;}
+    
     var model = MODELS[$('#model_select').val()];
     var cma_id = getActiveCMAID();
     var msg = '';
-
+    
     var msg_select_model = '';
     if (!model) {
 	msg_select_model = 'To enable "Run model" button, select a <b>Model type</b>';
@@ -5507,6 +5509,8 @@ function startNewModelRun(are_you_sure) {
 }
 
 function onStartedCMA(cma) {
+    toggleHeader($('.header.modeling'));
+    
 //     var cma_description = $('#cma_description').val();
     $('#cma_loaded').attr('data-cma_id',cma.cma_id);
     $('#cma_loaded').html(cma.description);

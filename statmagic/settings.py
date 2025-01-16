@@ -174,8 +174,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAPFILE_FILENAME = 'statmagic.map'
 
-MAPSERVER_SERVER = os.environ['MAPSERVER_SERVER'] if not IS_MTRI_SERVER else 'vm-apps2'
+MAPSERVER_SERVER = os.environ['MAPSERVER_SERVER'] if 'MAPSERVER_SERVER' in os.environ else 'vm-apps2'
 
 # Location on the MAPSERVER_SERVER where the sync'd data lives
-TILESERVER_LOCAL_SYNC_FOLDER = os.environ['TILESERVER_LOCAL_SYNC_FOLDER' ]if not IS_MTRI_SERVER else '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'
+TILESERVER_LOCAL_SYNC_FOLDER = os.environ['TILESERVER_LOCAL_SYNC_FOLDER'] if 'TILESERVER_LOCAL_SYNC_FOLDER' in os.environ else '/net/vm-apps2/home/mgbillmi/statmagic/data/datalayer_download/'
 

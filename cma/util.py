@@ -30,7 +30,11 @@ from rasterio.transform import from_origin
 from rasterio.features import rasterize
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
+from pyogrio import set_gdal_config_options
 
+set_gdal_config_options({
+    'SHAPE_RESTORE_SHX': 'YES',
+})
 
 # Import cdr_schemas
 if 'CDR_SCHEMAS_DIRECTORY' in os.environ:
@@ -1480,21 +1484,27 @@ def process_vector_for_mapfile(dataset):
             
         if dataset.extent_geom is None:
             # Get bounds
-            [xmin,ymin,xmax,ymax] = gdf.to_crs(4326).total_bounds
-            coords = [
-                [xmin,ymin],
-                [xmin,ymax],
-                [xmax,ymax],
-                [xmax,ymin],
-                [xmin,ymin]
-            ]
-            gj = json.dumps({
-                'type': 'Polygon',
-                'coordinates': [coords]
-            })
-            geom = GEOSGeometry(gj)
+            try:
+                [xmin,ymin,xmax,ymax] = gdf.to_crs(4326).total_bounds
+                coords = [
+                    [xmin,ymin],
+                    [xmin,ymax],
+                    [xmax,ymax],
+                    [xmax,ymin],
+                    [xmin,ymin]
+                ]
+            except:
+                print('Could not get lat/lon bounds; naive crs in file?')
+                coords = None
 
-            dataset.extent_geom = geom#GEOSGeometry(gj)
+            if coords:
+                gj = json.dumps({
+                    'type': 'Polygon',
+                    'coordinates': [coords]
+                })
+                geom = GEOSGeometry(gj)
+
+                dataset.extent_geom = geom#GEOSGeometry(gj)
             
         dataset.save()
     

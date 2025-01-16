@@ -983,7 +983,7 @@ def get_mineral_sites(request):
     cs = params['commodity']
     if type(cs) == str:
         cs = [cs]
-    if 'rare earth elements' in cs:
+    if cs and ('rare earth elements' in cs or 'ree' in cs or 'REE' in cs or 'Rare earth elements' in cs):
         cs += [
             'Lanthanum', 
             'Cerium', 
@@ -1006,6 +1006,8 @@ def get_mineral_sites(request):
    # print(cs)
     sites_json = []
     sites_df_merged = None
+    if not cs:
+        cs = []
     for c in cs:
         # Args to (a) send to CDR and (b) use as cache key
         args = {
@@ -1040,14 +1042,21 @@ def get_mineral_sites(request):
             sites_df_merged = pd.concat([sites_df_merged,sites_df])
         
     # print(json.dumps(gj))
-    
-    print(len(sites_df_merged))
+    if sites_df_merged:
+        print(len(sites_df_merged))
     
     # Apply non-CDR-based filters
     #   * TODO: also trim out unncessary properties
     sites_filtered = []
+    uniqdts = []
     #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
     for index, site in sites_df_merged.iterrows():
+        for n in range(params['top_n']):
+            pname = f'top{n+1}_deposit_type'
+            if pname in site and site[pname] not in uniqdts and site[pname] not in [float('nan')]:
+                uniqdts.append(site[pname])
+
+
         # Apply grade/tonnage data filter
         #print(params['only_gradetonnage'], site['grade'])
         if (params['only_gradetonnage'] in ('true',True,'True','t','T') and (
@@ -1086,7 +1095,8 @@ def get_mineral_sites(request):
        
 
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
-      
+    uniqdts = list(set(uniqdts))
+    #print(uniqdts)
     if params['format'] == 'csv':
         sites_df_filtered = pd.DataFrame(
             sites_filtered,
@@ -1116,6 +1126,7 @@ def get_mineral_sites(request):
             # Return response as JSON to client
             response = HttpResponse(json.dumps({
                 'mineral_sites': sites_gj,
+          #      'uniqdts': uniqdts,
                 'params': params
             }))
             response['Content-Type'] = 'application/json'
