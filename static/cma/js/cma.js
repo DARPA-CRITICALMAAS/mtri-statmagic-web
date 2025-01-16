@@ -4146,6 +4146,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess').removeClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
+	    msg += '<br>To enabled "Run model" button, all input layers must be pre-processed';
         }
         
         // Enable ONLY 'run' if all layers are processed and a label raster is
@@ -4186,6 +4187,9 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess').removeClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
+
+	    msg += '<br>To enabled "Run model" button, all input layers must be pre-processed.'
+	    
         } else { // If all processed, enable RUN only
             $('.button.model_process_submit.preprocess').addClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
@@ -5368,7 +5372,7 @@ function updateLayerCategoryNLayersInfo(startup) {
         $(`${cont_id} .header.topbar.sub`).each(function(j,tb) {
             var category_clean = $(tb).attr('class').split(' ').pop();
             var sel = `${cont_id} .header.topbar.sub.${category_clean}`;
-            var layers = $(sel).next('.content').find('tr.datalayer_row').not('.hide_table_row');
+            var layers = $(sel).next('.content').find('tr.datalayer_row').not('.hide_table_row');//.is(':visible');
             var n_layers = layers.length;
             var n_on_map = 0;
             $.each(layers, function(i,layer) {
@@ -5842,15 +5846,21 @@ function filter_list(text_input, container, filter_type) {
 
         // If any conditions are true then search term has been found and keep row shown, else hide
         if (conditionals.some(value => value)) {
-            $(row).show()
+            $(row).show();
+	    $(row).removeClass('hide_table_row');
         }
         else {
             $(row).hide()
+	    $(row).addClass('hide_table_row');
         }
 
     });
     // Hide labels if there are no remaining datalayers for it's section
     hideSubcategoryLabels();
+
+    // Update n layer label for the category
+    updateLayerCategoryNLayersInfo();
+
 }
 
 

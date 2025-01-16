@@ -663,6 +663,7 @@ def initiate_cma(request):
     #print(type(geojson_dict))
 
     # Extent always comes in as 4326, so reproject and simplify while at it
+    print(params)
     params['extent'] = util.simplify_and_transform_geojson(
         geojson_dict,
         4326,
@@ -1042,7 +1043,7 @@ def get_mineral_sites(request):
             sites_df_merged = pd.concat([sites_df_merged,sites_df])
         
     # print(json.dumps(gj))
-    if sites_df_merged:
+    if sites_df_merged is not None:
         print(len(sites_df_merged))
     
     # Apply non-CDR-based filters
