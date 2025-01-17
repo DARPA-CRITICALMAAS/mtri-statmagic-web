@@ -1,4 +1,7 @@
 import json, math, os, sys, zipfile
+import tempfile
+
+import rasterio as rio
 import pandas as pd
 import shapely
 import pyproj
@@ -682,14 +685,20 @@ def initiate_cma(request):
     
     # Generate template raster
     proj4 = models.CRS.objects.filter(srid=params['crs']).values_list('proj4text')[0][0]
-    tmpfile = util.build_template_raster_from_CMA(cma, proj4)
-    
+    template_meta, template_array = util.build_template_raster_from_CMA(cma, proj4)
+
     # Initiate CMA to CDR, returning cma_id
     cdr = cdr_utils.CDR()
-    response = cdr.post_cma(
-        input_file=open(tmpfile,'rb'),#memfile,
-        metadata=cma_json,
-    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        tmpfile = os.path.join(tempdir, f"{util.getUniqueID()}.tif")
+        with rio.open(tmpfile, 'w', **template_meta) as ds:
+            ds.write(template_array)
+
+        response = cdr.post_cma(
+            input_file=open(tmpfile,'rb'),#memfile,
+            metadata=cma_json,
+        )
     
     # And get the CMA object that was created  
     cma = util.process_cma(cdr.get_cma(response['cma_id']))

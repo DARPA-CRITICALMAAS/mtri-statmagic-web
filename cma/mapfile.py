@@ -669,7 +669,8 @@ def write_mapfile(
 
 
     # Write outputs
-    mapfile_name = "/usr/local/project/statmagic.map" if not settings.IS_MTRI_SERVER else mapfile_name
+    # mapfile_name = "/usr/local/project/statmagic.map" if not settings.IS_MTRI_SERVER else mapfile_name
+    mapfile_name = "/var/www/mapfiles/statmagic.map" if not settings.IS_MTRI_SERVER else mapfile_name
     with open(mapfile_name, 'w') as m:
         m.write(mapfile_text)
 

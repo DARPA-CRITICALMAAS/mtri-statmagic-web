@@ -1123,15 +1123,15 @@ def create_template_raster_from_bounds_and_resolution(
 
     # Replace with S3 boto3 type stuff here
     #mem_file = MemoryFile()
-    tmpfile = os.path.join(settings.BASE_DIR,'cma','temp',f'{getUniqueID()}.tif')#tempfile.NamedTemporaryFile()
-    with rio.open(tmpfile, 'w', **out_meta) as ds:
-    #with tmpfile.open(**out_meta) as ds:
-        ds.write(out_array)
-    
+    # tmpfile = os.path.join(settings.BASE_DIR,'cma','temp',f'{getUniqueID()}.tif')#tempfile.NamedTemporaryFile()
+    # with rio.open(tmpfile, 'w', **out_meta) as ds:
+    # #with tmpfile.open(**out_meta) as ds:
+    #     ds.write(out_array)
+
     #with rio.open('/home/mgbillmi/PROCESSING/StatMAGIC/test_template.tif', 'w', **out_meta) as new_dataset:
         #new_dataset.write(out_array)
         
-    return tmpfile
+    return out_meta, out_array
 
 
 def build_template_raster_from_CMA(cma, proj4, buffer_distance=0):
@@ -1410,8 +1410,9 @@ def process_vector_for_mapfile(dataset):
                     # Run shptree to index the file
                     if exts == 'shp':
                         print("\tindexing vector...")
+                        # os.system(f'shptree {sync_path}')
                         os.system('shptree {sync_path}')
-                    
+
 
     # vvv NOTE: abandoning this b/c mpm_input_preprocessing 
     #     module already handles these
@@ -1443,7 +1444,6 @@ def process_vector_for_mapfile(dataset):
         print('extracting metadata for:',shp)
         if not gdf:
             gdf = gpd.read_file(shp)
-        
         if dataset.vector_format is None:
             # NOTE: Assuming here that the type of first feature represents the 
             #       type of ALL features, which may not be the case
@@ -1468,6 +1468,9 @@ def process_vector_for_mapfile(dataset):
                         'min': float(gdf[colname].min()),
                         'max': float(gdf[colname].max())
                     }
+                    # for stat, stat_val in s.items():
+                    #     if np.isnan(stat_val):
+                    #         s[stat] = "null"
                 if dtype in ('datetime',):
                     s = {
                         'min': gdf[colname].min(),
