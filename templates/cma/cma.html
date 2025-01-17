@@ -368,7 +368,7 @@
                 </div>
                 <div class='content main'>
                     <div style="text-align: right">
-                        <input type="text" id="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'processed')" placeholder="Seach for processed layer">
+                        <input type="text" class="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'processed')" placeholder="Search for processed layer">
                     </div>
                 </div> <!--content main-->
             </div> <!--collapse processedlayer_container-->
@@ -388,7 +388,7 @@
                         <div class='download' title='Download all MPM outputs listed below'><img src="{% static 'cma/img/download-32.png' %}" onclick="downloadModelOutputsBulk(this)" height=14 width=14 /></div>
                     </div>
                     <div style="text-align: right">
-                        <input type="text" id="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'outputs')" placeholder="Seach for output layer">
+                        <input type="text" class="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'outputs')" placeholder="Search for output layer">
                     </div>
                 </div> <!--content main-->
             </div> <!--collapse model_results-->

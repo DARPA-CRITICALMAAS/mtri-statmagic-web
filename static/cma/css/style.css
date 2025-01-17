@@ -2629,7 +2629,10 @@ tr.datalayer_row.hide_table_row {
 
 input.dynamic_search {
     margin-right: 10px;
+    margin-top: 4px;
+    text-align: left;
+    direction:ltr;
 }
 input.dynamic_search::placeholder {
-    text-align: left
+    text-align: left;
 }
