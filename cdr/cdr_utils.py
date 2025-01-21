@@ -38,7 +38,7 @@ class CDR():
         token = os.environ['CDR_API_TOKEN']
 
         self.headers = {"Authorization": f"Bearer {token}"}
-        self.client = httpx.Client(follow_redirects=True)
+        self.client = httpx.Client(follow_redirects=True, verify=False)
 
         # Set an extended timeout period b/c the CSV endpoints in particular
         # take longer than the default of 5 seconds
