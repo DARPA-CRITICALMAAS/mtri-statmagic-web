@@ -32,7 +32,7 @@ IS_PRODUCTION_SERVER = 'apps' in HOST
 if IS_PRODUCTION_SERVER:
     # Load production key from ENV
     SECRET_KEY = os.environ['SECRET_KEY'] 
-    DEBUG = True
+    DEBUG = False
     DJANGO_VITE_DEV = False
 else:
     SECRET_KEY = 'iat3k%kt0e53=c*68_!m-cr-tb2=r#1m6925*(5k1-d5wvhan)'#'django-insecure-horfy%^!-p6s)tda@@=iyslwunl@!0+b@hxvh)fm*f0hxpxvu-'
@@ -45,30 +45,31 @@ URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic/'
 
 ALLOWED_HOSTS = ['*']
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'default': {
-            'format': '[DJANGO] %(levelname)s %(asctime)s %(module)s '
-                      '%(name)s.%(funcName)s:%(lineno)s: %(message)s'
+if not 'precision' in HOST:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '[DJANGO] %(levelname)s %(asctime)s %(module)s '
+                        '%(name)s.%(funcName)s:%(lineno)s: %(message)s'
+            },
         },
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-        }
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        }
-    },
-}
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+            }
+        },
+        'loggers': {
+            '': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': True,
+            }
+        },
+    }
 
 
 # Application definition

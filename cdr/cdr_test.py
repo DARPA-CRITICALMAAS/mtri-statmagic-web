@@ -76,33 +76,37 @@ post_data_intersect_sources = {
 #res = cdr.get_cmas()
 #print(res)
 
-#res = cdr.get_model_runs('ESRI:102008_bdaf6346717f92613f3352615b6c616dab715b6c1d0674f91cf95e6a88f6a6fc__res0_500_res1_500_nickel')
+res = cdr.get_model_runs('ESRI:102008_a1884434abea271a02c943ac3186e5ac2150f52f4b42ca2a5d75fb403f6ac54a__res0_500_res1_500_copper')
 # res = cdr.get_model_runs('')
 #
-# for r in res:
-#     print(r)
-# # blerg
+print(len([r for r in res if 'event' in r]))
+for r in res:
+    print(r)
+    if '60bd99412c4948548' in r['model_run_id']:
+        print(r['event'])
+blerg
 #
 # res = cdr.get_cma('ESRI:102008_dd3d7552701c9c08e8019eef6ee42db15777a33d85b44f00ab019161306f27f1__res0_10000_res1_10000_Nickel')
 # print(res)
 # blerg
 #
 # #
-res = cdr.get_model_run("02fdfd4d2aaf4ff59247976d0a70a74f")
-# print(res['event']['payload']['evidence_layers'])#.keys()))
-print(res['event']['payload']['model_type'])
-print(res['event']['payload']['evidence_layers'])
-print(res)
-blerg
-#
+# res = cdr.get_model_run("60bd99412c49485483576f6a6f9c82ad")
+# # print(res['event']['payload']['evidence_layers'])#.keys()))
+# print(res['event']['payload']['model_type'])
+# print(res['event']['payload']['evidence_layers'])
+# print(res)
+# blerg
+# #
 # # for p,v in res['event']['payload']['train_config'].items():
 # #     print(p,v)
 # # for el in res['event']['payload']['evidence_layers']:
 # #     print(el['data_source']['description'],el['data_source']['format'])
 # # print(len(res['event']['payload']['evidence_layers']))
 # # blerg
-res = cdr.get_prospectivity_output_layers(model_run_id='6ed9a1e88d5a401fa3775d181e7b38f9')
+res = cdr.get_prospectivity_output_layers(model_run_id='60bd99412c49485483576f6a6f9c82ad')
 for r in res:
+    print(r)
     if '.zip' in r['title']:
         print()
         print(r)

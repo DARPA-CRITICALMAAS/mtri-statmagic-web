@@ -30,7 +30,11 @@
 
 #map {
 /*     display: inline-block; */
+    position: fixed;
+    top: 64;
+    right: 0;
     height: 800px;
+    width: 60%;
 /*     width: 66%; */
 }
 #control_panel {

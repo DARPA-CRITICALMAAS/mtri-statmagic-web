@@ -77,6 +77,19 @@
     </div>
 </div>
 
+<div id='vector_processing_info' class='overlay'>
+    <div class="modal" >
+        <div class="close-top" onclick="$('#vector_processing_info').hide()">
+            <img class="close-top-img" height=32 
+                src="{% static 'cma/' %}img/close-dark.png" 
+                onmouseover="this.src='{% static 'cma/' %}img/close-light.png'"
+                onmouseout="this.src='{% static 'cma/' %}img/close-dark.png'">
+        </div>
+        <div class='message_modal_header'>Vector data layer processing</div>
+        <div class='message_modal_content'>Vector data layers are processed into a distance-to rasters, i.e. lower pixel values indicate closer proximity to the vector features in the data layer.</div>
+    </div>
+</div>
+
 <div class='flex-container main'>
     <div class='flex-child control_panel'>
         <div id='control_panel'>
@@ -205,7 +218,7 @@
                     <input type='checkbox' id='hide_intersecting_cb' onchange='toggleIntersectingLayers();' /><label for='hide_intersecting_cb'> only show layers that intersect with drawn extent</label>
                 </div>
                 <div>
-                    <input type="text" class="dynamic_search" onkeyup="filter_list(this, $(this).parent().parent(), 'datalayer')" placeholder="Seach for datalayer">
+                    <input type="text" class="dynamic_search" id='dynamic_search_datalayer' onkeyup="filter_list(this, $(this).parent().parent(), 'datalayer')" placeholder="Search for datalayer">
                 </div>
                <!-- <div class='layer_filter'>
                     <input type='checkbox' id='toggle_national_layers_chk' onchange='toggleNationalLayers();' /><label for='toggle_national_layers_chk'> only show CONUS-wide layers</label>
@@ -313,6 +326,7 @@
                                 </tbody>
                             </table>
                             <div id='datacube_message_div' class='modeling_instructions'></div>
+<!--                             <div id='datacube_message_div2' class='modeling_instructions'></div> -->
                         </div> <!--content datacube-->
                     </div> <!--collapse sub-->
     <!--                <div class='collapse sub collapse_parameters'>

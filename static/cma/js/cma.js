@@ -226,10 +226,12 @@ function onLoad() {
         if (closed) {
             $('.flex-child.control_panel').css('width','40%');
             $('.collapse.modeling').show(); // see below vvv
+            $('#map').css('width','60%');
             cmp.html('⯇');
         } else {
             $('.flex-child.control_panel').css('width','0');
             $('.collapse.modeling').hide(); // <- hack b/c contents squeeze out bottom otherwise
+            $('#map').css('width','100%');
             cmp.html('⯈');
         } 
 
@@ -1029,6 +1031,9 @@ function loadCMA(cma_id) {
     // Make UI changes (show model opts, etc.)
     onStartedCMA(cma);
     
+    // Clear loaded processed layers 
+    resetProcessedLayers();  
+    
     // Load model runs
     loadModelRuns(cma_id);
     
@@ -1037,8 +1042,7 @@ function loadCMA(cma_id) {
     $('#sites_ignoreextent').prop('checked',false);
     loadMineralSites();
      
-    // Clear loaded processed layers 
-    resetProcessedLayers();  
+
     
      // Reset model outputs filter 
      $('#model_output_layers_filter select').val('all');
@@ -1076,6 +1080,7 @@ function loadModelOutputs(cma_id,model_run_id) {
         
         if (d.gui_model == 'outputlayer' && 
             d.cma_id && d.cma_id == cma_id &&
+            CMAS_EXISTING[d.cma_id].model_run_objects && CMAS_EXISTING[d.cma_id].model_run_objects[d.model_run_id] &&
             (model_run_id == 'all' || (d.model_run_id && d.model_run_id == model_run_id))
         ) {
             // Don't add outputs from model run objects not loaded. 
@@ -1250,8 +1255,9 @@ function loadModelRuns(cma_id,mrid_selected) {
             GET_MODEL_RUNS_MOST_RECENT = response.model_runs;
             
             // Load outputs
-            loadModelOutputs(cma_id);
             processModelRunsFromCDR(response.model_runs,mrid_selected);
+            loadModelOutputs(cma_id);
+ 
 
         },
         error: function(response) {
@@ -3983,6 +3989,10 @@ function addLayerToDataCube(datalayer) {
     DATACUBE_CONFIG.push({data_source_id: dsid, transform_methods: []});
         
     var psteps = `<td class='processing'><span class='link processingsteps_list' onclick='editProcessingSteps(this);'>[none]</span></td>`
+    if (datalayer.data_format == 'shp') {
+        psteps = `<td class='processing'><span class='link processingsteps_list' onclick='$("#vector_processing_info").show();'>distance-to</span></td>`
+        
+    }
     
     var name_pretty = getLayerNameLabel(datalayer);
     
@@ -3998,9 +4008,10 @@ function addLayerToDataCube(datalayer) {
             onRemoveDataCubeLayerClick($('tr.cube_layer.label_raster')[0]);
             
             cls2 = ' label_raster';
-            if (!MODELS[$('#model_select').val()].uses_training) {
+            var m = MODELS[$('#model_select').val()];
+            if (m && !m.uses_training) {
                 cls2 += ' disabled';
-                toggleLabelRasterEnable(false);
+                toggleLabelRasterEnable(false); 
             } else {
                 toggleLabelRasterEnable(true);
             }
@@ -4111,7 +4122,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'To enable "Run model" button, select at least 1 non-training INPUT LAYER';
+            msg = 'To enable "Run model" button, select at least 1 non-training INPUT LAYER<br>';
         }
         
         // Enable ONLY 'pre-process' button IF unprocessed layers exist and 
@@ -4134,7 +4145,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').addClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
             
-            msg = 'Click "pre-process layers" to create a <b>label raster</b> from the selected training data.<br>To enable "Run model" button, select at least 1 non-training INPUT LAYER.';
+            msg = 'Click "pre-process layers" to create a <b>label raster</b> from the selected training data.<br>To enable "Run model" button, select at least 1 non-training INPUT LAYER.<br>';
         }
         
         // Disable ONLY 'run' button 
@@ -4146,7 +4157,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess').removeClass('disabled');
             $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
-	    msg += '<br>To enabled "Run model" button, all input layers must be pre-processed';
+	    msg += 'To enable "Run model" button, all input layers must be pre-processed<br>';
         }
         
         // Enable ONLY 'run' if all layers are processed and a label raster is
@@ -4174,7 +4185,7 @@ function validateModelButtons() {
 		msg = 'Click "pre-process layers" to create a <b>label raster</b> from the selected training data'; 
 	    }
 	    if (model) {
-		msg += '<br>To enable "Run model" button, select at least 1 INPUT LAYER';
+		msg += 'To enable "Run model" button, select at least 1 INPUT LAYER<br>';
 	    }
 	    
             $('#model_button_status').html(msg);
@@ -4188,7 +4199,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
 
-	    msg += '<br>To enabled "Run model" button, all input layers must be pre-processed.'
+	    msg += 'To enabled "Run model" button, all input layers must be pre-processed.<br>'
 	    
         } else { // If all processed, enable RUN only
             $('.button.model_process_submit.preprocess').addClass('disabled');
@@ -5182,14 +5193,21 @@ function toggleNationalLayers() {
 }
 
 function toggleIntersectingLayers() {
-    // Loop over and toggle each datalayer row
-    $('.datalayer_table tr.datalayer_row').each(function() {
-        if (drawnLayer && $('#hide_intersecting_cb').is(':checked') && !boundsOverlap($(this).attr('data-path'))) {
-            $(this).addClass('hide_table_row');
-        } else {
-            $(this).removeClass('hide_table_row');
-        }
-    });
+    // Trigger the dynamic search function so both text and geospatial filters 
+    // are applied. This function also now does the intersect query
+    filter_list(
+        $('#dynamic_search_datalayer')[0],
+        $('#datalayer_container'),
+        'datalayer'
+    );
+        // Loop over and toggle each datalayer row
+//     $('.datalayer_table tr.datalayer_row').each(function() {
+//         if (drawnLayer && $('#hide_intersecting_cb').is(':checked') && !boundsOverlap($(this).attr('data-path'))) {
+//             $(this).addClass('hide_table_row');
+//         } else {
+//             $(this).removeClass('hide_table_row');
+//         }
+//     });
     hideSubcategoryLabels();
 
     // Update n layer label for the category 
@@ -5245,8 +5263,20 @@ function getLayerControlCategories(dl) {
     var subcat = dl.subcategory;
     
     if (dl.gui_model == 'outputlayer') {
-        category = dl.model;//dl.subcategory;
+        // Get model type from run_id 
+        category = dl.model;
         subcat = dl.model_run_id;
+        
+        
+        var cma = CMAS_EXISTING[getActiveCMAID()]
+        if (cma.model_run_objects && cma.model_run_objects[dl.model_run_id]) {
+            var m = cma.model_run_objects[dl.model_run_id];
+            var mtype0 = m.model_type;
+            if (mtype0 == 'rf') {mtype0 = 'jataware_rf'}
+            var mtype = MODELS[mtype0].name_pretty.split(' (')[0];
+            category = mtype;//`${mtype} - ${dl.model}`;//dl.subcategory;
+        }
+
     }
     if (dl.subcategory == 'User upload') {
         category = 'User upload';
@@ -5847,11 +5877,22 @@ function filter_list(text_input, container, filter_type) {
         // If any conditions are true then search term has been found and keep row shown, else hide
         if (conditionals.some(value => value)) {
             $(row).show();
-	    $(row).removeClass('hide_table_row');
+            
+
+            if ($(row).hasClass('datalayer_row') && 
+                drawnLayer &&
+                $('#hide_intersecting_cb').is(':checked') && 
+                !boundsOverlap($(row).attr('data-path'))) {
+                
+                $(row).addClass('hide_table_row');
+
+            } else {
+                $(row).removeClass('hide_table_row');
+            }
         }
         else {
             $(row).hide()
-	    $(row).addClass('hide_table_row');
+            $(row).addClass('hide_table_row');
         }
 
     });

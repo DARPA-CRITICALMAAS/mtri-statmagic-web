@@ -27,9 +27,17 @@ class CDR():
         '''
 
         if not cdr_host:
-            cdr_host = os.environ['CDR_API']
+            if 'CDR_API' in os.environ:
+                cdr_host = os.environ['CDR_API']
+            else:
+                cdr_host = 'https://api.cdr.land'
+                
         if not cdr_version:
-            cdr_version = os.environ['CDR_API_VERSION']
+            if 'CDR_API_VERSION' in os.environ:
+                cdr_version = os.environ['CDR_API_VERSION']
+            else:
+                cdr_version = 'v1'
+                
 
         self.cdr_host = cdr_host
         self.cdr_version = cdr_version
@@ -270,7 +278,7 @@ class CDR():
             f'prospectivity/model_run?model_run_id={model_run_id}'
         )
 
-    def get_model_runs(self, cma_id, size=10000):
+    def get_model_runs(self, cma_id, size=100000):
         return self.run_query(
             f'prospectivity/model_runs?cma_id={cma_id}&size={size}'
         )

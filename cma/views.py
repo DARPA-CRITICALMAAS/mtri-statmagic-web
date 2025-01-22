@@ -330,6 +330,9 @@ def get_model_run(request):
     return response
 
 def get_model_runs_for_cma(request):
+    '''
+    DEPRECATED; uses get_model_runs() instead
+    '''
     params = {
         'cma_id': '',
     }
@@ -648,7 +651,9 @@ def initiate_cma(request):
         'crs': None,
     }
     params = util.process_params(request, params, post=True)
-    params['resolution'] = [float(x) for x in request.POST.getlist('resolution[]')]
+    params['resolution'] = [
+        float(x) for x in request.POST.getlist('resolution[]')
+    ]
     
     #print(params['extent'])
     params['extent'] = util.validate_wkt_geom(params['extent'])
@@ -1050,58 +1055,59 @@ def get_mineral_sites(request):
             sites_df_merged = sites_df
         else:
             sites_df_merged = pd.concat([sites_df_merged,sites_df])
-        
-    # print(json.dumps(gj))
-    if sites_df_merged is not None:
-        print(len(sites_df_merged))
-    
-    # Apply non-CDR-based filters
-    #   * TODO: also trim out unncessary properties
+            
     sites_filtered = []
     uniqdts = []
-    #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
-    for index, site in sites_df_merged.iterrows():
-        for n in range(params['top_n']):
-            pname = f'top{n+1}_deposit_type'
-            if pname in site and site[pname] not in uniqdts and site[pname] not in [float('nan')]:
-                uniqdts.append(site[pname])
+    # print(json.dumps(gj))
+    if sites_df_merged is not None:
+        print(f'Processing {len(sites_df_merged)} sites from CDR')
+    
+        # Apply non-CDR-based filters
+        #   * TODO: also trim out unncessary properties
+
+        #for site in sites_json:#json.loads(sites_df.to_json(orient='records')):
+        for index, site in sites_df_merged.iterrows():
+            for n in range(params['top_n']):
+                pname = f'top{n+1}_deposit_type'
+                if pname in site and site[pname] not in uniqdts and site[pname] not in [float('nan')]:
+                    uniqdts.append(site[pname])
 
 
-        # Apply grade/tonnage data filter
-        #print(params['only_gradetonnage'], site['grade'])
-        if (params['only_gradetonnage'] in ('true',True,'True','t','T') and (
-             site['grade'] in (None, '') or
-             math.isnan(site['grade']))
-            ):
-           # print('skipping!')
-            continue
-        
-        # Apply primary deposit site confidence threshold filter
-        conf_thresh = params['top1_deposit_classification_confidence__gte']
-        conf = site['top1_deposit_classification_confidence']
-        if conf_thresh and conf:
-            if float(conf) < float(conf_thresh):
+            # Apply grade/tonnage data filter
+            #print(params['only_gradetonnage'], site['grade'])
+            if (params['only_gradetonnage'] in ('true',True,'True','t','T') and (
+                site['grade'] in (None, '') or
+                math.isnan(site['grade']))
+                ):
+            # print('skipping!')
                 continue
-        
-        # Apply other filters
-        skip = False
-        for p in ('rank','type','top1_deposit_type','top1_deposit_group'):
-            if params[p]:
-                srank = site[p]
-                if not srank or srank in ('nan',) or type(srank) == float:
-                    skip = True
+            
+            # Apply primary deposit site confidence threshold filter
+            conf_thresh = params['top1_deposit_classification_confidence__gte']
+            conf = site['top1_deposit_classification_confidence']
+            if conf_thresh and conf:
+                if float(conf) < float(conf_thresh):
                     continue
-                if '[' in srank:
-                    srank = eval(srank)
-                else:
-                    srank = [srank]
-                matches =  [i for i in srank if ('any' in params[p] or i in params[p])]
-                if not matches:
-                    skip = True
-        if skip:
-            continue
-        
-        sites_filtered.append(site)
+            
+            # Apply other filters
+            skip = False
+            for p in ('rank','type','top1_deposit_type','top1_deposit_group'):
+                if params[p]:
+                    srank = site[p]
+                    if not srank or srank in ('nan',) or type(srank) == float:
+                        skip = True
+                        continue
+                    if '[' in srank:
+                        srank = eval(srank)
+                    else:
+                        srank = [srank]
+                    matches =  [i for i in srank if ('any' in params[p] or i in params[p])]
+                    if not matches:
+                        skip = True
+            if skip:
+                continue
+            
+            sites_filtered.append(site)
        
 
     base_name = f'StatMAGIC_{params["commodity"]}'#_{dt.now().date()}'
