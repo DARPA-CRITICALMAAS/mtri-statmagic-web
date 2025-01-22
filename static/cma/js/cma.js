@@ -3167,6 +3167,9 @@ function submitPreprocessing(process_and_run,mpm_initial) {
             }
         });
         
+        if (evidence_layers.length == 0) {
+            return;
+        }
         
     } else { // Otherwise pull from DATACUBE_CONFIG
         var model = MODELS[$('#model_select').val()];
