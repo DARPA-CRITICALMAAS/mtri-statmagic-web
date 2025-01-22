@@ -28,6 +28,7 @@ var MINERAL_SITES_LAYER_USER_UPLOAD;
 var CMAS_EXISTING;
 var MINERAL_SITES_SORT_BY = {prop: 'id', order: 'asc'};
 var FISHNET_LAYER = new L.FeatureGroup();
+var DEPOSIT_TYPES_ALL;
 const DRAW_STYLE = {
     color: 'orange',
     weight: 4,
@@ -1225,6 +1226,8 @@ function getMetadata() {
                 `;
             });
             $('#choose_cma_table tbody').html(trs);
+            
+            DEPOSIT_TYPES_ALL = response.top1_deposit_type;
             
             // Now load these to the dropdowns
             $.each(['commodity','top1_deposit_type'], function(i,v) {
@@ -3077,6 +3080,22 @@ function validateLoadSitesButton() {
     } else {
         $('#load_sites_button').addClass('disabled');
     }
+    
+    // Filter the list of valid deposit types
+//     console.log(v);
+    var opts =`<option value='any' selected>[any]</option>`;
+    if (v_len == 0) {
+        $.each(DEPOSIT_TYPES_ALL, function(i,dt) {
+            opts += `<option value='${dt}'>${dt}</option>`;
+        });
+    } else {
+        $.each(v, function(i,c) {
+            $.each(DEPOSIT_TYPES_BY_COMMODITY[c], function(i,dt) {
+                opts += `<option value='${dt}'>${dt}</option>`;
+            });
+        });
+    }
+    $(`#top1_deposit_type`).html(opts);
     
     validateDTConfidence();
     
