@@ -45,7 +45,7 @@ URL_PREFIX = '/' if IS_MTRI_SERVER else '/statmagic/'
 
 ALLOWED_HOSTS = ['*']
 
-if not 'precision' in HOST:
+if not IS_MTRI_SERVER:
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
