@@ -5025,9 +5025,11 @@ function validateCMAinitializeForm(el) {
     // Enforce max value of resolution 
     var crs_name = $('#cma_crs').val();
     var crs = CRS_OPTIONS[crs_name];
-    var maxval = crs.units == 'deg.'  ? 1 : 9999999;
-    if ($('#cma_resolution').val() > maxval) {
-        $('#cma_resolution').val(maxval);
+    if (crs) {
+        var maxval = crs.units == 'deg.'  ? 1 : 9999999;
+        if ($('#cma_resolution').val() > maxval) {
+            $('#cma_resolution').val(maxval);
+        }
     }
     
     // Name needs to be set and unique
