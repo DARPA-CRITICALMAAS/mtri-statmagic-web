@@ -10,7 +10,7 @@ if (MAPSERVER_SERVER == 'vm-apps2') {
     WMS_URL = `http://opg.mtri.org/mapserver_opg/wms?`;
     MAPFILE = `/var/www/mapfiles2/${MAPFILE_FILENAME}`;
 } else {
-    WMS_URL = `https://${MAPSERVER_SERVER}/cgi-bin/mapserv?`;
+    WMS_URL = `http://${MAPSERVER_SERVER}/cgi-bin/mapserv?`;
     MAPFILE = `/var/www/mapfiles/${MAPFILE_FILENAME}`;
 }
 var COMMODITIES;
@@ -1708,66 +1708,66 @@ function showMessage(title,content) {
 function createLayerControl() {
     var images2 = {Layers:{}};
     
-    TA1_SYSTEMS = {};
-    $.each(TA1_SYSTEMS,function(system, versions) {
-        $.each(versions, function(i,version) {
-            // Create a popup 
-            var popup = L.popup({
-                minWidth: 260,
-                autoPan: false,
-            });
-            var ta1_layer = L.vectorGrid.protobuf(
-                `https://api.cdr.land/v1/tiles/polygon/system/${system}/system_version/${version}/tile/{z}/{x}/{y}`, {
-                fetchOptions: {
-                    headers: {
-                        Authorization: `Bearer ${CDR_BEARER}`
-                    },
-                },
-                rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
-                attribution: system,
-                interactive: true,
-                vectorTileLayerStyles: {
-                    units: function(properties) {
-                        return {
-                            weight: 0.5,
-                            color: properties.color,
-                            fillColor: properties.color,
-                            fillOpacity: 0.5,
-                            fill: true,
-                        };
-                    },
-                    lines: function(properties) {
-                        return {
-                            weight: 1,
-                            color: properties.color,
-                        };
-                    }
-                },
-            });
-            ta1_layer.bindPopup(popup);
-            ta1_layer.on('click', function(e) {
-                var prop = e.layer.properties;
-                console.log(prop);
-                popup.setContent(`${prop.system} v${prop.system_version}<br><b>${prop.descrip}</b>`);
-                ta1_layer.openPopup();
-            });
-        //     ta1_layer.on('mouseover', function(e) {
-        //         console.log(e.layer);
-        // //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
-        // 
-        //         
-        //     });
-            
-            images2.Layers[`ta1__${system}_v${version}`] = {
-                group: 'Reference Layers',
-                label: `TA1 ${system} v${version}`,
-                as_checkbox: true,
-                title: '',
-                layers: [ta1_layer],
-                legend: '',
-            };
-        });
-    });
+    // TA1_SYSTEMS = {};
+    // $.each(TA1_SYSTEMS,function(system, versions) {
+    //     $.each(versions, function(i,version) {
+    //         // Create a popup
+    //         var popup = L.popup({
+    //             minWidth: 260,
+    //             autoPan: false,
+    //         });
+    //         var ta1_layer = L.vectorGrid.protobuf(
+    //             `https://api.cdr.land/v1/tiles/polygon/system/${system}/system_version/${version}/tile/{z}/{x}/{y}`, {
+    //             fetchOptions: {
+    //                 headers: {
+    //                     Authorization: `Bearer ${CDR_BEARER}`
+    //                 },
+    //             },
+    //             rendererFactory: L.svg.tile,//L.canvas.tile,// L.svg.tile
+    //             attribution: system,
+    //             interactive: true,
+    //             vectorTileLayerStyles: {
+    //                 units: function(properties) {
+    //                     return {
+    //                         weight: 0.5,
+    //                         color: properties.color,
+    //                         fillColor: properties.color,
+    //                         fillOpacity: 0.5,
+    //                         fill: true,
+    //                     };
+    //                 },
+    //                 lines: function(properties) {
+    //                     return {
+    //                         weight: 1,
+    //                         color: properties.color,
+    //                     };
+    //                 }
+    //             },
+    //         });
+    //         ta1_layer.bindPopup(popup);
+    //         ta1_layer.on('click', function(e) {
+    //             var prop = e.layer.properties;
+    //             console.log(prop);
+    //             popup.setContent(`${prop.system} v${prop.system_version}<br><b>${prop.descrip}</b>`);
+    //             ta1_layer.openPopup();
+    //         });
+    //     //     ta1_layer.on('mouseover', function(e) {
+    //     //         console.log(e.layer);
+    //     // //         e.layer.setStyle({weight: 1});//, fillOpacity: 0.7});
+    //     //
+    //     //
+    //     //     });
+    //
+    //         images2.Layers[`ta1__${system}_v${version}`] = {
+    //             group: 'Reference Layers',
+    //             label: `TA1 ${system} v${version}`,
+    //             as_checkbox: true,
+    //             title: '',
+    //             layers: [ta1_layer],
+    //             legend: '',
+    //         };
+    //     });
+    // });
     
      // Create a popup 
     var popup2 = L.popup({

@@ -1,6 +1,8 @@
 import codecs, copy, os, sys, tempfile
 import json
 from itertools import chain
+from pathlib import Path
+
 from django.conf import settings
 from django.forms.models import model_to_dict
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
@@ -81,16 +83,17 @@ def openRaster(ds_path):
     # If this is an MTRI server, prepend the /net/[mapserver system] location 
     #if settings.TILESERVER_LOCAL_SYNC_FOLDER in ds_path and settings.IS_MTRI_SERVER:
     #    ds_path2 = f'/net/{util.settings.MAPSERVER_SERVER}/{ds_path}'
-        
+
     if ' ' in ds_path:
         td = tempfile.TemporaryDirectory()
-        url = r['download_url'].replace('/vsicurl_streaming/','')
+        # url = r['download_url'].replace('/vsicurl_streaming/','')
+        url = ds_path.replace('/vsicurl_streaming/','')
         os.system(f'wget -P {td.name} "{url}"')
         tp = os.path.join(td.name,os.path.basename(ds_path))
         ds = gdal.Open(tp)
     else:
         ds = gdal.Open(ds_path2)
-        
+
     return ds
 
 
@@ -382,7 +385,22 @@ def write_mapfile(
                     END
                 '''
             
-        elif ext in ('tif','upload'):
+        elif ext in ('tif','upload') and Path(r["download_url"]).suffix == ".tif":
+            # only run connection test if raster needs to be opened for any stat calculation
+            if r['extent_geom'] is None or (r['stats_minimum'] is None and r['stats_maximum'] is None) or r['spatial_resolution_m'] is None:
+                # Set timeout and try to open. Sync to local if conn failed and replace ds_path with local path
+                gdal.SetConfigOption("GDAL_HTTP_CONNECTTIMEOUT", "30")
+                gdal.SetConfigOption("GDAL_HTTP_TIMEOUT", "30")
+
+                print(f"Attempting to test connection for {ds_path}")
+                conn_test = gdal.Open(ds_path)
+                if conn_test is None:
+                    print(f"Connection failed for {ds_path}, syncing to local")
+                    td = tempfile.TemporaryDirectory()
+                    url = ds_path.replace('/vsicurl_streaming/', '')
+                    os.system(f'wget -nv -P {td.name} "{url}"')
+                    ds_path = os.path.join(td.name, os.path.basename(ds_path))
+                    ds_path2 = ds_path
 
             # Retrieve extent_geom if not already loaded
             if r['extent_geom'] is None:

@@ -522,7 +522,7 @@ def get_tif_resolution(tif_path):
     if ' ' in tif_path:
         td = tempfile.TemporaryDirectory()
         url = tif_path.replace("/vsicurl_streaming/","")
-        os.system(f'wget -P {td.name} "{url}"')
+        os.system(f'wget -nv -P {td.name} "{url}"')
         print(td, os.path.basename(tif_path))
         ds = gdal.Open(os.path.join(td.name,os.path.basename(tif_path)))
     else:
@@ -656,7 +656,7 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
     '''
     data_source_id: (optional) filter by data source ID if needed
     '''
-    
+
     ### Pull dsids from the GUI DB
     existing_dsids = [
         x[0] for x in 
@@ -1344,7 +1344,7 @@ def get_extent_geom_of_raster(tif):
     if xds.rio.crs:
         transform_bounds_box = box(*xds.rio.transform_bounds("EPSG:4326"))
 
-        # Loop through coords and change any large longitudes (~W of Alaska) to 
+        # Loop through coords and change any large longitudes (~W of Alaska) to
         # -180 so that the geometry does not draw the wrong way around the world
         xx, yy = transform_bounds_box.exterior.coords.xy
 
@@ -1410,8 +1410,8 @@ def process_vector_for_mapfile(dataset):
                     # Run shptree to index the file
                     if exts == 'shp':
                         print("\tindexing vector...")
-                        # os.system(f'shptree {sync_path}')
-                        os.system('shptree {sync_path}')
+                        os.system(f'shptree {sync_path}')
+                        # os.system('shptree {sync_path}')
 
 
     # vvv NOTE: abandoning this b/c mpm_input_preprocessing 
@@ -1468,9 +1468,9 @@ def process_vector_for_mapfile(dataset):
                         'min': float(gdf[colname].min()),
                         'max': float(gdf[colname].max())
                     }
-                    # for stat, stat_val in s.items():
-                    #     if np.isnan(stat_val):
-                    #         s[stat] = "null"
+                    for stat, stat_val in s.items():
+                        if np.isnan(stat_val):
+                            s[stat] = "null"
                 if dtype in ('datetime',):
                     s = {
                         'min': gdf[colname].min(),
