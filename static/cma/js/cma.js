@@ -1216,11 +1216,12 @@ function getMetadata() {
             // Load CMAs to load CMA table
             trs = '';
             $.each(CMAS_EXISTING, function(cma_id,cma) {
+                var units = cma.crs == 'EPSG:4326' ? 'deg' : 'm';
                 trs += `
                     <tr onclick="loadCMA('${cma_id}');">
                         <td class='description'>${cma.description}</td>
                         <td>${cma.mineral}</td>
-                        <td>${cma.resolution[0]}m</td>
+                        <td>${cma.resolution[0]}${units}</td>
                         <td>${cma.crs}</td>
                     </tr>
                 `;
