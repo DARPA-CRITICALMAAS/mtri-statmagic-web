@@ -4412,9 +4412,14 @@ function onRemoveDataCubeLayerClick(cmp) {
 function onCRSselect() {
     var crs_name = $('#cma_crs').val();
     var crs = CRS_OPTIONS[crs_name];
-    console.log(crs_name,crs);
+//     console.log(crs_name,crs);
     $('#cma_crs_units').html(crs.units);
     $('#cma_resolution').val(crs.default_resolution);
+    
+    var maxval = crs.units == 'deg.'  ? 1 : 9999999;
+    $('#cma_resolution').attr('max',maxval);    
+        
+    
     getFishnet();
 }
 
@@ -5016,6 +5021,14 @@ function validateCMAinitializeForm(el) {
     }
     
     var msg = '';
+    
+    // Enforce max value of resolution 
+    var crs_name = $('#cma_crs').val();
+    var crs = CRS_OPTIONS[crs_name];
+    var maxval = crs.units == 'deg.'  ? 1 : 9999999;
+    if ($('#cma_resolution').val() > maxval) {
+        $('#cma_resolution').val(maxval);
+    }
     
     // Name needs to be set and unique
     if ($('#cma_description').val() == '') {
