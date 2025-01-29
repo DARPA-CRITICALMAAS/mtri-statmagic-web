@@ -678,8 +678,8 @@ def sync_cdr_prospectivity_processed_layers_to_datalayer(
     dsids = []
     #for event_id in event_ids:
     for cma_id in cmas_ids:
-        if 'test' in cma_id:
-            continue
+        #if 'test' in cma_id:
+        #    continue
         
         res = cdr.get_processed_data_layers(cma_id=cma_id)
 

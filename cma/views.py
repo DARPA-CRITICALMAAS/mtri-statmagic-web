@@ -458,58 +458,73 @@ def check_model_run_status(request):
     }
     params = util.process_params(request,params)
     
-    # Get list of outputs associated w/ model_run
+    mrids = params['model_run_id'].split(',')
+    
+   
+
     cdr = cdr_utils.CDR()
-    res = cdr.get_prospectivity_output_layers(**params)
-    
-    # Get local database content 
-    dsids = [x[0] for x in  
-        models.OutputLayer.objects.filter(
-            model_run_id=params['model_run_id']
-        ).values_list('data_source_id')
-    ]
-    
-    msg = 'No additional model outputs currently available'
-    
-    n_complete = 0
-    if len(res) == 0:
-        msg = 'No model outputs available...'
-    else:
-        # Get mapfile content
-        with open(mapfile.get_mapfile_path(),'r') as f:
-            mapfile_content = f.read()
+    model_runs = {}
+    for mrid in mrids:
         
-        for ol in res:
-            #print(ol)
-            dsid = ol['layer_id']
-            ext = ol['download_url'].split('.')[-1]
+        # Get local database content 
+        dsids = [x[0] for x in  
+            models.OutputLayer.objects.filter(
+                model_run_id = mrid#params['model_run_id']
+            ).values_list('data_source_id')
+        ]
             
-            # Check if layer is in database
-            if dsid not in dsids:
-                print(dsids)
-                print(dsid)
-                msg = 'Unprocessed outputs available; syncing with GUI...'
-                break
+    
+        # Get list of outputs associated w/ model_run
+        res = cdr.get_prospectivity_output_layers(model_run_id=mrid)
 
-            # Check if layer is sync'd locally 
-            if not os.path.exists(util.get_output_layer_local_sync_path(dsid,ext=ext)):
-                msg = 'Unprocessed model outputs available; optimizing for visualization...'
-                break
+        msg = 'No additional model outputs currently available'
         
-            # Check to see if all layers are in mapfile
-            if ext in ('tif','shp') and mapfile.scrub_wms_layername(dsid) not in mapfile_content:
-                msg = 'Extracting model output stats/extent for map visualization...'
-                break
+        n_complete = 0
+        if len(res) == 0:
+            msg = 'No model outputs available...'
+        else:
+            # Get mapfile content
+            with open(mapfile.get_mapfile_path(),'r') as f:
+                mapfile_content = f.read()
+            
+            for ol in res:
+                #print(ol)
+                dsid = ol['layer_id']
+                ext = ol['download_url'].split('.')[-1]
+                
+                # Check if layer is in database
+                if dsid not in dsids:
+                    print(dsids)
+                    print(dsid)
+                    msg = 'Unprocessed outputs available; syncing with GUI...'
+                    break
 
-            # Track layers that made it through all the checks w/out breaking
-            n_complete += 1
+                # Check if layer is sync'd locally 
+                if not os.path.exists(util.get_output_layer_local_sync_path(dsid,ext=ext)):
+                    msg = 'Unprocessed model outputs available; optimizing for visualization...'
+                    break
+            
+                # Check to see if all layers are in mapfile
+                if ext in ('tif','shp') and mapfile.scrub_wms_layername(dsid) not in mapfile_content:
+                    msg = 'Extracting model output stats/extent for map visualization...'
+                    break
+
+                # Track layers that made it through all the checks w/out breaking
+                n_complete += 1
+                
+        model_runs[mrid] = {
+            'complete': n_complete == len(res),
+            'model_run_status': msg,
+            'DATALAYERS_LOOKUP_UPDATES': util.load_new_layers(dsids=dsids),
+        }
 
     response = HttpResponse(
         json.dumps({
             'params': params,
-            'complete': n_complete == len(res),
-            'DATALAYERS_LOOKUP_UPDATES': util.load_new_layers(dsids=dsids),
-            'model_run_status': msg,
+            'model_runs': model_runs,
+
+            #'complete': n_complete == len(res),
+           # 'model_run_status': msg,
         })
     )
     response['Content-Type'] = 'application/json'

@@ -29,6 +29,7 @@ var CMAS_EXISTING;
 var MINERAL_SITES_SORT_BY = {prop: 'id', order: 'asc'};
 var FISHNET_LAYER = new L.FeatureGroup();
 var DEPOSIT_TYPES_ALL;
+var MODEL_RUNS_BEING_TRACKED = [];
 const DRAW_STYLE = {
     color: 'orange',
     weight: 4,
@@ -844,6 +845,9 @@ function resetModelUI(clear) {
     // Collapse results pane 
     closeCollapse('.header.model_results')
     
+    // Clear the runtime estimate  
+    $('#model_runtime_estimate').html('');
+    
     if (clear) {
         clearModelUIselections();
     }
@@ -1552,6 +1556,7 @@ function loadModelRun(cma_id,model_run_id) {
     // Map of various model type vars to those listed in GUI
     var mtypemap = {
         beak_som: 'beak_som',
+        beak_bnn: 'beak_bnn',
         som: 'beak_som',
         SOM: 'beak_som',
         sri_NN: 'sri_NN',
@@ -1588,7 +1593,6 @@ function loadModelRun(cma_id,model_run_id) {
                 // Only update the html_attribute default value if non-null
                 if (p.value != null) {
                     p.html_attributes.value = p.value;
-                    
                 }
             });
         });
@@ -1606,7 +1610,6 @@ function loadModelRun(cma_id,model_run_id) {
         //       loaded yet; 
         if (dl) {
 //             addLayerToDataCube(dl);
-            
             // Update the 'Add to cube' interface
             onRadioCubeClick($(`label[for='radiocube_${dsid}'][class='yes']`)[0]);//.trigger('click');
         }
@@ -1653,6 +1656,49 @@ function getSelectedProcessingSteps() {
     });
     
     return l;
+}
+
+function getModelRuntimeEstimate() {
+    //var selmod = $('#model_select').val();
+    var m = $('#model_select').val();
+    var model = MODELS[m];
+    var minutes_estimate = null;
+    
+    // Derive extent/height/width from CMA
+    var cma = CMAS_EXISTING[getActiveCMAID()];
+    
+    // Bounds are returned as lat/lon. If the CMA CRS is not WGS84, we assume 
+    // resolution units must be meters, so we roughly convert m to degrees to
+    // match the bounds. (assume 1deg ~= 111km)
+    var resolution = cma.crs == 'EPSG:4326' ? cma.resolution[0] : cma.resolution[0]/111000;
+    var bounds = drawnLayer.getBounds();
+    var height = (bounds.getNorth() - bounds.getSouth()) / resolution;
+    var width = (bounds.getEast() - bounds.getWest()) / resolution;
+    
+    // Params that go into these calculations    
+    var n_layers = DATACUBE_CONFIG.length;
+    var extent_megapixels = (width * height) / 1e6;
+
+    var train_config = getModelTrainConfigForSubmission();
+    if (m == 'beak_bnn') {
+        var nn_epochs = train_config.training_epochs;
+        minutes_estimate = (0.003 * n_layers) + (0.530 * extent_megapixels) + (0.001 * nn_epochs);
+        
+    }
+    
+    if (m == 'beak_som') {
+        var som_size = train_config.dimensions_x * train_config.dimensions_y;// som_x * som_y
+        var som_epochs = train_config.num_epochs;// som_epohcs
+        minutes_estimate = (0.195 * n_layers) + (1.282 * extent_megapixels) + (0.004 * som_size) + (0.045 * som_epochs)
+    }
+    
+    var m = minutes_estimate == undefined ? '--' : minutes_estimate.toFixed(1);
+    $('#model_runtime_estimate').html(
+        `Model run time estimate: 
+         <span class='runtime_minutes'>${m} minutes </span>`
+    );
+
+    
 }
 
 function populateAddProcessingStep() {
@@ -3187,7 +3233,7 @@ function submitPreprocessing(process_and_run,mpm_initial) {
             }
         });
         
-        if (evidence_layers.length == 0) {
+        if (Object.keys(evidence_layers).length == 0) {
             return;
         }
         
@@ -3356,8 +3402,7 @@ function activateRunStatus() {
     
 }
 
-// Send POST request to backend
-function submitModelRun() {
+function getModelTrainConfigForSubmission() {
     var model = $('#model_select').val();
     var train_config = {};
     $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
@@ -3381,6 +3426,37 @@ function submitModelRun() {
             });
         });
     });
+    
+    return train_config;
+    
+}
+
+// Send POST request to backend
+function submitModelRun() {
+    var train_config = getModelTrainConfigForSubmission();
+//     var model = $('#model_select').val();
+//     var train_config = {};
+//     $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
+//         $.each(groups, function(group,parr) {
+//             $.each(parr, function(i,p) {
+//                 // If value is null/undefined/empty, don't include in
+//                 // train_config b/c it will mess up the cdr_schema object 
+//                 // generation.
+//                 if (p.value != undefined && p.value != '') {
+//                     train_config[p.name] = p.value;//p.html_attributes.value;
+//                 }
+//                 
+//                 // Tuples get special processing- represented as string
+//                 // Determines tuple by checking for 'tuple' in the param name
+//                 if ((p.name.indexOf('tuple') > -1 ||
+//                     ['network_arch_head_units','network_arch_core_units'].indexOf(p.name) > -1
+//                     )
+//                     && p.value) {
+//                     train_config[p.name] = p.value.split(',');
+//                 }
+//             });
+//         });
+//     });
     console.log(train_config)
     // This is now just a list of ProcessedLayer IDs
     var evidence_layers = []
@@ -3497,32 +3573,32 @@ function checkModelRunStatus(model_run_id) {
     
     var AJAX_CHECK_MODEL_RUN_STATUS = $.ajax(`${URL_PREFIX}check_model_run_status`, {
         data: {
-            model_run_id: model_run_id,
+            model_run_id: MODEL_RUNS_BEING_TRACKED.join(','),
         },
         type: 'GET',
         success: function(response) {
             console.log(this.url,response);
-            
-            var n_updates = processDataLayersUpdates(response);
-            
-            // Reload model runs/outputs if udpates
-//             if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
-            if (n_updates > 0) {
-                console.log('layer updates!');
-                loadModelRuns(getActiveCMAID(),model_run_id);
-                processModelRunsFromCDR(null,model_run_id);
-//                 processDataLayersUpdates(response);
+            $.each(response.model_runs, function(mrid, mobj) {
+                var n_updates = processDataLayersUpdates(mobj);
                 
-            }
-            
-            // Update model run status message
-            var ts = getDateAsYYYYMMDD(null,true,true).split(' ');
-            var sel0 = `.model_run_status_div[data-model_run_id="${model_run_id}"]`;
-            $(`${sel0} td.status`).html(response.model_run_status);
-            $(`${sel0} td.last_updated`).html(`
-                <span class='date'>${ts[0]}</span>
-                <span class='time'>${ts[1]}</span>
-            `);
+                // Reload model runs/outputs if udpates
+    //             if (response.DATALAYERS_LOOKUP_UPDATES.length > 0) {
+                if (n_updates > 0) {
+                    console.log('layer updates!');
+                    loadModelRuns(getActiveCMAID(),model_run_id);
+                    processModelRunsFromCDR(null,model_run_id);
+    //                 processDataLayersUpdates(response);
+                }
+          
+                // Update model run status message
+                var ts = getDateAsYYYYMMDD(null,true,true).split(' ');
+                var sel0 = `.model_run_status_div[data-model_run_id="${mrid}"]`;
+                $(`${sel0} td.status`).html(mobj.model_run_status);
+                $(`${sel0} td.last_updated`).html(`
+                    <span class='date'>${ts[0]}</span>
+                    <span class='time'>${ts[1]}</span>
+                `);
+            });
             
             // Wait 3 seconds and then check again
 //             if (!response.complete) { // <- commenting out for now b/c there may be outputs that have not been uploaded to CDR
@@ -4080,10 +4156,12 @@ function validateModelButtons() {
     var model = MODELS[$('#model_select').val()];
     var cma_id = getActiveCMAID();
     var msg = '';
+    $('#model_runtime_estimate').html('');
+    
     
     var msg_select_model = '';
     if (!model) {
-	msg_select_model = 'To enable "Run model" button, select a <b>Model type</b>';
+        msg_select_model = 'To enable "Run model" button, select a <b>Model type</b>';
     }
     $('#model_button_status_select_model').html(msg_select_model);
     
@@ -4134,7 +4212,7 @@ function validateModelButtons() {
             $('.button.model_process_submit.run').addClass('disabled');
             
             msg = `Select at least 1 INPUT LAYER<br>${msg_no_training}`;
-            $('#model_button_status').html(msg);
+           
             
             return;
         }
@@ -4181,6 +4259,12 @@ function validateModelButtons() {
             $('.button.model_process_submit.preprocess_and_run').removeClass('disabled');
             $('.button.model_process_submit.run').addClass('disabled');
 	    msg += 'To enable "Run model" button, all input layers must be pre-processed<br>';
+        if (!label_raster_included && 
+            training_sites_selected && 
+            DATACUBE_CONFIG.length > 0) {
+            msg += 'Either add a processed <b>label raster</b> or click "pre-process layers" to create one from the selected training data.<br>';
+                  
+            }
         }
         
         // Enable ONLY 'run' if all layers are processed and a label raster is
@@ -4233,6 +4317,9 @@ function validateModelButtons() {
         }
     }
     
+    if (!$('.button.model_process_submit.run').hasClass('disabled')) {
+         getModelRuntimeEstimate();
+    }
     $('#model_button_status').html(msg);
 }
 
@@ -4322,6 +4409,8 @@ function onRadioCubeClick(cmp) {
     // Update header_info 
     updateDataCubeLabelInfo();
     validateModelButtons();
+    
+    
 }
 
 function updateDataCubeLabelInfo() {
