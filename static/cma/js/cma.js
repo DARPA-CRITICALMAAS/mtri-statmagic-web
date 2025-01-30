@@ -1658,14 +1658,23 @@ function getSelectedProcessingSteps() {
     return l;
 }
 
-function getModelRuntimeEstimate() {
-    //var selmod = $('#model_select').val();
-    var m = $('#model_select').val();
-    var model = MODELS[m];
+
+function getModelRuntimeEstimate(model_run_id) {
     var minutes_estimate = null;
+    var cma = CMAS_EXISTING[getActiveCMAID()]
+    var m = $('#model_select').val();
     
+    if (model_run_id) {
+
+        if (cma.model_run_objects && cma.model_run_objects[model_run_id]) {
+            m = cma.model_run_objects[model_run_id].model_type;
+        }
+    }
+    
+    var model = MODELS[m];
+    
+
     // Derive extent/height/width from CMA
-    var cma = CMAS_EXISTING[getActiveCMAID()];
     
     // Bounds are returned as lat/lon. If the CMA CRS is not WGS84, we assume 
     // resolution units must be meters, so we roughly convert m to degrees to
@@ -1680,10 +1689,10 @@ function getModelRuntimeEstimate() {
     var extent_megapixels = (width * height) / 1e6;
 
     var train_config = getModelTrainConfigForSubmission();
+
     if (m == 'beak_bnn') {
         var nn_epochs = train_config.training_epochs;
         minutes_estimate = (0.003 * n_layers) + (0.530 * extent_megapixels) + (0.001 * nn_epochs);
-        
     }
     
     if (m == 'beak_som') {
@@ -1695,11 +1704,10 @@ function getModelRuntimeEstimate() {
     var m = minutes_estimate == undefined ? '--' : minutes_estimate.toFixed(1);
     $('#model_runtime_estimate').html(
         `Model run time estimate: 
-         <span class='runtime_minutes'>${m} minutes </span>`
+         <span class='runtime_minutes'>${m}</span> minutes`
     );
-
-    
 }
+
 
 function populateAddProcessingStep() {
     // Get currently listed options
@@ -3434,7 +3442,7 @@ function getModelTrainConfigForSubmission() {
 // Send POST request to backend
 function submitModelRun() {
     var train_config = getModelTrainConfigForSubmission();
-//     var model = $('#model_select').val();
+    var model = $('#model_select').val();
 //     var train_config = {};
 //     $.each(MODELS_CACHE[model].parameters, function(reqopt,groups) {
 //         $.each(groups, function(group,parr) {
@@ -3457,7 +3465,7 @@ function submitModelRun() {
 //             });
 //         });
 //     });
-    console.log(train_config)
+//     console.log(train_config)
     // This is now just a list of ProcessedLayer IDs
     var evidence_layers = []
     $.each(DATACUBE_CONFIG,function(i,l) {
@@ -3507,6 +3515,12 @@ function submitModelRun() {
                             <td class='timestamp'>
                                 <span class='date'>${ts[0]}</span>
                                 <span class='time'>${ts[1]}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Estimated runtime:</td>
+                            <td class='last_updated'>
+                                ${$('.runtime_minutes').html()} minutes
                             </td>
                         </tr>
                         <tr>
