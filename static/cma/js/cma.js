@@ -3507,9 +3507,27 @@ function submitModelRun() {
                 <div class='model_run_status_div' data-model_run_id=${mrid}>
                     <div class='model_run_status_header'>
                         Status for run ID:
-                        <div class='model_run_id'>${mrid}</div>
+                        <div class='model_run_id' title='Click to load configuration for this run' onclick='loadModelRun("${cma_id}","${mrid}");'>${mrid}</div>
                     </div>
                     <table class='model_parameters_table model_run_status_table'>
+                        <tr>
+                            <td class='label'>CMA:</td>
+                            <td class='last_updated' title='${cma_id}'>
+                                ${CMAS_EXISTING[cma_id].description}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Model type:</td>
+                            <td class='last_updated'>
+                                ${MODELS[model].name_pretty}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='label'># input layers:</td>
+                            <td class='last_updated'>
+                                ${evidence_layers.length}
+                            </td>
+                        </tr>
                         <tr>
                             <td class='label'>Submitted at:</td>
                             <td class='timestamp'>
