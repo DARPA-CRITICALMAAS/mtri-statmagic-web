@@ -31,7 +31,8 @@ import subscriber_handlers
 
 # Generate unique system_name id
 res = Popen("echo beak_via_mtri_$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)", shell=True, stdout=PIPE)
-system_name = res.stdout.read().decode('utf-8').strip()
+# system_name = res.stdout.read().decode('utf-8').strip()
+system_name = 'beak-mtri'
 
 SETTINGS = {
     'system_name': system_name,
@@ -131,12 +132,31 @@ def run():
         reload=False
     ) # start a Uvicorn server with the FastAPI application
 
+def get_registrations():
+    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'}
+    client = httpx.Client(follow_redirects=True)
+    r = client.get(f"{SETTINGS['cdr_host']}/user/me/registrations", headers=headers)
+    return r.json()
+
+def delete_registrations():
+    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'}
+    client = httpx.Client(follow_redirects=True)
+    registrations = get_registrations()
+
+    if len(registrations) != 0:
+        for reg in registrations:
+            client.delete(f"{os.environ['CDR_API']}/user/me/register/{reg['id']}",headers=headers)  # Send a DELETE request to the CDR host to unregister the system. The URL is constructed from the CDR host URL, the registration ID, and some static parts. The headers defined earlier are passed to the request.
 
 def register_system():
     """Register our system to the CDR using the server_settings"""
-    #global server_settings
-    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'}
 
+    # Get all registrations associated with MTRI's CDR token
+    # Delete all registrations if they exist, then re-register
+    reg_res = get_registrations()
+    if len(reg_res) != 0:
+        delete_registrations()
+
+    #global server_settings
     registration = {
         "name": SETTINGS['system_name'],
         "version": SETTINGS['system_version'],
@@ -149,7 +169,9 @@ def register_system():
         "events": []
 
     }
+
     # creating an httpx client
+    headers = {'Authorization': f'Bearer {SETTINGS["user_api_token"]}'}
     client = httpx.Client(follow_redirects=True) # follow_redirects=True argument tells the client to automatically follow redirects
 
     r = client.post(f"{SETTINGS['cdr_host']}/user/me/register",
