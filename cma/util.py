@@ -170,7 +170,7 @@ def simplify_and_transform_geojson(geometry,s_srs,t_srs=4326):
 
     # Set geojson precision to 0 if units are meters
     precision = 4
-    if int(t_srs) == 102008:
+    if int(t_srs) != 4326:
         precision = 0
     
     return json.loads(reduce_geojson_precision(runSQL(sql)[0],precision=precision))
