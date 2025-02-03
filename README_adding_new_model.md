@@ -30,14 +30,14 @@ Once complete, the created schemas needs to be sync'd with the StatMaGIC databas
 
 ## 3. Add hooks in backend model submission code
 
-In the [`./mtri-statmagic-web/cma/views.py:submit_model_run`](https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cma/views.py#L872) function, update the `model_map` variable to include the model type you just created; as when editing the `mmap` variable in the [sync_cdr_schemas.py]() script, the key should be the value for `name` you used when creating the `prospectivity model type` in **Step 1**, and the value should be the options **class** in [./cdr_schemas/cdr_schemas/prospectivity_models.py](https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/main/cdr_schemas/prospectivity_models.py) created in the previous step.
+In the [./mtri-statmagic-web/cma/views.py:submit_model_run](https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cma/views.py#L872) function, update the `model_map` variable to include the model type you just created; as when editing the `mmap` variable in the [sync_cdr_schemas.py](https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/data_management_scripts/sync_cdr_schemas.py) script, the key should be the value for `name` you used when creating the `prospectivity model type` in **Step 1**, and the value should be the options **class** in [./cdr_schemas/cdr_schemas/prospectivity_models.py](https://github.com/DARPA-CRITICALMAAS/cdr_schemas/blob/main/cdr_schemas/prospectivity_models.py) created in the previous step.
 
 
 ## 4. Set up a CDR subscriber for processing model run submissions.
 
 You can now submit model runs for the new model type in StatMaGIC, and you should receive a "Model run submitted successfully!" message, but no results will be returned because a subscriber and handler has not yet been set up to process the requests.
 
-To do this, use the [./mtri-statmagic-web/cdr/subscriber_server.py] (https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cdr/subscriber_server.py) and [./mtri-statmagic-web/cdr/subscriber_handler.py] (https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cdr/subscriber_handler.py) scripts as templates to create a new listener.
+To do this, use the [./mtri-statmagic-web/cdr/subscriber_server.py](https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cdr/subscriber_server.py) and [./mtri-statmagic-web/cdr/subscriber_handler.py](https://github.com/DARPA-CRITICALMAAS/mtri-statmagic-web/blob/main/cdr/subscriber_handler.py) scripts as templates to create a new listener.
 
 The `subscriber_server.py` script registers the listener with the CDR and sends the request to the appropriate handler. 
 
